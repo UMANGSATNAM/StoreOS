@@ -7,6 +7,45 @@ import type { Language } from '@/lib/i18n';
 // StoreOS - Zustand Global Store
 // ============================================================
 
+// --- Cash Register Types ---
+
+export interface CashRegisterTransaction {
+  id: string;
+  type: 'sale' | 'cash_in' | 'cash_out' | 'tip' | 'refund';
+  amount: number;
+  description: string;
+  timestamp: string;
+  runningBalance: number;
+}
+
+export interface CashRegister {
+  isOpen: boolean;
+  openedAt: string | null;
+  openingBalance: number;
+  currentBalance: number;
+  totalCashIn: number;
+  totalCashOut: number;
+  totalSales: number;
+  totalOrders: number;
+  transactions: CashRegisterTransaction[];
+  notes: string;
+}
+
+export interface CashRegisterDaySummary {
+  date: string;
+  openingBalance: number;
+  closingBalance: number;
+  totalSales: number;
+  totalCashIn: number;
+  totalCashOut: number;
+  totalOrders: number;
+  expectedBalance: number;
+  actualBalance: number;
+  difference: number;
+  notes: string;
+  closedAt: string;
+}
+
 interface AppState {
   // --- Navigation ---
   currentView: AppView;
@@ -58,6 +97,15 @@ interface AppState {
   // --- Language ---
   language: Language;
   setLanguage: (lang: Language) => void;
+
+  // --- Cash Register ---
+  cashRegister: CashRegister | null;
+  cashRegisterHistory: CashRegisterDaySummary[];
+  openCashRegister: (openingBalance: number, notes?: string) => void;
+  closeCashRegister: (actualBalance: number, notes?: string) => void;
+  updateCashRegister: (updates: Partial<CashRegister>) => void;
+  addCashRegisterTransaction: (transaction: Omit<CashRegisterTransaction, 'id' | 'timestamp' | 'runningBalance'>) => void;
+  recordCashSale: (amount: number, orderId?: string) => void;
 }
 
 export const useAppStore = create<AppState>()(
@@ -176,6 +224,109 @@ export const useAppStore = create<AppState>()(
       // --- Language ---
       language: 'en' as Language,
       setLanguage: (lang) => set({ language: lang }),
+
+      // --- Cash Register ---
+      cashRegister: null,
+      cashRegisterHistory: [],
+
+      openCashRegister: (openingBalance, notes = '') =>
+        set({
+          cashRegister: {
+            isOpen: true,
+            openedAt: new Date().toISOString(),
+            openingBalance,
+            currentBalance: openingBalance,
+            totalCashIn: 0,
+            totalCashOut: 0,
+            totalSales: 0,
+            totalOrders: 0,
+            transactions: [],
+            notes,
+          },
+        }),
+
+      closeCashRegister: (actualBalance, notes = '') => {
+        const reg = get().cashRegister;
+        if (!reg) return;
+        const expectedBalance = reg.openingBalance + reg.totalCashIn - reg.totalCashOut;
+        const difference = actualBalance - expectedBalance;
+        const summary: CashRegisterDaySummary = {
+          date: reg.openedAt || new Date().toISOString(),
+          openingBalance: reg.openingBalance,
+          closingBalance: actualBalance,
+          totalSales: reg.totalSales,
+          totalCashIn: reg.totalCashIn,
+          totalCashOut: reg.totalCashOut,
+          totalOrders: reg.totalOrders,
+          expectedBalance,
+          actualBalance,
+          difference,
+          notes,
+          closedAt: new Date().toISOString(),
+        };
+        set((state) => ({
+          cashRegister: null,
+          cashRegisterHistory: [...state.cashRegisterHistory, summary],
+        }));
+      },
+
+      updateCashRegister: (updates) =>
+        set((state) => ({
+          cashRegister: state.cashRegister
+            ? { ...state.cashRegister, ...updates }
+            : null,
+        })),
+
+      addCashRegisterTransaction: (transaction) =>
+        set((state) => {
+          const reg = state.cashRegister;
+          if (!reg) return {};
+          const amount = transaction.type === 'cash_out' || transaction.type === 'refund'
+            ? -Math.abs(transaction.amount)
+            : Math.abs(transaction.amount);
+          const newBalance = Math.round((reg.currentBalance + amount) * 100) / 100;
+          const newTx: CashRegisterTransaction = {
+            ...transaction,
+            id: `tx-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+            timestamp: new Date().toISOString(),
+            runningBalance: newBalance,
+          };
+          const totalCashInDelta = transaction.type === 'cash_in' || transaction.type === 'tip'
+            ? Math.abs(transaction.amount) : 0;
+          const totalCashOutDelta = transaction.type === 'cash_out' || transaction.type === 'refund'
+            ? Math.abs(transaction.amount) : 0;
+          const totalSalesDelta = transaction.type === 'sale'
+            ? Math.abs(transaction.amount) : 0;
+          return {
+            cashRegister: {
+              ...reg,
+              currentBalance: newBalance,
+              totalCashIn: Math.round((reg.totalCashIn + totalCashInDelta) * 100) / 100,
+              totalCashOut: Math.round((reg.totalCashOut + totalCashOutDelta) * 100) / 100,
+              totalSales: Math.round((reg.totalSales + totalSalesDelta) * 100) / 100,
+              transactions: [...reg.transactions, newTx],
+            },
+          };
+        }),
+
+      recordCashSale: (amount, orderId) => {
+        const { addCashRegisterTransaction } = get();
+        addCashRegisterTransaction({
+          type: 'sale',
+          amount,
+          description: orderId ? `Cash sale — Order #${orderId}` : 'Cash sale',
+        });
+        set((state) => {
+          const reg = state.cashRegister;
+          if (!reg) return {};
+          return {
+            cashRegister: {
+              ...reg,
+              totalOrders: reg.totalOrders + 1,
+            },
+          };
+        });
+      },
     }),
     {
       name: 'storeos-storage',
@@ -188,6 +339,8 @@ export const useAppStore = create<AppState>()(
         currentView: state.currentView,
         dashboardTab: state.dashboardTab,
         language: state.language,
+        cashRegister: state.cashRegister,
+        cashRegisterHistory: state.cashRegisterHistory,
       }),
     }
   )

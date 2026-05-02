@@ -113,6 +113,7 @@ import {
   ArrowUpRight,
   RotateCcw,
   CircleDot,
+  Wallet,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslation, t as translate } from '@/lib/i18n';
@@ -135,6 +136,7 @@ import ExpensesPanel from '@/components/dashboard/ExpensesPanel';
 import NotificationsPanel from '@/components/dashboard/NotificationsPanel';
 import KeyboardShortcutsModal from '@/components/dashboard/KeyboardShortcutsModal';
 import KitchenDisplay from '@/components/dashboard/KitchenDisplay';
+import CashRegisterPanel from '@/components/dashboard/CashRegisterPanel';
 
 // ─── Niche-specific nav items ────────────────────────────────
 
@@ -160,6 +162,7 @@ const MAIN_NAV_ITEMS = [
   { label: 'Staff', icon: UserCog, tab: 'staff' },
   { label: 'Reports', icon: BarChart3, tab: 'reports' },
   { label: 'Notifications', icon: Bell, tab: 'notifications' },
+  { label: 'Cash Register', icon: Wallet, tab: 'cash-register' },
   { label: 'Settings', icon: Settings, tab: 'settings' },
 ];
 
@@ -670,7 +673,7 @@ function DashboardOverview({ storeId, niche }: { storeId: string; niche: string 
       color: 'text-emerald-600 dark:text-emerald-400',
       bg: 'bg-emerald-50 dark:bg-emerald-900/20',
       leftBorder: 'border-l-emerald-500',
-      gradient: 'from-emerald-50/80 to-white dark:from-emerald-900/10 dark:to-gray-900',
+      gradient: 'from-emerald-50/80 to-white dark:from-gray-800 dark:to-gray-900',
       sparkline: sparklineData.sales,
       sparkColor: '#10b981',
     },
@@ -683,7 +686,7 @@ function DashboardOverview({ storeId, niche }: { storeId: string; niche: string 
       color: 'text-sky-600 dark:text-sky-400',
       bg: 'bg-sky-50 dark:bg-sky-900/20',
       leftBorder: 'border-l-sky-500',
-      gradient: 'from-sky-50/80 to-white dark:from-sky-900/10 dark:to-gray-900',
+      gradient: 'from-sky-50/80 to-white dark:from-gray-800 dark:to-gray-900',
       sparkline: sparklineData.orders,
       sparkColor: '#0ea5e9',
     },
@@ -696,7 +699,7 @@ function DashboardOverview({ storeId, niche }: { storeId: string; niche: string 
       color: 'text-amber-600 dark:text-amber-400',
       bg: 'bg-amber-50 dark:bg-amber-900/20',
       leftBorder: 'border-l-amber-500',
-      gradient: 'from-amber-50/80 to-white dark:from-amber-900/10 dark:to-gray-900',
+      gradient: 'from-amber-50/80 to-white dark:from-gray-800 dark:to-gray-900',
       sparkline: sparklineData.products,
       sparkColor: '#f59e0b',
     },
@@ -709,7 +712,7 @@ function DashboardOverview({ storeId, niche }: { storeId: string; niche: string 
       color: 'text-purple-600 dark:text-purple-400',
       bg: 'bg-purple-50 dark:bg-purple-900/20',
       leftBorder: 'border-l-purple-500',
-      gradient: 'from-purple-50/80 to-white dark:from-purple-900/10 dark:to-gray-900',
+      gradient: 'from-purple-50/80 to-white dark:from-gray-800 dark:to-gray-900',
       sparkline: sparklineData.customers,
       sparkColor: '#8b5cf6',
     },
@@ -937,7 +940,7 @@ function DashboardOverview({ storeId, niche }: { storeId: string; niche: string 
                           <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
                         </linearGradient>
                       </defs>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" className="dark:opacity-20" />
+                      <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" className="dark:[stroke:#374151] dark:opacity-30" />
                       <XAxis
                         dataKey="date"
                         tick={{ fontSize: 11, fill: '#9ca3af' }}
@@ -1807,7 +1810,7 @@ function PlaceholderTab({ tab, label }: { tab: string; label: string }) {
 // ─── Main Dashboard Component ────────────────────────────────
 
 export default function PosDashboard() {
-  const { user, store, subscription, logout, dashboardTab, setDashboardTab, globalSearch, setGlobalSearch } =
+  const { user, store, subscription, logout, dashboardTab, setDashboardTab, globalSearch, setGlobalSearch, cashRegister } =
     useAppStore();
   const { t, language } = useTranslation();
   const { theme, setTheme } = useTheme();
@@ -1856,6 +1859,7 @@ export default function PosDashboard() {
     students: 'students',
     vehicles: 'vehicles',
     kitchen: 'dashboard',
+    'cash-register': 'dashboard',
   };
 
   // Build full nav items including niche-specific
@@ -1957,6 +1961,10 @@ export default function PosDashboard() {
 
     if (dashboardTab === 'kitchen') {
       return <KitchenDisplay />;
+    }
+
+    if (dashboardTab === 'cash-register') {
+      return <CashRegisterPanel />;
     }
 
     const tabLabel = navItems.find((n) => n.tab === dashboardTab)?.label || dashboardTab;
@@ -2249,7 +2257,7 @@ export default function PosDashboard() {
                         className={`transition-all duration-200 relative ${
                           isActive
                             ? `${nicheAccent} font-semibold ${nicheAccentBg} border-l-[3px] ${getNicheSidebarBg(niche).replace('bg-', 'border-l-')} shadow-sm shadow-emerald-500/5`
-                            : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:translate-x-1 hover:bg-gray-100 dark:hover:bg-gray-800/50'
+                            : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 hover:translate-x-1 hover:bg-gray-100 dark:hover:bg-gray-800/50'
                         }`}
                       >
                         <Icon className="w-4 h-4 shrink-0" />
@@ -2268,6 +2276,7 @@ export default function PosDashboard() {
                 {navItems.slice(3, -2).map((item) => {
                   const Icon = item.icon;
                   const isActive = dashboardTab === item.tab;
+                  const isCashRegister = item.tab === 'cash-register';
                   return (
                     <SidebarMenuItem key={item.tab}>
                       <SidebarMenuButton
@@ -2277,11 +2286,14 @@ export default function PosDashboard() {
                         className={`transition-all duration-200 relative ${
                           isActive
                             ? `${nicheAccent} font-semibold ${nicheAccentBg} border-l-[3px] ${getNicheSidebarBg(niche).replace('bg-', 'border-l-')} shadow-sm shadow-emerald-500/5`
-                            : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:translate-x-1 hover:bg-gray-100 dark:hover:bg-gray-800/50'
+                            : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 hover:translate-x-1 hover:bg-gray-100 dark:hover:bg-gray-800/50'
                         }`}
                       >
                         <Icon className="w-4 h-4 shrink-0" />
                         <span className="whitespace-nowrap">{tabLabelMap[item.tab] ? t(tabLabelMap[item.tab]) : item.label}</span>
+                        {isCashRegister && (
+                          <span className={`ml-auto w-2 h-2 rounded-full shrink-0 ${cashRegister?.isOpen ? 'bg-emerald-500' : 'bg-red-500'}`} />
+                        )}
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                   );
@@ -2290,12 +2302,13 @@ export default function PosDashboard() {
             </SidebarGroupContent>
           </SidebarGroup>
           <SidebarGroup>
-            <SidebarGroupLabel className="text-[10px] font-bold tracking-widest text-gray-400 dark:text-gray-500 uppercase">Niche</SidebarGroupLabel>
+            <SidebarGroupLabel className="text-[10px] font-bold tracking-widest text-gray-400 dark:text-gray-500 uppercase">System</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
                 {navItems.slice(-2).map((item) => {
                   const Icon = item.icon;
                   const isActive = dashboardTab === item.tab;
+                  const isCashRegister = item.tab === 'cash-register';
                   return (
                     <SidebarMenuItem key={item.tab}>
                       <SidebarMenuButton
@@ -2305,11 +2318,14 @@ export default function PosDashboard() {
                         className={`transition-all duration-200 relative ${
                           isActive
                             ? `${nicheAccent} font-semibold ${nicheAccentBg} border-l-[3px] ${getNicheSidebarBg(niche).replace('bg-', 'border-l-')} shadow-sm shadow-emerald-500/5`
-                            : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:translate-x-1 hover:bg-gray-100 dark:hover:bg-gray-800/50'
+                            : 'text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 hover:translate-x-1 hover:bg-gray-100 dark:hover:bg-gray-800/50'
                         }`}
                       >
                         <Icon className="w-4 h-4 shrink-0" />
                         <span className="whitespace-nowrap">{tabLabelMap[item.tab] ? t(tabLabelMap[item.tab]) : item.label}</span>
+                        {isCashRegister && (
+                          <span className={`ml-auto w-2 h-2 rounded-full shrink-0 ${cashRegister?.isOpen ? 'bg-emerald-500' : 'bg-red-500'}`} />
+                        )}
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                   );
@@ -2433,6 +2449,19 @@ export default function PosDashboard() {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+
+            {/* Cash Register Status */}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9 relative"
+              onClick={() => setDashboardTab('cash-register')}
+              title={cashRegister?.isOpen ? 'Register: Open' : 'Register: Closed'}
+            >
+              <Wallet className="w-4 h-4" />
+              <span className={`absolute bottom-0.5 right-0.5 w-2.5 h-2.5 rounded-full border-2 border-white dark:border-gray-950 ${cashRegister?.isOpen ? 'bg-emerald-500' : 'bg-red-500'}`} />
+              <span className="sr-only">Cash Register</span>
+            </Button>
 
             {/* Notification Bell */}
             <DropdownMenu>

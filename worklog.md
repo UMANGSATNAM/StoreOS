@@ -1631,3 +1631,302 @@ Priority Recommendations for Next Phase:
 6. Add multi-language support (English + Hindi toggle)
 7. Add data export (Excel/PDF) for all panels
 8. Add customer-facing online ordering page per store
+
+---
+Task ID: 3
+Agent: niche-seed-developer
+Task: Add seed data for remaining 7 business niches
+
+Work Log:
+- Read existing seed file (`/api/seed/route.ts`) to understand the NicheSeedConfig architecture
+- Found that all 7 niche keys already existed with different data; replaced them with task-specified configs
+- **hotel**: Replaced "Heritage Inn" (Varanasi, hotel-stay) → "Grand Palace Hotel" (Jaipur, hotel-premium, 18% GST)
+  - 5 categories: Room Service, Dining, Spa & Wellness, Events, Minibar
+  - 15 products: Standard Room ₹2500, Deluxe Room ₹4500, Suite ₹8000, Breakfast Buffet ₹500, Lunch Thali ₹350, Dinner Buffet ₹700, Spa Massage ₹2000, Spa Facial ₹1500, Swimming Pool ₹0, Conference Room ₹5000/hr, Wedding Hall ₹50000, Minibar Water ₹100, Minibar Chips ₹80, Minibar Beer ₹350, Laundry Service ₹500
+  - 5 rooms seed data (standard/deluxe/suite types)
+- **coaching**: Replaced "Excel Academy" (Pune, coach-learn) → "Excel Academy" (Delhi, coach-academic, 18% GST)
+  - 5 categories: Board Exam Prep, JEE/NEET, Language Classes, Computer Courses, Skill Development
+  - 15 products: 10th Board ₹5000, 12th Board ₹6000, JEE Foundation ₹15000, JEE Advanced ₹25000, NEET ₹25000, Spoken English ₹3000, French ₹4000, Python Course ₹8000, Web Development ₹12000, Tally ₹5000, Excel Mastery ₹3000, GST Course ₹4000, Digital Marketing ₹10000, Photography ₹6000, Public Speaking ₹3000
+  - 5 students seed data
+- **clinic**: Replaced "Sharma Clinic" (Jaipur, 0% GST) → "HealthFirst Clinic" (Mumbai, 5% GST)
+  - 5 categories: Consultation, Lab Tests, Pharmacy, Procedures, Health Packages
+  - 15 products: General Consultation ₹500, Specialist ₹1000, Dental Checkup ₹400, Eye Exam ₹300, Blood Test ₹200, X-Ray ₹400, MRI ₹6000, Ultrasound ₹1500, ECG ₹300, Vaccination ₹250, Health Checkup ₹3000, Diabetes Package ₹2500, Cardiac Package ₹5000, Women Wellness ₹3500, Physiotherapy ₹800
+  - 5 appointments seed data
+- **garage**: Replaced "Singh Auto Works" (Lucknow, garage-auto) → "AutoFix Garage" (Pune, garage-pro, 18% GST)
+  - 5 categories: Service & Repair, Body Work, Parts, Accessories, Wash & Detail
+  - 15 products: Oil Change ₹800, Brake Service ₹1500, Engine Repair ₹5000, AC Service ₹1200, Tire Rotation ₹400, Dent Repair ₹2000, Paint Touch-up ₹3000, Full Body Paint ₹15000, Battery ₹3000, Brake Pads ₹1200, Headlight ₹800, Car Perfume ₹250, Floor Mats ₹800, Basic Wash ₹300, Detailing ₹2000
+  - 5 vehicles seed data
+- **wholesale**: Replaced "Patel Distributors" (Ahmedabad, whole-biz) → "MegaTrade Wholesale" (Surat, wholesale-bulk, 18% GST)
+  - 5 categories: Grains & Pulses, Spices, Oils & Ghee, Dry Fruits, Household
+  - 15 products: Rice (50kg) ₹2200, Wheat (50kg) ₹1800, Toor Dal (50kg) ₹5500, Chana Dal (50kg) ₹4500, Turmeric (5kg) ₹800, Red Chilli (5kg) ₹1200, Cumin (5kg) ₹2000, Mustard Oil (15L) ₹2400, Sunflower Oil (15L) ₹2100, Ghee (5kg) ₹3000, Almond (5kg) ₹4000, Cashew (5kg) ₹6000, Raisin (5kg) ₹2500, Detergent (10kg) ₹600, Soap Box (50pc) ₹500
+- **jewellery**: Replaced "Kundan Jewellers" (Mumbai, jewel-gold) → "Krishna Jewellers" (Chennai, jewel-elegant, 3% GST)
+  - 5 categories: Gold, Silver, Diamond, Platinum, Coins & Bars
+  - 15 products: Gold Chain ₹25000, Gold Ring ₹18000, Gold Earrings ₹12000, Gold Bangle ₹35000, Gold Necklace ₹75000, Silver Chain ₹3000, Silver Ring ₹2000, Silver Anklet ₹5000, Diamond Ring ₹85000, Diamond Earrings ₹65000, Diamond Pendant ₹55000, Platinum Band ₹45000, Platinum Ring ₹60000, Gold Coin 1g ₹6500, Silver Coin ₹800
+- **stationery**: Replaced "National Stationery" (Kolkata, stat-book) → "BookLand Stationery" (Lucknow, station-neat, 18% GST)
+  - 5 categories: Books, Notebooks, Pens & Pencils, Art Supplies, Office Supplies
+  - 15 products: NCERT Maths ₹150, NCERT Science ₹150, English Grammar ₹250, Notebook (200pg) ₹60, Notebook (100pg) ₹35, Drawing Book ₹80, Reynolds Pen ₹10, Parker Pen ₹250, Pencil Set ₹50, Water Colors ₹180, Sketch Pens ₹120, Crayons ₹90, Chart Paper ₹15, Stapler ₹120, File Folder ₹30
+- Verified all product indices (catIdx) are correct for category assignments
+- Used Indian names for owners and realistic Indian pricing in ₹
+- Different tax rates per niche: hotel 18%, coaching 18%, clinic 5%, garage 18%, wholesale 18%, jewellery 3%, stationery 18%
+- Lint passes with zero errors
+- Cleaned up leftover remnant code from incomplete old hotel config replacement
+
+Stage Summary:
+- All 7 niche seed configs replaced with task-specified data matching exact requirements
+- Total: 15 niche configs now in seed API (8 original + 7 updated)
+- Each niche has 5 categories, 15 products, realistic Indian pricing, niche-specific seed data where applicable
+- Niche-specific seeds: hotel (5 rooms), coaching (5 students), clinic (5 appointments), garage (5 vehicles)
+- Code compiles and lint passes with zero errors
+
+---
+Task ID: 5+6
+Agent: settings-styling-enhancer
+Task: Enhance Settings Panel and dark mode styling
+
+Work Log:
+- **Enhanced Settings Panel - Store Profile Tab**
+  - Replaced rectangular logo upload with circular avatar with camera icon overlay (group-hover effect)
+  - Changed Owner icon from Zap to User for semantic correctness
+  - Added "Save Changes" button directly in the profile card
+  - All fields properly connected to state and save handler persists to API + Zustand
+  - Added dark mode classes: `dark:bg-gray-800 dark:border-gray-700` on Cards, `dark:bg-gray-900 dark:border-gray-600` on inputs
+
+- **Enhanced Settings Panel - Tax Tab**
+  - Added GST rate presets (0%, 5%, 12%, 18%, 28%) with visual button selector
+  - Added custom rate input alongside presets
+  - Added Tax Inclusive/Exclusive pricing toggle
+  - Added HSN Code field with Hash icon
+  - Added CESS percentage field with description
+  - All values connected to state and tracked in unsaved changes
+
+- **Enhanced Settings Panel - Receipt Tab**
+  - Added Show GSTIN toggle on receipts
+  - Added Show Customer Phone toggle
+  - Added Auto-Print on Payment toggle
+  - Enhanced receipt preview with: proper CGST/SGST breakdown, CESS display, customer phone, GSTIN
+  - Preview shows real-time updates as settings change
+
+- **Enhanced Settings Panel - Payment Tab**
+  - Added Split Payment toggle with amber icon
+  - Added UPI ID field when UPI is enabled
+  - Added Bank Account Details section (Bank Name, Account Number, IFSC Code) when Card is enabled
+  - Added Razorpay Key field with mock support
+  - Added Default Payment Method selector (dynamic based on enabled methods)
+  - All payment method icons replaced emoji with proper Lucide icons
+
+- **Enhanced Settings Panel - Branding Tab**
+  - Added 6 preset accent colors (Emerald, Sky, Amber, Rose, Violet, Orange) in a grid
+  - Added Sidebar Style selector (Standard / Compact) with visual icons
+  - Retained color picker, font selection, custom CSS
+  - Enhanced brand preview with dark mode text colors
+
+- **Enhanced Settings Panel - Subscription Tab**
+  - Added Usage Stats grid (4 cards: Orders This Month, Products, Storage, Staff)
+  - Added Upgrade Plan dialog with plan comparison (Starter ₹99, Pro ₹499, Enterprise ₹1,999)
+  - Added Billing History table with 3 invoices (INV-001, INV-002, INV-003)
+  - Table has proper dark mode: `dark:bg-gray-900` header, `dark:bg-gray-800/50` zebra striping
+
+- **Enhanced Settings Panel - WhatsApp Tab**
+  - Added WhatsApp Business Number field
+  - Added Auto-Send Receipt toggle
+  - Added Order Confirmation Template textarea with variable hints
+  - Added Delivery Update Template textarea with variable hints
+  - Added Send Test Message button with toast showing number
+
+- **Enhanced Settings Panel - Data Tab**
+  - Replaced simple reset with "Type DELETE to confirm" dialog
+  - Added Database Size indicator (4.2 MB)
+  - Added Last Backup time display
+  - Added Backup Now button with loading state
+  - Renamed "Reset" to "Clear All Data" for clarity
+
+- **Dark Mode Improvements in globals.css**
+  - Added `transition: background-color 0.3s ease, color 0.3s ease` to html element
+  - Added comprehensive dark mode CSS utilities:
+    - Card dark mode: `dark:bg-gray-800 dark:border-gray-700`
+    - Table dark mode: `dark:bg-gray-900` headers, `dark:bg-gray-800/50` zebra striping
+    - Input dark mode: `dark:bg-gray-900 dark:border-gray-600 dark:text-gray-100`
+    - Badge dark mode: improved contrast
+    - Dialog dark mode: `dark:bg-gray-800 dark:border-gray-700`
+    - Stat card dark gradient: `dark:from-gray-800 dark:to-gray-900`
+    - Sidebar dark text: `dark:text-gray-300`
+    - Chart dark mode: lighter opacity, gray-400 text, gray-700 grid lines
+  - Added dark mode transition for all elements with exclusion for animations/toasts
+
+- **PosDashboard Dark Mode Improvements**
+  - Updated stat card gradients from `dark:from-emerald-900/10` to `dark:from-gray-800 dark:to-gray-900` for all 4 cards
+  - Updated sidebar nav items from `dark:text-gray-400` to `dark:text-gray-300` for better readability
+  - Updated CartesianGrid stroke for dark mode: `dark:[stroke:#374151]`
+
+- **Responsive Improvements**
+  - Settings tab labels hidden on mobile (show only icon), full label on `sm:` and up
+  - All grids use `sm:grid-cols-2` breakpoints
+  - Tables wrapped with `overflow-x-auto`
+  - Dialogs properly sized on mobile
+  - All cards have proper responsive padding
+
+Stage Summary:
+- Settings Panel completely rewritten with all 8 tabs fully functional
+- Store Profile: circular avatar, save button, all fields connected
+- Tax: GST presets, inclusive/exclusive, HSN code, CESS
+- Receipt: 4 new toggles, enhanced preview with tax breakdown
+- Payment: Split payment, bank details, Razorpay, default selector
+- Branding: 6 preset colors, sidebar style, preview panel
+- Subscription: usage stats, upgrade dialog with 3 plans, billing history table
+- WhatsApp: business number, auto-send, template messages, test button
+- Data: DELETE confirmation dialog, DB size, last backup
+- Comprehensive dark mode CSS utilities added to globals.css
+- PosDashboard sidebar nav text and stat card gradients improved for dark mode
+- Chart grid lines improved for dark mode visibility
+- Lint passes with zero errors
+
+---
+Task ID: 4
+Agent: cash-register-developer
+Task: Add Day Open/Close Cash Register feature
+
+Work Log:
+- Created CashRegister type, CashRegisterTransaction type, and CashRegisterDaySummary type in `src/lib/store.ts`
+- Added cashRegister, cashRegisterHistory, openCashRegister, closeCashRegister, updateCashRegister, addCashRegisterTransaction, recordCashSale to Zustand store
+- Added cashRegister and cashRegisterHistory to persist partialize config so state survives page refresh
+- Created `src/components/dashboard/CashRegisterPanel.tsx` — full cash register management panel with:
+  - CLOSED state: Beautiful open register card with animated unlock icon, opening balance input with quick buttons (₹1000/2000/5000/10000), notes field, last close summary card, previous day summaries with detail dialog
+  - OPEN state: Green OPEN badge with pulsing dot, opened time and running duration, 4 balance summary cards (Opening Balance, Cash Sales, Cash In/Out, Current Balance), quick action buttons (Cash In, Cash Out, Record Tip) with dialogs, scrollable recent transactions list with type icons and running balance
+  - Close Register Dialog: Day summary grid, denomination counting (₹2000/500/200/100/50/20/10) with quantity inputs and auto-calculate, expected vs actual balance comparison, difference indicator (balanced/over/short), closing notes, confirmation button
+  - Day Summary Detail Dialog for viewing past close summaries
+- Wired CashRegisterPanel into PosDashboard.tsx:
+  - Added Wallet icon import
+  - Added "Cash Register" sidebar nav item (Wallet icon, tab: cash-register) in MAIN_NAV_ITEMS
+  - Added cash-register tab to tabLabelMap
+  - Added cash-register case in renderTabContent()
+  - Added Cash Register status indicator button in top bar (next to notifications) with green/red dot showing open/closed state
+  - Added register status dot indicator on Cash Register sidebar items (green for open, red for closed)
+  - Renamed last sidebar group from "Niche" to "System" (now contains Cash Register + Settings)
+- Lint passes with zero errors on modified files
+- Dev server compiles successfully
+
+Stage Summary:
+- Full cash register management with day open/close workflow
+- Denomination counting with auto-calculation and expected vs actual comparison
+- Transaction tracking with running balance
+- Zustand persistence for register state across sessions
+- Top bar indicator showing register status (green dot = open, red dot = closed)
+- Sidebar status dot on Cash Register item
+- Quick actions for cash in/out/tip with validation
+- Close register generates day summary saved to history
+
+---
+Task ID: cron-review-6
+Agent: QA Review Agent (Cycle 6)
+Task: Periodic review, QA testing, bug fixes, feature enhancements, styling improvements
+
+Work Log:
+- **QA Testing**: Performed comprehensive QA via agent-browser on all major flows
+  - Landing page ✅, Dashboard ✅, Billing/POS ✅ (cart works with JS click)
+  - Kitchen Display ✅, Customers ✅ (loyalty tiers showing), Keyboard Shortcuts ✅ (press ? opens)
+  - Expenses ✅, Suppliers ✅, Settings ✅ (all 9 tabs loading), Cash Register ✅ (open/close flow working)
+  - Dark mode ✅, Try Demo ✅
+  - No console errors on any panel
+
+- **BUG FIX: SettingsPanel missing Percent import** — `Percent` icon from lucide-react was used in tab config but not imported, causing ReferenceError at line 495. Added `Percent` to the import list.
+
+- **FEATURE: Day Open/Close Cash Register** — Full cash register management system
+  - Zustand store: cashRegister state + actions (openCashRegister, closeCashRegister, updateCashRegister, addCashRegisterTransaction, recordCashSale)
+  - CashRegisterPanel with two states:
+    - CLOSED: Beautiful "Open Register" card with opening balance input, quick buttons (₹1000-10000), last close summary, previous day history
+    - OPEN: Green "OPEN" badge with pulsing dot, running duration, 4 balance summary cards (Opening/Cash Sales/Cash In-Out/Current), Quick action dialogs (Cash In/Out/Tips), scrollable transaction list, Close Register button
+  - Close Register dialog: Day summary, denomination counting (₹2000→₹10) with auto-calculate, expected vs actual comparison, difference indicator, closing notes
+  - PosDashboard integration: sidebar nav item with Wallet icon + status dot, top bar status button (green/red dot)
+  - Persistent state via localStorage/Zustand
+
+- **FEATURE: 7 New Niche Seed Configurations** — All 15 niches now have seed data
+  - Hotel (Grand Palace Hotel, Jaipur, 18% GST, 15 products + 5 rooms)
+  - Coaching (Excel Academy, Delhi, 18% GST, 15 products + 5 students)
+  - Clinic (HealthFirst Clinic, Mumbai, 5% GST, 15 products + 5 appointments)
+  - Garage (AutoFix Garage, Pune, 18% GST, 15 products + 5 vehicles)
+  - Wholesale (MegaTrade Wholesale, Surat, 18% GST, 15 products)
+  - Jewellery (Krishna Jewellers, Chennai, 3% GST, 15 products)
+  - Stationery (BookLand Stationery, Lucknow, 18% GST, 15 products)
+  - Total niche configs: 15 (ALL niches now covered!)
+
+- **ENHANCEMENT: Settings Panel Fully Functional** — All 9 tabs now have working UI:
+  - Store Profile: Circular avatar with camera icon, Save Changes button, toast on save
+  - Tax: GST toggle, rate presets (0/5/12/18/28%), inclusive/exclusive toggle, HSN code, CESS
+  - Receipt: Header/footer text, toggles (logo/GSTIN/phone), auto-print, paper size, print preview
+  - Payment: Enable/disable methods, UPI ID, bank details, Razorpay key, default method
+  - Branding: 6 accent color presets, sidebar style selector, brand preview panel
+  - Subscription: Usage stats (4 cards), upgrade dialog with plan comparison, billing history
+  - WhatsApp: Business number, auto-send receipt, templates, test message button
+  - Data: Export JSON, import file picker, clear all with DELETE confirmation, DB size, last backup
+  - Language: New tab with language toggle (English/Hindi)
+
+- **ENHANCEMENT: Dark Mode Improvements**
+  - Added transition animation (0.3s ease) for theme changes
+  - Cards: dark:bg-gray-800 dark:border-gray-700
+  - Tables: dark:bg-gray-900 headers, dark zebra striping
+  - Inputs: dark:bg-gray-900 dark:border-gray-600 dark:text-gray-100
+  - Stat cards: dark gradient backgrounds (from-gray-800 to-gray-900)
+  - Sidebar: dark:text-gray-300 for nav items
+  - Charts: darker grid lines for dark mode visibility
+  - Dialogs: dark:bg-gray-800 dark:border-gray-700
+
+- **ENHANCEMENT: Responsive Improvements**
+  - Tab labels hidden on mobile (icon-only), shown on sm: breakpoint
+  - All grids use sm:grid-cols-2 breakpoints
+  - Tables with overflow-x-auto for mobile
+  - Dialogs properly sized on mobile
+
+Stage Summary:
+- All QA tests pass, Settings runtime error fixed
+- Day Open/Close Cash Register fully functional with denomination counting
+- All 15 niche seed configurations now complete
+- Settings Panel all 9 tabs now functional (not just placeholder)
+- Dark mode comprehensively improved with smooth transitions
+- Responsive design enhanced across panels
+- Lint passes with zero errors
+- Dev server compiles and runs successfully
+
+Current Project Status:
+✅ COMPLETE — StoreOS POS SaaS Platform (Cycle 6 Enhanced)
+- ✅ Landing page with parallax testimonials, shimmer pricing, social footer, realistic hero mockup
+- ✅ Auth (login/signup) with password strength, form validation, full data flow
+- ✅ 3-step onboarding with RICH niche previews, visual template mockups, comparison mode
+- ✅ POS Dashboard with niche-aware sidebar, REAL sales chart, order status card, niche quick actions, time-of-day greeting, color-coded activity feed, panel transitions
+- ✅ Kitchen Display System (KDS) — Kanban board for restaurant/bakery niches
+- ✅ Cash Register — Day Open/Close with denomination counting, cash in/out, day summary
+- ✅ Billing/POS with cart, payments, professional receipts + Print/WhatsApp/Copy/PDF
+- ✅ Products & Inventory with stat cards, grid/list view toggle, CRUD operations
+- ✅ Customer management with LOYALTY TIERS (Bronze/Silver/Gold/Platinum), progress bars, tier comparison
+- ✅ Orders with visual badges (status/payment/type), stat cards, filters
+- ✅ Staff management with roles, shifts, commission, stat cards
+- ✅ Reports & Analytics with real charts, period toggle, CSV/PDF export
+- ✅ Settings with 9 FUNCTIONAL tabs (Profile, Tax, Receipt, Payment, Branding, Plan, WhatsApp, Data, Language)
+- ✅ 6 niche-specific panels (Tables, Appointments, Rooms, Members, Students, Vehicles)
+- ✅ Suppliers & Expenses panels
+- ✅ Keyboard Shortcuts Help Modal (29 shortcuts, press ? to toggle)
+- ✅ Admin Super Panel with platform analytics, store management
+- ✅ Dark mode via next-themes (smooth transitions, comprehensive dark styling)
+- ✅ Seed API with ALL 15 niche configurations
+- ✅ "Try Demo" quick-login button on landing page
+- ✅ 18+ API routes, Prisma database, Zustand state management
+- ✅ Responsive design, keyboard shortcuts, toast notifications, micro-interactions
+- ✅ Custom scrollbar, glass effects, gradient text, focus-visible styles
+- ✅ i18n support (English + Hindi)
+
+Unresolved Issues / Risks:
+- Agent-browser click doesn't trigger React onClick reliably (workaround: use JS click)
+- Some niche-specific features are placeholder-level (e.g., Zomato integration, WhatsApp API)
+- PWA/offline mode not yet implemented
+- No actual Razorpay/Stripe integration (mock only)
+- Kitchen Display orders are from seed data; real-time WebSocket integration not yet implemented
+- i18n only has basic structure, not all strings translated
+
+Priority Recommendations for Next Phase:
+1. Implement WebSocket real-time updates for Kitchen Display
+2. Add PWA with service worker for offline billing capability
+3. Add real Razorpay payment integration with webhook handler
+4. Implement WhatsApp Business API notification service
+5. Complete i18n translations for all UI strings (English + Hindi)
+6. Add customer-facing online ordering page per store
+7. Add barcode/QR code scanning for products
+8. Add multi-store support (switch between stores)

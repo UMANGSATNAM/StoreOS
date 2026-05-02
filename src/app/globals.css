@@ -121,6 +121,7 @@
   }
   html {
     scroll-behavior: smooth;
+    transition: background-color 0.3s ease, color 0.3s ease;
   }
   ::selection {
     background: rgba(16, 185, 129, 0.25);
@@ -169,6 +170,95 @@
   main::-webkit-scrollbar-thumb:hover {
     background: rgba(16, 185, 129, 0.3);
   }
+}
+
+/* ═══════════ Dark Mode Enhancement Utilities ═══════════ */
+
+/* Card dark mode */
+.dark [data-slot="card"] {
+  background-color: rgba(31, 41, 55, 1); /* gray-800 */
+  border-color: rgba(55, 65, 81, 1); /* gray-700 */
+}
+
+/* Table dark mode */
+.dark table thead {
+  background-color: rgba(17, 24, 39, 1); /* gray-900 */
+}
+.dark table tbody tr:nth-child(even) {
+  background-color: rgba(31, 41, 55, 0.5); /* gray-800/50 */
+}
+.dark table tbody tr:hover {
+  background-color: rgba(55, 65, 81, 0.5); /* gray-700/50 */
+}
+
+/* Input dark mode */
+.dark input[type="text"],
+.dark input[type="email"],
+.dark input[type="number"],
+.dark input[type="password"],
+.dark input[type="tel"],
+.dark input[type="url"],
+.dark input[type="time"],
+.dark input[type="date"],
+.dark textarea,
+.dark select {
+  background-color: rgba(17, 24, 39, 1); /* gray-900 */
+  border-color: rgba(75, 85, 99, 1); /* gray-600 */
+  color: rgba(243, 244, 246, 1); /* gray-100 */
+}
+
+/* Badge dark mode contrast */
+.dark [data-slot="badge"] {
+  color: rgba(243, 244, 246, 1); /* gray-100 */
+}
+
+/* Dialog dark mode */
+.dark [data-slot="dialog-content"] {
+  background-color: rgba(31, 41, 55, 1); /* gray-800 */
+  border-color: rgba(55, 65, 81, 1); /* gray-700 */
+}
+
+/* Stat cards dark gradient */
+.dark .stat-card-gradient {
+  background: linear-gradient(to bottom right, rgba(31, 41, 55, 1), rgba(17, 24, 39, 1));
+}
+
+/* Sidebar dark mode text */
+.dark aside nav a,
+.dark aside nav button {
+  color: rgba(209, 213, 219, 1); /* gray-300 */
+}
+.dark aside nav a:hover,
+.dark aside nav button:hover {
+  color: rgba(243, 244, 246, 1); /* gray-100 */
+}
+
+/* Chart colors for dark mode - lighter colors */
+.dark .recharts-area-area,
+.dark .recharts-bar-rect {
+  opacity: 0.8;
+}
+.dark .recharts-text {
+  fill: rgba(156, 163, 175, 1); /* gray-400 */
+}
+.dark .recharts-cartesian-grid line {
+  stroke: rgba(55, 65, 81, 0.5); /* gray-700/50 */
+}
+
+/* Dark mode transition for all elements */
+.dark *,
+.dark *::before,
+.dark *::after {
+  transition: background-color 0.3s ease, border-color 0.3s ease, color 0.15s ease;
+}
+
+/* Override for animations that shouldn't have transition */
+.dark .no-dark-transition,
+.dark .no-dark-transition *,
+.dark [data-slot="toast"],
+.dark .framer-motion *,
+.dark [style*="animation"] {
+  transition: none !important;
 }
 
 /* Glass Effect Utility */
