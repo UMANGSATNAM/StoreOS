@@ -1078,6 +1078,8 @@ export async function POST(request: NextRequest) {
     }
 
     // ─── 9. Create Recent Orders ───
+    const pLen = config.products.length;
+    const safeIdx = (idx: number) => Math.min(idx, pLen - 1);
     const orderDefinitions = [
       {
         customerIdx: 0,
@@ -1087,8 +1089,8 @@ export async function POST(request: NextRequest) {
         staffIdx: 0,
         nicheData: config.niche === 'restaurant' ? JSON.stringify({ tableNumber: 2, section: 'indoor' }) : null,
         items: [
-          { prodIdx: 0, name: config.products[0].name, quantity: 2, unitPrice: config.products[0].price },
-          { prodIdx: 5, name: config.products[5].name, quantity: 1, unitPrice: config.products[5].price },
+          { prodIdx: safeIdx(0), name: config.products[safeIdx(0)].name, quantity: 2, unitPrice: config.products[safeIdx(0)].price },
+          { prodIdx: safeIdx(5), name: config.products[safeIdx(5)].name, quantity: 1, unitPrice: config.products[safeIdx(5)].price },
         ],
       },
       {
@@ -1099,8 +1101,8 @@ export async function POST(request: NextRequest) {
         staffIdx: 1,
         nicheData: config.niche === 'restaurant' ? JSON.stringify({ tableNumber: 4, section: 'indoor' }) : null,
         items: [
-          { prodIdx: 1, name: config.products[1].name, quantity: 2, unitPrice: config.products[1].price },
-          { prodIdx: 8, name: config.products[8].name, quantity: 2, unitPrice: config.products[8].price },
+          { prodIdx: safeIdx(1), name: config.products[safeIdx(1)].name, quantity: 2, unitPrice: config.products[safeIdx(1)].price },
+          { prodIdx: safeIdx(8), name: config.products[safeIdx(8)].name, quantity: 2, unitPrice: config.products[safeIdx(8)].price },
         ],
       },
       {
@@ -1111,8 +1113,8 @@ export async function POST(request: NextRequest) {
         staffIdx: 0,
         nicheData: null,
         items: [
-          { prodIdx: 6, name: config.products[6].name, quantity: 1, unitPrice: config.products[6].price },
-          { prodIdx: 7, name: config.products[7].name, quantity: 1, unitPrice: config.products[7].price },
+          { prodIdx: safeIdx(6), name: config.products[safeIdx(6)].name, quantity: 1, unitPrice: config.products[safeIdx(6)].price },
+          { prodIdx: safeIdx(7), name: config.products[safeIdx(7)].name, quantity: 1, unitPrice: config.products[safeIdx(7)].price },
         ],
       },
       {
@@ -1123,8 +1125,8 @@ export async function POST(request: NextRequest) {
         staffIdx: Math.min(2, staff.length - 1),
         nicheData: config.niche === 'restaurant' ? JSON.stringify({ tableNumber: 8, section: 'VIP' }) : null,
         items: [
-          { prodIdx: 9, name: config.products[9].name, quantity: 1, unitPrice: config.products[9].price },
-          { prodIdx: 3, name: config.products[3].name, quantity: 2, unitPrice: config.products[3].price },
+          { prodIdx: safeIdx(9), name: config.products[safeIdx(9)].name, quantity: 1, unitPrice: config.products[safeIdx(9)].price },
+          { prodIdx: safeIdx(3), name: config.products[safeIdx(3)].name, quantity: 2, unitPrice: config.products[safeIdx(3)].price },
         ],
       },
       {
@@ -1135,8 +1137,8 @@ export async function POST(request: NextRequest) {
         staffIdx: 0,
         nicheData: null,
         items: [
-          { prodIdx: 10, name: config.products[10].name, quantity: 1, unitPrice: config.products[10].price },
-          { prodIdx: 12, name: config.products[12].name, quantity: 1, unitPrice: config.products[12].price },
+          { prodIdx: safeIdx(10), name: config.products[safeIdx(10)].name, quantity: 1, unitPrice: config.products[safeIdx(10)].price },
+          { prodIdx: safeIdx(12), name: config.products[safeIdx(12)].name, quantity: 1, unitPrice: config.products[safeIdx(12)].price },
         ],
       },
     ];
