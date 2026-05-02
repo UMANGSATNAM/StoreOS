@@ -36,6 +36,7 @@ import {
   Linkedin,
   Instagram,
   Youtube,
+  Github,
   Loader2,
   Shield,
   HeadphonesIcon,
@@ -589,9 +590,18 @@ export default function LandingPage() {
     }
   };
 
-  // Scroll detection for sticky nav
+  // Scroll detection for sticky nav + parallax
   useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 20);
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 20);
+      // Parallax for testimonials section
+      const testimonialsSection = document.getElementById('testimonials-parallax');
+      if (testimonialsSection) {
+        const rect = testimonialsSection.getBoundingClientRect();
+        const offset = rect.top * 0.08;
+        document.documentElement.style.setProperty('--parallax-testimonials', `${offset}px`);
+      }
+    };
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
@@ -1106,6 +1116,22 @@ export default function LandingPage() {
                         ))}
                       </div>
                     </div>
+                    {/* Product Grid - mini screenshot content */}
+                    <div className="grid grid-cols-3 gap-2">
+                      {[
+                        { name: 'Butter Chicken', price: '₹320', clr: 'bg-orange-100 dark:bg-orange-900/20' },
+                        { name: 'Paneer Tikka', price: '₹250', clr: 'bg-amber-100 dark:bg-amber-900/20' },
+                        { name: 'Dal Makhani', price: '₹220', clr: 'bg-emerald-100 dark:bg-emerald-900/20' },
+                      ].map((item) => (
+                        <div key={item.name} className={`rounded-lg p-2 ${item.clr} text-center`}>
+                          <div className="w-full aspect-square rounded bg-white/60 dark:bg-gray-700/40 mb-1.5 flex items-center justify-center">
+                            <ShoppingCart className="w-4 h-4 text-gray-400 dark:text-gray-500" />
+                          </div>
+                          <p className="text-[10px] font-medium text-gray-700 dark:text-gray-300 truncate">{item.name}</p>
+                          <p className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400">{item.price}</p>
+                        </div>
+                      ))}
+                    </div>
                     {/* Recent Orders - auto-cycling 4 orders every 3s */}
                     <div className="space-y-2">
                       <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Recent Orders</p>
@@ -1390,9 +1416,9 @@ export default function LandingPage() {
                     background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.05), rgba(20, 184, 166, 0.08))',
                   } : undefined}
                 >
-                  {/* Gradient border wrapper for popular card */}
+                  {/* Gradient border wrapper for popular card with shimmer */}
                   {tier.popular && (
-                    <div className="absolute -inset-[2px] rounded-xl bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 -z-10 opacity-60" />
+                    <div className="absolute -inset-[2px] rounded-xl pricing-shimmer-border -z-10 opacity-80" />
                   )}
                   {/* Another background layer */}
                   {tier.popular && (
@@ -1429,6 +1455,14 @@ export default function LandingPage() {
                           <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 border-0 rounded-full text-[11px]">
                             <Zap className="w-3 h-3 mr-0.5" />
                             Best Value
+                          </Badge>
+                        </div>
+                      )}
+                      {tier.popular && (
+                        <div className="mt-3 flex items-center justify-center gap-2">
+                          <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 border-0 rounded-full text-[11px]">
+                            <Zap className="w-3 h-3 mr-0.5" />
+                            Save 20% annually
                           </Badge>
                         </div>
                       )}
@@ -1516,9 +1550,13 @@ export default function LandingPage() {
       <div className="section-divider" />
 
       {/* ═══════════════════ TESTIMONIALS ═══════════════════ */}
-      <section className="py-20 sm:py-28 bg-gray-50 dark:bg-gray-900/50 relative overflow-hidden">
+      <section id="testimonials-parallax" className="py-20 sm:py-28 bg-gray-50 dark:bg-gray-900/50 relative overflow-hidden">
         <div className="absolute top-0 left-0 w-[400px] h-[400px] bg-emerald-100/30 dark:bg-emerald-900/10 rounded-full blur-3xl -translate-x-1/4 -translate-y-1/4" />
         <div className="absolute bottom-0 right-0 w-[350px] h-[350px] bg-teal-100/30 dark:bg-teal-900/10 rounded-full blur-3xl translate-x-1/4 translate-y-1/4" />
+        {/* Parallax background shapes */}
+        <div className="absolute top-20 left-[5%] w-24 h-24 bg-emerald-200/20 dark:bg-emerald-800/10 rounded-full blur-xl" style={{ transform: 'translateY(var(--parallax-testimonials, 0px))' }} />
+        <div className="absolute bottom-20 right-[8%] w-32 h-32 bg-teal-200/20 dark:bg-teal-800/10 rounded-full blur-xl" style={{ transform: 'translateY(var(--parallax-testimonials, 0px))' }} />
+        <div className="absolute top-1/2 left-1/2 w-40 h-40 bg-emerald-100/15 dark:bg-emerald-900/5 rounded-full blur-2xl" style={{ transform: 'translate(-50%, -50%) translateY(var(--parallax-testimonials, 0px))' }} />
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <FadeIn>
@@ -1554,7 +1592,7 @@ export default function LandingPage() {
                     const isHighlighted = i === testimonialIndex;
                     return (
                       <TiltCard key={t.name} className="h-full">
-                        <Card className={`h-full border-gray-200 dark:border-gray-800 hover:shadow-xl transition-all duration-500 overflow-hidden relative glass-card ${
+                        <Card className={`h-full border-gray-200 dark:border-gray-800 hover:shadow-xl transition-all duration-500 overflow-hidden relative bg-gradient-to-br from-white via-white to-emerald-50/30 dark:from-gray-900 dark:via-gray-900 dark:to-emerald-950/20 ${
                           isHighlighted ? 'shadow-xl ring-2 ring-emerald-500/30 scale-[1.02]' : ''
                         }`}>
                           <div className="absolute top-3 right-4 text-6xl font-serif text-emerald-500/10 dark:text-emerald-400/10 leading-none select-none pointer-events-none">
@@ -1563,18 +1601,15 @@ export default function LandingPage() {
                           <div className={`h-1.5 bg-gradient-to-r ${t.color} transition-all duration-500 ${isHighlighted ? 'h-2' : ''}`} />
                           <CardContent className="p-6">
                             <div className="flex gap-0.5 mb-3">
-                              {Array.from({ length: t.rating }).map((_, si) => (
-                                <Star key={si} className="w-4 h-4 fill-amber-400 text-amber-400" />
-                              ))}
-                              {Array.from({ length: 5 - t.rating }).map((_, si) => (
-                                <Star key={`e-${si}`} className="w-4 h-4 text-gray-300 dark:text-gray-600" />
+                              {Array.from({ length: 5 }).map((_, si) => (
+                                <Star key={si} className={`w-4 h-4 ${si < t.rating ? 'fill-amber-400 text-amber-400' : 'text-gray-300 dark:text-gray-600'}`} />
                               ))}
                             </div>
                             <p className="text-gray-700 dark:text-gray-300 leading-relaxed text-sm mb-6">
                               &ldquo;{t.quote}&rdquo;
                             </p>
                             <div className="flex items-center gap-3">
-                              <div className={`w-11 h-11 rounded-full bg-gradient-to-br ${t.color} flex items-center justify-center text-white font-bold text-sm shadow-md`}>
+                              <div className={`w-11 h-11 rounded-full bg-gradient-to-br ${t.color} flex items-center justify-center text-white font-bold text-sm shadow-md ring-2 ring-white/20`}>
                                 {t.initials}
                               </div>
                               <div className="flex-1 min-w-0">
@@ -1584,6 +1619,7 @@ export default function LandingPage() {
                                   <span className="truncate">{t.business} · {t.city}</span>
                                 </div>
                               </div>
+                              <BadgeCheck className="w-5 h-5 text-emerald-500 shrink-0" />
                             </div>
                           </CardContent>
                         </Card>
@@ -1610,25 +1646,22 @@ export default function LandingPage() {
                         exit={{ opacity: 0, x: carouselDirection * -100 }}
                         transition={{ duration: 0.4, ease: 'easeInOut' }}
                       >
-                        <Card className="border-gray-200 dark:border-gray-800 overflow-hidden relative glass-card">
+                        <Card className="border-gray-200 dark:border-gray-800 overflow-hidden relative bg-gradient-to-br from-white via-white to-emerald-50/30 dark:from-gray-900 dark:via-gray-900 dark:to-emerald-950/20">
                           <div className="absolute top-3 right-4 text-6xl font-serif text-emerald-500/10 dark:text-emerald-400/10 leading-none select-none pointer-events-none">
                             &ldquo;
                           </div>
                           <div className={`h-1.5 bg-gradient-to-r ${t.color}`} />
                           <CardContent className="p-6">
                             <div className="flex gap-0.5 mb-3">
-                              {Array.from({ length: t.rating }).map((_, si) => (
-                                <Star key={si} className="w-4 h-4 fill-amber-400 text-amber-400" />
-                              ))}
-                              {Array.from({ length: 5 - t.rating }).map((_, si) => (
-                                <Star key={`e-${si}`} className="w-4 h-4 text-gray-300 dark:text-gray-600" />
+                              {Array.from({ length: 5 }).map((_, si) => (
+                                <Star key={si} className={`w-4 h-4 ${si < t.rating ? 'fill-amber-400 text-amber-400' : 'text-gray-300 dark:text-gray-600'}`} />
                               ))}
                             </div>
                             <p className="text-gray-700 dark:text-gray-300 leading-relaxed text-sm mb-6">
                               &ldquo;{t.quote}&rdquo;
                             </p>
                             <div className="flex items-center gap-3">
-                              <div className={`w-11 h-11 rounded-full bg-gradient-to-br ${t.color} flex items-center justify-center text-white font-bold text-sm shadow-md`}>
+                              <div className={`w-11 h-11 rounded-full bg-gradient-to-br ${t.color} flex items-center justify-center text-white font-bold text-sm shadow-md ring-2 ring-white/20`}>
                                 {t.initials}
                               </div>
                               <div className="flex-1 min-w-0">
@@ -1638,6 +1671,7 @@ export default function LandingPage() {
                                   <span className="truncate">{t.business} · {t.city}</span>
                                 </div>
                               </div>
+                              <BadgeCheck className="w-5 h-5 text-emerald-500 shrink-0" />
                             </div>
                           </CardContent>
                         </Card>
@@ -1729,7 +1763,7 @@ export default function LandingPage() {
       </section>
 
       {/* ═══════════════════ FOOTER ═══════════════════ */}
-      <footer id="contact" className="bg-gray-900 dark:bg-gray-950 text-gray-400 pt-16 pb-8 relative">
+      <footer id="contact" className="bg-gray-900 dark:bg-gray-950 text-gray-400 pt-20 pb-12 relative">
         {/* Top border gradient emerald → transparent */}
         <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-emerald-500 to-transparent" />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -1755,7 +1789,7 @@ export default function LandingPage() {
             </div>
           </div>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-10 pb-12 border-b border-gray-800">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-12 pb-14 border-b border-gray-800">
             {/* Brand + Newsletter */}
             <div className="sm:col-span-2 lg:col-span-2">
               <div className="flex items-center gap-2 mb-4">
@@ -1772,6 +1806,7 @@ export default function LandingPage() {
                 {[
                   { Icon: Twitter, label: 'Twitter', href: '#' },
                   { Icon: Linkedin, label: 'LinkedIn', href: '#' },
+                  { Icon: Github, label: 'GitHub', href: '#' },
                   { Icon: Instagram, label: 'Instagram', href: '#' },
                   { Icon: Youtube, label: 'YouTube', href: '#' },
                 ].map(({ Icon, label, href }) => (
@@ -1886,8 +1921,8 @@ export default function LandingPage() {
                 {[
                   { Icon: Twitter, href: '#', label: 'Twitter' },
                   { Icon: Linkedin, href: '#', label: 'LinkedIn' },
+                  { Icon: Github, href: '#', label: 'GitHub' },
                   { Icon: Instagram, href: '#', label: 'Instagram' },
-                  { Icon: Youtube, href: '#', label: 'YouTube' },
                 ].map(({ Icon, href, label }) => (
                   <a
                     key={label}

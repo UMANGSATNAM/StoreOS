@@ -119,6 +119,103 @@
   body {
     @apply bg-background text-foreground;
   }
+  html {
+    scroll-behavior: smooth;
+  }
+  ::selection {
+    background: rgba(16, 185, 129, 0.25);
+    color: inherit;
+  }
+  *:focus-visible {
+    outline: 2px solid #10b981;
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+}
+
+/* Custom Scrollbar - Emerald themed */
+@layer base {
+  .sidebar-scroll::-webkit-scrollbar,
+  aside::-webkit-scrollbar,
+  [data-sidebar]::-webkit-scrollbar {
+    width: 4px;
+  }
+  .sidebar-scroll::-webkit-scrollbar-track,
+  aside::-webkit-scrollbar-track,
+  [data-sidebar]::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .sidebar-scroll::-webkit-scrollbar-thumb,
+  aside::-webkit-scrollbar-thumb,
+  [data-sidebar]::-webkit-scrollbar-thumb {
+    background: rgba(16, 185, 129, 0.2);
+    border-radius: 9999px;
+  }
+  .sidebar-scroll::-webkit-scrollbar-thumb:hover,
+  aside::-webkit-scrollbar-thumb:hover,
+  [data-sidebar]::-webkit-scrollbar-thumb:hover {
+    background: rgba(16, 185, 129, 0.4);
+  }
+  main::-webkit-scrollbar {
+    width: 6px;
+  }
+  main::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  main::-webkit-scrollbar-thumb {
+    background: rgba(16, 185, 129, 0.15);
+    border-radius: 9999px;
+  }
+  main::-webkit-scrollbar-thumb:hover {
+    background: rgba(16, 185, 129, 0.3);
+  }
+}
+
+/* Glass Effect Utility */
+.glass-effect {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+.dark .glass-effect {
+  background: rgba(17, 24, 39, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Gradient Text Utility */
+.gradient-text {
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-image: linear-gradient(to right, #059669, #14b8a6);
+}
+
+/* Page Transition Loading Animation */
+@keyframes pageTransitionIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.page-transition-enter {
+  animation: pageTransitionIn 0.2s ease-out forwards;
+}
+
+/* Pricing card shimmer animation */
+@keyframes borderShimmer {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+.pricing-shimmer-border {
+  background: linear-gradient(135deg, #10b981, #14b8a6, #06b6d4, #10b981);
+  background-size: 300% 300%;
+  animation: borderShimmer 3s ease infinite;
 }
 
 /* Print styles - hide everything except receipt or report */

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAppStore } from '@/lib/store';
 import { useTheme } from 'next-themes';
 import { NICHES, getNicheBySlug } from '@/lib/types';
@@ -133,6 +134,7 @@ import SuppliersPanel from '@/components/dashboard/SuppliersPanel';
 import ExpensesPanel from '@/components/dashboard/ExpensesPanel';
 import NotificationsPanel from '@/components/dashboard/NotificationsPanel';
 import KeyboardShortcutsModal from '@/components/dashboard/KeyboardShortcutsModal';
+import KitchenDisplay from '@/components/dashboard/KitchenDisplay';
 
 // ─── Niche-specific nav items ────────────────────────────────
 
@@ -268,7 +270,7 @@ const NICHE_QUICK_ACTIONS: Record<string, Array<{ label: string; icon: React.Ele
   restaurant: [
     { label: 'New Table', icon: Utensils, tab: 'tables', color: 'text-orange-600 dark:text-orange-400', bg: 'bg-orange-50 dark:bg-orange-900/20' },
     { label: 'Take Order', icon: Soup, tab: 'billing', color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-900/20' },
-    { label: 'Kitchen Display', icon: ChefHat, tab: 'orders', color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-50 dark:bg-amber-900/20' },
+    { label: 'Kitchen Display', icon: ChefHat, tab: 'kitchen', color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-50 dark:bg-amber-900/20' },
     { label: 'Daily Special', icon: UtensilsCrossed, tab: 'products', color: 'text-rose-600 dark:text-rose-400', bg: 'bg-rose-50 dark:bg-rose-900/20' },
     { label: 'Menu Card', icon: FileText, tab: 'products', color: 'text-sky-600 dark:text-sky-400', bg: 'bg-sky-50 dark:bg-sky-900/20' },
     { label: 'Zomato Orders', icon: Wifi, tab: 'orders', color: 'text-red-600 dark:text-red-400', bg: 'bg-red-50 dark:bg-red-900/20' },
@@ -327,6 +329,7 @@ const NICHE_QUICK_ACTIONS: Record<string, Array<{ label: string; icon: React.Ele
   ],
   bakery: [
     { label: 'New Order', icon: Cake, tab: 'billing', color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-50 dark:bg-amber-900/20' },
+    { label: 'Kitchen Display', icon: ChefHat, tab: 'kitchen', color: 'text-orange-600 dark:text-orange-400', bg: 'bg-orange-50 dark:bg-orange-900/20' },
     { label: 'Today Menu', icon: Coffee, tab: 'products', color: 'text-orange-600 dark:text-orange-400', bg: 'bg-orange-50 dark:bg-orange-900/20' },
     { label: 'Combo Builder', icon: ShoppingCartIcon, tab: 'billing', color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-900/20' },
     { label: 'Loyalty Stamp', icon: Stamp, tab: 'customers', color: 'text-violet-600 dark:text-violet-400', bg: 'bg-violet-50 dark:bg-violet-900/20' },
@@ -420,14 +423,14 @@ function DashboardOverview({ storeId, niche }: { storeId: string; niche: string 
 
   // ─── Mock Activity Feed Data ────────────────────────────────
   const activityFeed = useMemo(() => [
-    { id: '1', type: 'order' as const, icon: ShoppingCart, description: 'New order #1047 from Priya Sharma', time: '2 min ago', color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-900/20' },
-    { id: '2', type: 'alert' as const, icon: AlertTriangle, description: 'Low stock: Prawn Masala (2 left)', time: '5 min ago', color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-50 dark:bg-amber-900/20' },
-    { id: '3', type: 'payment' as const, icon: IndianRupee, description: 'Payment received ₹3,200 via UPI', time: '12 min ago', color: 'text-sky-600 dark:text-sky-400', bg: 'bg-sky-50 dark:bg-sky-900/20' },
-    { id: '4', type: 'customer' as const, icon: UserPlus, description: 'New customer: Rahul Verma signed up', time: '18 min ago', color: 'text-purple-600 dark:text-purple-400', bg: 'bg-purple-50 dark:bg-purple-900/20' },
-    { id: '5', type: 'order' as const, icon: ShoppingCart, description: 'New order #1046 from Amit Patel', time: '25 min ago', color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-900/20' },
-    { id: '6', type: 'payment' as const, icon: IndianRupee, description: 'Payment received ₹1,850 via Cash', time: '32 min ago', color: 'text-sky-600 dark:text-sky-400', bg: 'bg-sky-50 dark:bg-sky-900/20' },
-    { id: '7', type: 'alert' as const, icon: AlertTriangle, description: 'Low stock: Mushroom Manchurian (3 left)', time: '45 min ago', color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-50 dark:bg-amber-900/20' },
-    { id: '8', type: 'customer' as const, icon: UserPlus, description: 'New customer: Meera Joshi signed up', time: '1 hr ago', color: 'text-purple-600 dark:text-purple-400', bg: 'bg-purple-50 dark:bg-purple-900/20' },
+    { id: '1', type: 'order' as const, icon: ShoppingCart, description: 'New order #1047 from Priya Sharma', time: '2 min ago', color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-900/20', border: 'border-l-emerald-500' },
+    { id: '2', type: 'alert' as const, icon: AlertTriangle, description: 'Low stock: Prawn Masala (2 left)', time: '5 min ago', color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-50 dark:bg-amber-900/20', border: 'border-l-amber-500' },
+    { id: '3', type: 'payment' as const, icon: IndianRupee, description: 'Payment received ₹3,200 via UPI', time: '12 min ago', color: 'text-sky-600 dark:text-sky-400', bg: 'bg-sky-50 dark:bg-sky-900/20', border: 'border-l-sky-500' },
+    { id: '4', type: 'customer' as const, icon: UserPlus, description: 'New customer: Rahul Verma signed up', time: '18 min ago', color: 'text-purple-600 dark:text-purple-400', bg: 'bg-purple-50 dark:bg-purple-900/20', border: 'border-l-purple-500' },
+    { id: '5', type: 'order' as const, icon: ShoppingCart, description: 'New order #1046 from Amit Patel', time: '25 min ago', color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-900/20', border: 'border-l-emerald-500' },
+    { id: '6', type: 'payment' as const, icon: IndianRupee, description: 'Payment received ₹1,850 via Cash', time: '32 min ago', color: 'text-sky-600 dark:text-sky-400', bg: 'bg-sky-50 dark:bg-sky-900/20', border: 'border-l-sky-500' },
+    { id: '7', type: 'alert' as const, icon: AlertTriangle, description: 'Low stock: Mushroom Manchurian (3 left)', time: '45 min ago', color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-50 dark:bg-amber-900/20', border: 'border-l-amber-500' },
+    { id: '8', type: 'customer' as const, icon: UserPlus, description: 'New customer: Meera Joshi signed up', time: '1 hr ago', color: 'text-purple-600 dark:text-purple-400', bg: 'bg-purple-50 dark:bg-purple-900/20', border: 'border-l-purple-500' },
   ], []);
 
   // ─── Sparkline data per stat card ───────────────────────────
@@ -804,7 +807,13 @@ function DashboardOverview({ storeId, niche }: { storeId: string; niche: string 
   return (
     <div className="space-y-6">
       {/* ─── Enhanced Welcome Section ─── */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+      <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 overflow-hidden rounded-xl px-5 py-4 -mx-1">
+        {/* Background gradient pattern */}
+        <div className="absolute inset-0 bg-gradient-to-br from-emerald-50/60 via-transparent to-teal-50/40 dark:from-emerald-950/20 dark:via-transparent dark:to-teal-950/10 -z-10" />
+        <div className="absolute inset-0 opacity-[0.03] dark:opacity-[0.04] -z-10" style={{
+          backgroundImage: 'radial-gradient(circle, #10b981 1px, transparent 1px)',
+          backgroundSize: '16px 16px',
+        }} />
         <div>
           <div className="flex items-center gap-2 mb-1">
             <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100">
@@ -1182,18 +1191,25 @@ function DashboardOverview({ storeId, niche }: { storeId: string; niche: string 
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
                     <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500" />
                   </span>
+                  {/* New activities badge */}
+                  <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border-0 text-[10px] px-1.5 py-0">
+                    {activityFeed.length} new
+                  </Badge>
                 </div>
                 <Badge variant="secondary" className="text-[10px]">Live</Badge>
               </div>
             </CardHeader>
             <CardContent>
-              <div className="space-y-0 max-h-72 overflow-y-auto">
+              <div className="space-y-1 max-h-72 overflow-y-auto">
                 {activityFeed.map((item, idx) => {
                   const ItemIcon = item.icon;
                   return (
-                    <div
+                    <motion.div
                       key={item.id}
-                      className="flex gap-3 group cursor-pointer animate-[fadeInSlide_0.3s_ease-out] hover:bg-gray-50 dark:hover:bg-gray-800/50 -mx-2 px-2 py-1 rounded-lg transition-colors"
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ duration: 0.3, delay: idx * 0.05 }}
+                      className={`flex gap-3 group cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 px-2 py-1.5 rounded-lg transition-colors border-l-[3px] ${item.border}`}
                       onClick={() => {
                         if (item.type === 'order' || item.type === 'payment') {
                           setDashboardTab('orders');
@@ -1214,13 +1230,13 @@ function DashboardOverview({ storeId, niche }: { storeId: string; niche: string 
                         )}
                       </div>
                       {/* Content */}
-                      <div className={`pb-4 flex-1 min-w-0 ${idx === activityFeed.length - 1 ? 'pb-0' : ''}`}>
+                      <div className={`pb-3 flex-1 min-w-0 ${idx === activityFeed.length - 1 ? 'pb-0' : ''}`}>
                         <p className="text-sm text-gray-700 dark:text-gray-300 leading-snug group-hover:text-gray-900 dark:group-hover:text-gray-100 transition-colors">{item.description}</p>
                         <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5">{item.time}</p>
                       </div>
                       {/* Hover arrow */}
                       <ArrowUpRight className="w-3.5 h-3.5 text-gray-300 dark:text-gray-600 self-center opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
-                    </div>
+                    </motion.div>
                   );
                 })}
               </div>
@@ -1498,7 +1514,8 @@ function DashboardOverview({ storeId, niche }: { storeId: string; niche: string 
                     <button
                       key={action.label}
                       onClick={() => setDashboardTab(action.tab)}
-                      className="flex flex-col items-center gap-1 p-2.5 rounded-xl border border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-sm transition-all group"
+                      title={`${action.label} — Go to ${action.tab} tab`}
+                      className="flex flex-col items-center gap-1 p-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-gray-800/50 hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-md transition-all group"
                     >
                       <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${action.bg} group-hover:scale-110 transition-transform`}>
                         <Icon className={`w-3.5 h-3.5 ${action.color}`} />
@@ -1838,6 +1855,7 @@ export default function PosDashboard() {
     members: 'members',
     students: 'students',
     vehicles: 'vehicles',
+    kitchen: 'dashboard',
   };
 
   // Build full nav items including niche-specific
@@ -1846,6 +1864,11 @@ export default function PosDashboard() {
     // Insert niche nav after "Orders"
     const ordersIdx = navItems.findIndex((n) => n.tab === 'orders');
     navItems.splice(ordersIdx + 1, 0, nicheNavItem);
+  }
+  // Add Kitchen Display for restaurant/bakery niches
+  if (niche === 'restaurant' || niche === 'bakery') {
+    const ordersIdx = navItems.findIndex((n) => n.tab === 'orders');
+    navItems.splice(ordersIdx + 1, 0, { label: 'Kitchen Display', icon: ChefHat, tab: 'kitchen' });
   }
 
   // Subscription badge
@@ -1932,6 +1955,10 @@ export default function PosDashboard() {
       return <VehiclesPanel />;
     }
 
+    if (dashboardTab === 'kitchen') {
+      return <KitchenDisplay />;
+    }
+
     const tabLabel = navItems.find((n) => n.tab === dashboardTab)?.label || dashboardTab;
     return <PlaceholderTab tab={dashboardTab} label={tabLabel} />;
   };
@@ -1942,55 +1969,70 @@ export default function PosDashboard() {
       const target = e.target as HTMLElement;
       const isInputFocused = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
 
-      // ? or Ctrl+/ - Toggle shortcuts overlay
+      // ─── Global Shortcuts (work even in some input contexts) ───
+
+      // ? or Ctrl+/ - Toggle shortcuts help modal
       if ((e.key === '?' && !isInputFocused) || ((e.ctrlKey || e.metaKey) && e.key === '/')) {
         e.preventDefault();
         setShowShortcuts((prev) => !prev);
         return;
       }
 
-      // Esc - Close shortcuts overlay
-      if (e.key === 'Escape' && showShortcuts) {
-        setShowShortcuts(false);
+      // Esc - Close shortcuts overlay or dialogs
+      if (e.key === 'Escape') {
+        if (showShortcuts) {
+          setShowShortcuts(false);
+          return;
+        }
+      }
+
+      // Ctrl+K or / - Focus search
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+        return;
+      }
+
+      // Ctrl+B - Toggle sidebar (handled by SidebarProvider internally)
+      // Already handled by shadcn/ui SidebarProvider with SIDEBAR_KEYBOARD_SHORTCUT = "b"
+
+      // Ctrl+D - Go to Dashboard
+      if ((e.ctrlKey || e.metaKey) && e.key === 'd') {
+        e.preventDefault();
+        setDashboardTab('overview');
+        toast.info('Switched to Dashboard');
+        return;
+      }
+
+      // Ctrl+E - Toggle dark mode
+      if ((e.ctrlKey || e.metaKey) && e.key === 'e') {
+        e.preventDefault();
+        setTheme(theme === 'dark' ? 'light' : 'dark');
         return;
       }
 
       // Don't process other shortcuts if in input field
       if (isInputFocused) return;
 
-      // / or Ctrl+K - Focus search
-      if (e.key === '/' || ((e.ctrlKey || e.metaKey) && e.key === 'k')) {
+      // / - Focus search (alternate)
+      if (e.key === '/') {
         e.preventDefault();
         searchInputRef.current?.focus();
         return;
       }
 
-      // N - New bill (go to billing tab)
-      if (e.key === 'n' || e.key === 'N') {
-        e.preventDefault();
-        setDashboardTab('billing');
-        toast.info('Switched to Billing / POS');
-        return;
-      }
+      // ─── Navigation Shortcuts (1-9) ───
 
-      // D - Toggle dark mode
-      if (e.key === 'd' || e.key === 'D') {
-        e.preventDefault();
-        setTheme(theme === 'dark' ? 'light' : 'dark');
-        return;
-      }
-
-      // 1-9 - Switch tabs
       const tabMap: Record<string, string> = {
         '1': 'overview',
         '2': 'billing',
         '3': 'products',
         '4': 'customers',
         '5': 'orders',
-        '6': 'staff',
-        '7': 'reports',
-        '8': 'settings',
-        '9': nicheNavItem?.tab || 'overview',
+        '6': 'reports',
+        '7': 'settings',
+        '8': nicheNavItem?.tab || 'overview',
+        '9': 'staff',
       };
       if (e.key in tabMap) {
         e.preventDefault();
@@ -1999,11 +2041,127 @@ export default function PosDashboard() {
         toast.info(`Switched to ${navItems.find((n) => n.tab === tab)?.label || tab}`);
         return;
       }
+
+      // ─── Billing / POS Shortcuts ───
+
+      // F2 - New bill
+      if (e.key === 'F2') {
+        e.preventDefault();
+        setDashboardTab('billing');
+        toast.info('New Bill — switched to Billing / POS');
+        return;
+      }
+
+      // F4 - Hold bill
+      if (e.key === 'F4') {
+        e.preventDefault();
+        if (dashboardTab === 'billing') {
+          toast.info('Bill held');
+        } else {
+          toast.info('Hold Bill — switch to Billing first');
+        }
+        return;
+      }
+
+      // F5 - Cash payment
+      if (e.key === 'F5') {
+        e.preventDefault();
+        if (dashboardTab === 'billing') {
+          toast.info('Cash payment mode');
+        } else {
+          toast.info('Cash Payment — switch to Billing first');
+        }
+        return;
+      }
+
+      // F6 - UPI payment
+      if (e.key === 'F6') {
+        e.preventDefault();
+        if (dashboardTab === 'billing') {
+          toast.info('UPI payment mode');
+        } else {
+          toast.info('UPI Payment — switch to Billing first');
+        }
+        return;
+      }
+
+      // F7 - Card payment
+      if (e.key === 'F7') {
+        e.preventDefault();
+        if (dashboardTab === 'billing') {
+          toast.info('Card payment mode');
+        } else {
+          toast.info('Card Payment — switch to Billing first');
+        }
+        return;
+      }
+
+      // F8 - Notifications
+      if (e.key === 'F8') {
+        e.preventDefault();
+        setDashboardTab('notifications');
+        toast.info('Notifications');
+        return;
+      }
+
+      // F9 - Print receipt
+      if (e.key === 'F9') {
+        e.preventDefault();
+        toast.info('Print receipt — use in Billing after payment');
+        return;
+      }
+
+      // F10 - Fullscreen mode
+      if (e.key === 'F10') {
+        e.preventDefault();
+        if (document.fullscreenElement) {
+          document.exitFullscreen();
+          toast.info('Exited fullscreen');
+        } else {
+          document.documentElement.requestFullscreen().catch(() => {
+            toast.error('Fullscreen not supported');
+          });
+          toast.info('Entered fullscreen');
+        }
+        return;
+      }
+
+      // + - Increase quantity (billing context)
+      if (e.key === '+' || e.key === '=') {
+        if (dashboardTab === 'billing') {
+          toast.info('Quantity increased');
+        }
+        return;
+      }
+
+      // - - Decrease quantity (billing context)
+      if (e.key === '-') {
+        if (dashboardTab === 'billing') {
+          toast.info('Quantity decreased');
+        }
+        return;
+      }
+
+      // Delete - Remove item from cart (billing context)
+      if (e.key === 'Delete') {
+        if (dashboardTab === 'billing') {
+          toast.info('Item removed from cart');
+        }
+        return;
+      }
+
+      // Enter - Quick pay (billing context)
+      if (e.key === 'Enter') {
+        if (dashboardTab === 'billing') {
+          toast.info('Quick pay');
+        }
+        return;
+      }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [showShortcuts, theme, setTheme, setDashboardTab, nicheNavItem, navItems]);
+  }, [showShortcuts, theme, setTheme, setDashboardTab, nicheNavItem, navItems, dashboardTab]);
 
   const handleLogout = () => {
     logout();
@@ -2059,7 +2217,7 @@ export default function PosDashboard() {
         {/* Logo Area */}
         <SidebarHeader className="p-4 bg-gradient-to-r from-emerald-50/80 to-transparent dark:from-emerald-950/30 dark:to-transparent">
           <div className="flex items-center gap-2">
-            <div className={`w-9 h-9 rounded-lg ${getNicheSidebarBg(niche)} flex items-center justify-center shrink-0 shadow-md shadow-emerald-500/20`}>
+            <div className={`w-9 h-9 rounded-lg ${getNicheSidebarBg(niche)} flex items-center justify-center shrink-0 shadow-md shadow-emerald-500/20 ${unreadCount > 0 ? 'animate-pulse' : ''}`}>
               <Zap className="w-5 h-5 text-white" />
             </div>
             <div className="flex flex-col min-w-0 group-data-[collapsible=icon]:hidden">
@@ -2076,10 +2234,10 @@ export default function PosDashboard() {
         {/* Navigation */}
         <SidebarContent className="overflow-y-auto">
           <SidebarGroup>
-            <SidebarGroupLabel>Menu</SidebarGroupLabel>
+            <SidebarGroupLabel className="text-[10px] font-bold tracking-widest text-gray-400 dark:text-gray-500 uppercase">Main</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {navItems.map((item) => {
+                {navItems.slice(0, 3).map((item) => {
                   const Icon = item.icon;
                   const isActive = dashboardTab === item.tab;
                   return (
@@ -2088,10 +2246,66 @@ export default function PosDashboard() {
                         isActive={isActive}
                         onClick={() => setDashboardTab(item.tab)}
                         tooltip={item.label}
-                        className={`transition-all duration-200 ${
+                        className={`transition-all duration-200 relative ${
                           isActive
-                            ? `${nicheAccent} font-semibold ${nicheAccentBg} scale-[1.02]`
-                            : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:scale-[1.02] hover:bg-gray-100 dark:hover:bg-gray-800/50'
+                            ? `${nicheAccent} font-semibold ${nicheAccentBg} border-l-[3px] ${getNicheSidebarBg(niche).replace('bg-', 'border-l-')} shadow-sm shadow-emerald-500/5`
+                            : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:translate-x-1 hover:bg-gray-100 dark:hover:bg-gray-800/50'
+                        }`}
+                      >
+                        <Icon className="w-4 h-4 shrink-0" />
+                        <span className="whitespace-nowrap">{tabLabelMap[item.tab] ? t(tabLabelMap[item.tab]) : item.label}</span>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  );
+                })}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+          <SidebarGroup>
+            <SidebarGroupLabel className="text-[10px] font-bold tracking-widest text-gray-400 dark:text-gray-500 uppercase">Management</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {navItems.slice(3, -2).map((item) => {
+                  const Icon = item.icon;
+                  const isActive = dashboardTab === item.tab;
+                  return (
+                    <SidebarMenuItem key={item.tab}>
+                      <SidebarMenuButton
+                        isActive={isActive}
+                        onClick={() => setDashboardTab(item.tab)}
+                        tooltip={item.label}
+                        className={`transition-all duration-200 relative ${
+                          isActive
+                            ? `${nicheAccent} font-semibold ${nicheAccentBg} border-l-[3px] ${getNicheSidebarBg(niche).replace('bg-', 'border-l-')} shadow-sm shadow-emerald-500/5`
+                            : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:translate-x-1 hover:bg-gray-100 dark:hover:bg-gray-800/50'
+                        }`}
+                      >
+                        <Icon className="w-4 h-4 shrink-0" />
+                        <span className="whitespace-nowrap">{tabLabelMap[item.tab] ? t(tabLabelMap[item.tab]) : item.label}</span>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  );
+                })}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+          <SidebarGroup>
+            <SidebarGroupLabel className="text-[10px] font-bold tracking-widest text-gray-400 dark:text-gray-500 uppercase">Niche</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {navItems.slice(-2).map((item) => {
+                  const Icon = item.icon;
+                  const isActive = dashboardTab === item.tab;
+                  return (
+                    <SidebarMenuItem key={item.tab}>
+                      <SidebarMenuButton
+                        isActive={isActive}
+                        onClick={() => setDashboardTab(item.tab)}
+                        tooltip={item.label}
+                        className={`transition-all duration-200 relative ${
+                          isActive
+                            ? `${nicheAccent} font-semibold ${nicheAccentBg} border-l-[3px] ${getNicheSidebarBg(niche).replace('bg-', 'border-l-')} shadow-sm shadow-emerald-500/5`
+                            : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:translate-x-1 hover:bg-gray-100 dark:hover:bg-gray-800/50'
                         }`}
                       >
                         <Icon className="w-4 h-4 shrink-0" />
@@ -2306,7 +2520,17 @@ export default function PosDashboard() {
 
         {/* Tab Content */}
         <div className="flex-1 p-4 sm:p-6 lg:p-8 bg-gray-50 dark:bg-gray-950">
-          {renderTabContent()}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={dashboardTab}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+            >
+              {renderTabContent()}
+            </motion.div>
+          </AnimatePresence>
         </div>
       </SidebarInset>
       {/* ═══════════════════ KEYBOARD SHORTCUTS MODAL ═══════════════════ */}

@@ -3,7 +3,18 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAppStore } from '@/lib/store';
 import { toast } from 'sonner';
-import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  getLoyaltyTier,
+  getNextTier,
+  getTierProgress,
+  getTierBadgeClasses,
+  getTierChartColor,
+  LOYALTY_TIERS,
+  type LoyaltyTier,
+  type LoyaltyTierInfo,
+} from '@/lib/loyalty';
 import {
   Users,
   Plus,
@@ -15,16 +26,12 @@ import {
   Phone,
   Mail,
   MapPin,
-  FileText,
   Star,
-  CreditCard,
-  Package,
   ShoppingBag,
   Calendar,
   TrendingUp,
   Gift,
   MessageSquare,
-  StickyNote,
   Receipt,
   CheckCircle2,
   Clock,
@@ -37,6 +44,14 @@ import {
   Shield,
   Award,
   ExternalLink,
+  Gem,
+  ChevronDown,
+  ChevronUp,
+  Sparkles,
+  Truck,
+  Zap,
+  UserCheck,
+  PartyPopper,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -143,13 +158,35 @@ function getInitials(name: string) {
   return name.charAt(0).toUpperCase();
 }
 
+// ─── Tier Icon Helper ───
+
+function getTierLucideIcon(tier: LoyaltyTier) {
+  switch (tier) {
+    case 'bronze': return Award;
+    case 'silver': return Shield;
+    case 'gold': return Crown;
+    case 'platinum': return Gem;
+  }
+}
+
+// ─── Tier Badge Component ───
+
+function LoyaltyTierBadge({ tier, size = 'sm' }: { tier: LoyaltyTierInfo; size?: 'xs' | 'sm' | 'md' }) {
+  const sizeClasses = size === 'xs' ? 'text-[10px] px-1.5 py-0 h-4' : size === 'md' ? 'text-xs px-2.5 py-0.5 h-6' : 'text-[11px] px-2 py-0 h-5';
+  return (
+    <span className={`inline-flex items-center gap-0.5 rounded-full border font-semibold ${getTierBadgeClasses(tier.tier)} ${sizeClasses}`}>
+      <span>{tier.icon}</span>
+      <span>{tier.name}</span>
+    </span>
+  );
+}
+
 // ─── Mock Loyalty History ───
 
 function generateMockLoyaltyHistory(customer: Customer): LoyaltyHistoryEntry[] {
   const entries: LoyaltyHistoryEntry[] = [];
   const now = new Date();
   if (customer.loyaltyPoints > 0) {
-    // Add some earned entries
     const earnCount = Math.min(customer.totalOrders || 2, 5);
     for (let i = 0; i < earnCount; i++) {
       const d = new Date(now);
@@ -197,7 +234,6 @@ function generateMockTimeline(customer: Customer, orders: Order[]): TimelineItem
       status: o.status as 'completed' | 'pending' | 'cancelled',
     }));
   }
-  // Generate mock timeline entries based on customer data
   const timeline: TimelineItem[] = [];
   const mockItems = [
     ['Butter Chicken', 'Naan', 'Raita'],
@@ -264,6 +300,20 @@ const emptyCustomerForm: CustomerFormData = {
   gstNumber: '',
 };
 
+// ─── Benefit Icon Helper ───
+
+function getBenefitIcon(benefit: string) {
+  if (benefit.toLowerCase().includes('points')) return <Zap className="h-3.5 w-3.5" />;
+  if (benefit.toLowerCase().includes('birthday')) return <PartyPopper className="h-3.5 w-3.5" />;
+  if (benefit.toLowerCase().includes('delivery') || benefit.toLowerCase().includes('free delivery')) return <Truck className="h-3.5 w-3.5" />;
+  if (benefit.toLowerCase().includes('priority')) return <UserCheck className="h-3.5 w-3.5" />;
+  if (benefit.toLowerCase().includes('exclusive') || benefit.toLowerCase().includes('vip')) return <Sparkles className="h-3.5 w-3.5" />;
+  if (benefit.toLowerCase().includes('gift')) return <Gift className="h-3.5 w-3.5" />;
+  if (benefit.toLowerCase().includes('manager')) return <Users className="h-3.5 w-3.5" />;
+  if (benefit.toLowerCase().includes('early') || benefit.toLowerCase().includes('access')) return <Calendar className="h-3.5 w-3.5" />;
+  return <Star className="h-3.5 w-3.5" />;
+}
+
 // ─── Main Component ───
 
 export default function CustomersPanel() {
@@ -295,6 +345,9 @@ export default function CustomersPanel() {
   const [loyaltyModalOpen, setLoyaltyModalOpen] = useState(false);
   const [loyaltyModalType, setLoyaltyModalType] = useState<'add' | 'redeem'>('add');
   const [loyaltyAmount, setLoyaltyAmount] = useState('');
+
+  // Tier benefits toggle
+  const [showTierBenefits, setShowTierBenefits] = useState(false);
 
   // Form state
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
@@ -351,6 +404,30 @@ export default function CustomersPanel() {
     currentPage * PAGE_SIZE
   );
 
+  // ─── Loyalty Tier Distribution ───
+
+  const tierDistribution = useMemo(() => {
+    const counts: Record<LoyaltyTier, number> = { bronze: 0, silver: 0, gold: 0, platinum: 0 };
+    customers.forEach((c) => {
+      const tier = getLoyaltyTier(c.totalSpent);
+      counts[tier.tier]++;
+    });
+    return LOYALTY_TIERS.map((t) => ({
+      name: t.name,
+      value: counts[t.tier],
+      tier: t.tier,
+      color: getTierChartColor(t.tier),
+    })).filter((d) => d.value > 0);
+  }, [customers]);
+
+  const totalLoyaltyPoints = useMemo(() => customers.reduce((s, c) => s + c.loyaltyPoints, 0), [customers]);
+  const avgPointsPerCustomer = customers.length > 0 ? Math.round(totalLoyaltyPoints / customers.length) : 0;
+
+  const mostLoyalCustomer = useMemo(() => {
+    if (customers.length === 0) return null;
+    return customers.reduce((max, c) => (c.loyaltyPoints > max.loyaltyPoints ? c : max), customers[0]);
+  }, [customers]);
+
   // ─── Customer CRUD ───
 
   function openAddCustomer() {
@@ -394,7 +471,6 @@ export default function CustomersPanel() {
         if (res.ok) {
           toast.success('Customer updated');
           setCustomerDialogOpen(false);
-          // Also update selected customer if it's the one being edited
           if (selectedCustomer?.id === editingCustomer.id) {
             setSelectedCustomer({
               ...selectedCustomer,
@@ -597,11 +673,19 @@ export default function CustomersPanel() {
     }
   }
 
+  // ─── Selected Customer Tier Data ───
+
+  const selectedCustomerTier = selectedCustomer ? getLoyaltyTier(selectedCustomer.totalSpent) : null;
+  const selectedCustomerTierProgress = selectedCustomer ? getTierProgress(selectedCustomer.totalSpent) : null;
+
   // ─── Render ───
 
   return (
     <div className="space-y-4 p-4 md:p-6">
-      {/* Stat Cards */}
+      {/* ═══════════════════════════════════════════════════════════ */}
+      {/* ═══ STAT CARDS ════════════════════════════════════════════ */}
+      {/* ═══════════════════════════════════════════════════════════ */}
+
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <Card className="shadow-sm hover:shadow-md transition-shadow">
           <CardContent className="p-4">
@@ -654,14 +738,217 @@ export default function CustomersPanel() {
               </div>
               <div>
                 <p className="text-xs text-gray-500 dark:text-gray-400">Loyalty Points</p>
-                <p className="text-xl font-bold">{customers.reduce((s, c) => s + c.loyaltyPoints, 0).toLocaleString()}</p>
+                <p className="text-xl font-bold">{totalLoyaltyPoints.toLocaleString()}</p>
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Top Bar */}
+      {/* ═══════════════════════════════════════════════════════════ */}
+      {/* ═══ LOYALTY OVERVIEW SECTION ══════════════════════════════ */}
+      {/* ═══════════════════════════════════════════════════════════ */}
+
+      <Card className="shadow-sm">
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-base font-semibold flex items-center gap-2">
+              <Crown className="h-5 w-5 text-amber-500" />
+              Loyalty Overview
+            </CardTitle>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-xs h-7"
+              onClick={() => setShowTierBenefits(!showTierBenefits)}
+            >
+              {showTierBenefits ? <ChevronUp className="h-3.5 w-3.5 mr-1" /> : <ChevronDown className="h-3.5 w-3.5 mr-1" />}
+              {showTierBenefits ? 'Hide' : 'View'} Tier Benefits
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent className="pt-0">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            {/* Tier Distribution PieChart */}
+            <div className="flex items-center justify-center">
+              {tierDistribution.length > 0 ? (
+                <div className="w-full max-w-[200px]">
+                  <ResponsiveContainer width="100%" height={180}>
+                    <PieChart>
+                      <Pie
+                        data={tierDistribution}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={45}
+                        outerRadius={75}
+                        paddingAngle={3}
+                        dataKey="value"
+                        stroke="none"
+                      >
+                        {tierDistribution.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '8px',
+                          fontSize: '12px',
+                        }}
+                        formatter={(value: number, name: string) => [`${value} customer${value !== 1 ? 's' : ''}`, name]}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                  {/* Legend */}
+                  <div className="flex flex-wrap items-center justify-center gap-2 mt-1">
+                    {tierDistribution.map((d) => (
+                      <span key={d.tier} className="flex items-center gap-1 text-[10px]">
+                        <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: d.color }} />
+                        {d.name} ({d.value})
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Crown className="h-10 w-10 mx-auto mb-2 opacity-30" />
+                  <p className="text-sm">No customers yet</p>
+                </div>
+              )}
+            </div>
+
+            {/* Stats Column */}
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800/30">
+                <div className="w-10 h-10 rounded-lg bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center flex-shrink-0">
+                  <Star className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Points in Circulation</p>
+                  <p className="text-xl font-bold text-amber-700 dark:text-amber-400">{totalLoyaltyPoints.toLocaleString()}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-sky-50 dark:bg-sky-900/20 border border-sky-100 dark:border-sky-800/30">
+                <div className="w-10 h-10 rounded-lg bg-sky-100 dark:bg-sky-900/40 flex items-center justify-center flex-shrink-0">
+                  <TrendingUp className="w-5 h-5 text-sky-600 dark:text-sky-400" />
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Avg Points / Customer</p>
+                  <p className="text-xl font-bold text-sky-700 dark:text-sky-400">{avgPointsPerCustomer.toLocaleString()}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Most Loyal Customer */}
+            <div className="flex flex-col gap-3">
+              {mostLoyalCustomer ? (
+                <div
+                  className="p-4 rounded-xl bg-gradient-to-br from-amber-50 via-yellow-50 to-orange-50 dark:from-amber-900/20 dark:via-yellow-900/10 dark:to-orange-900/20 border border-amber-200 dark:border-amber-800/30 cursor-pointer hover:shadow-md transition-all duration-200"
+                  onClick={() => openCustomerDetail(mostLoyalCustomer)}
+                >
+                  <div className="flex items-center gap-2 mb-2">
+                    <Sparkles className="h-4 w-4 text-amber-500" />
+                    <span className="text-xs font-semibold text-amber-700 dark:text-amber-400">Most Loyal Customer</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className={`h-12 w-12 rounded-full bg-gradient-to-br ${getAvatarGradient(mostLoyalCustomer.name)} flex items-center justify-center text-white text-lg font-bold shadow-md flex-shrink-0`}>
+                      {getInitials(mostLoyalCustomer.name)}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="font-bold truncate">{mostLoyalCustomer.name}</p>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <LoyaltyTierBadge tier={getLoyaltyTier(mostLoyalCustomer.totalSpent)} size="xs" />
+                        <span className="text-xs text-amber-700 dark:text-amber-400 font-semibold">{mostLoyalCustomer.loyaltyPoints} pts</span>
+                      </div>
+                    </div>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2">Total Spent: {formatCurrency(mostLoyalCustomer.totalSpent)}</p>
+                </div>
+              ) : (
+                <div className="p-4 rounded-xl border border-dashed border-gray-300 dark:border-gray-700 flex items-center justify-center text-sm text-muted-foreground">
+                  No customer data
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* ═══ Tier Benefits Cards (Toggle) ══════════════════════════ */}
+          <AnimatePresence>
+            {showTierBenefits && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.3 }}
+                className="overflow-hidden"
+              >
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mt-4 pt-4 border-t">
+                  {LOYALTY_TIERS.map((tier, index) => {
+                    const TierIcon = getTierLucideIcon(tier.tier);
+                    const isCurrentTier = selectedCustomerTier?.tier === tier.tier;
+                    return (
+                      <motion.div
+                        key={tier.tier}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.1, duration: 0.3 }}
+                      >
+                        <Card className={`shadow-sm hover:shadow-md transition-all duration-200 h-full ${isCurrentTier ? 'ring-2 ring-emerald-500 ring-offset-2 dark:ring-offset-gray-900' : ''} ${tier.bgColor} ${tier.borderColor} border`}>
+                          <CardContent className="p-4">
+                            <div className="flex items-center gap-2 mb-2">
+                              <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${tier.bgColor}`}>
+                                <TierIcon className={`w-5 h-5 ${tier.color}`} />
+                              </div>
+                              <div>
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-sm">{tier.icon}</span>
+                                  <span className={`font-bold ${tier.color}`}>{tier.name}</span>
+                                </div>
+                                <p className="text-[10px] text-muted-foreground">
+                                  {tier.maxSpend === Infinity
+                                    ? `${formatCurrency(tier.minSpend)}+`
+                                    : `${formatCurrency(tier.minSpend)} - ${formatCurrency(tier.maxSpend)}`}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-1 mb-2">
+                              <Zap className="h-3 w-3 text-amber-500" />
+                              <span className="text-xs font-semibold">{tier.multiplier}x points</span>
+                            </div>
+                            <Separator className="my-2" />
+                            <ul className="space-y-1.5">
+                              {tier.benefits.map((benefit, bIdx) => (
+                                <li key={bIdx} className="flex items-start gap-1.5 text-[11px] text-muted-foreground">
+                                  <span className="flex-shrink-0 mt-0.5">{getBenefitIcon(benefit)}</span>
+                                  <span>{benefit}</span>
+                                </li>
+                              ))}
+                            </ul>
+                            {isCurrentTier && (
+                              <div className="mt-2 pt-2 border-t">
+                                <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 text-[10px]">
+                                  <CheckCircle2 className="h-3 w-3 mr-0.5" />
+                                  Current Tier
+                                </Badge>
+                              </div>
+                            )}
+                          </CardContent>
+                        </Card>
+                      </motion.div>
+                    );
+                  })}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </CardContent>
+      </Card>
+
+      {/* ═══════════════════════════════════════════════════════════ */}
+      {/* ═══ TOP BAR ═══════════════════════════════════════════════ */}
+      {/* ═══════════════════════════════════════════════════════════ */}
+
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <Users className="h-6 w-6 text-emerald-600" />
@@ -690,7 +977,10 @@ export default function CustomersPanel() {
         </div>
       </div>
 
-      {/* Desktop Table */}
+      {/* ═══════════════════════════════════════════════════════════ */}
+      {/* ═══ DESKTOP TABLE ═════════════════════════════════════════ */}
+      {/* ═══════════════════════════════════════════════════════════ */}
+
       <Card className="hidden md:block">
         <CardContent className="p-0">
           {loading ? (
@@ -717,85 +1007,92 @@ export default function CustomersPanel() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Name</TableHead>
+                    <TableHead>Tier</TableHead>
                     <TableHead>Phone</TableHead>
                     <TableHead>Email</TableHead>
                     <TableHead className="text-center">Orders</TableHead>
                     <TableHead className="text-right">Total Spent</TableHead>
-                    <TableHead className="text-center">Loyalty Points</TableHead>
+                    <TableHead className="text-center">Points</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {paginatedCustomers.map((customer) => (
-                    <TableRow
-                      key={customer.id}
-                      className="cursor-pointer hover:scale-[1.005] transition-transform duration-150"
-                      onClick={() => openCustomerDetail(customer)}
-                    >
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <div className={`h-8 w-8 rounded-full bg-gradient-to-br ${getAvatarGradient(customer.name)} flex items-center justify-center text-white text-xs font-bold flex-shrink-0`}>
-                            {getInitials(customer.name)}
+                  {paginatedCustomers.map((customer) => {
+                    const tier = getLoyaltyTier(customer.totalSpent);
+                    return (
+                      <TableRow
+                        key={customer.id}
+                        className="cursor-pointer hover:scale-[1.005] transition-transform duration-150"
+                        onClick={() => openCustomerDetail(customer)}
+                      >
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <div className={`h-8 w-8 rounded-full bg-gradient-to-br ${getAvatarGradient(customer.name)} flex items-center justify-center text-white text-xs font-bold flex-shrink-0`}>
+                              {getInitials(customer.name)}
+                            </div>
+                            <span className="font-medium">{customer.name}</span>
                           </div>
-                          <span className="font-medium">{customer.name}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {customer.phone || '—'}
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {customer.email || '—'}
-                      </TableCell>
-                      <TableCell className="text-center">{customer.totalOrders}</TableCell>
-                      <TableCell className="text-right font-medium">
-                        {formatCurrency(customer.totalSpent)}
-                      </TableCell>
-                      <TableCell className="text-center">
-                        {customer.loyaltyPoints > 0 ? (
-                          <Badge className="bg-amber-100 text-amber-700 border-amber-200">
-                            {customer.loyaltyPoints} pts
-                          </Badge>
-                        ) : (
-                          <span className="text-muted-foreground">0</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div
-                          className="flex items-center justify-end gap-1"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => openCustomerDetail(customer)}
-                            title="View"
+                        </TableCell>
+                        <TableCell>
+                          <LoyaltyTierBadge tier={tier} size="xs" />
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">
+                          {customer.phone || '—'}
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">
+                          {customer.email || '—'}
+                        </TableCell>
+                        <TableCell className="text-center">{customer.totalOrders}</TableCell>
+                        <TableCell className="text-right font-medium">
+                          {formatCurrency(customer.totalSpent)}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          {customer.loyaltyPoints > 0 ? (
+                            <Badge className="bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-700">
+                              {customer.loyaltyPoints} pts
+                            </Badge>
+                          ) : (
+                            <span className="text-muted-foreground">0</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div
+                            className="flex items-center justify-end gap-1"
+                            onClick={(e) => e.stopPropagation()}
                           >
-                            <Users className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => openEditCustomer(customer)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-destructive hover:text-destructive"
-                            onClick={() => {
-                              setCustomerToDelete(customer);
-                              setDeleteDialogOpen(true);
-                            }}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={() => openCustomerDetail(customer)}
+                              title="View"
+                            >
+                              <Users className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={() => openEditCustomer(customer)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-destructive hover:text-destructive"
+                              onClick={() => {
+                                setCustomerToDelete(customer);
+                                setDeleteDialogOpen(true);
+                              }}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
 
@@ -843,7 +1140,10 @@ export default function CustomersPanel() {
         </CardContent>
       </Card>
 
-      {/* Mobile Card View */}
+      {/* ═══════════════════════════════════════════════════════════ */}
+      {/* ═══ MOBILE CARD VIEW ══════════════════════════════════════ */}
+      {/* ═══════════════════════════════════════════════════════════ */}
+
       <div className="md:hidden space-y-3">
         {loading ? (
           <CustomerTableSkeleton />
@@ -861,80 +1161,85 @@ export default function CustomersPanel() {
             </Button>
           </div>
         ) : (
-          paginatedCustomers.map((customer) => (
-            <Card
-              key={customer.id}
-              className="p-4 cursor-pointer hover:shadow-sm transition-shadow"
-              onClick={() => openCustomerDetail(customer)}
-            >
-              <div className="flex items-start gap-3">
-                <div className={`h-10 w-10 rounded-full bg-gradient-to-br ${getAvatarGradient(customer.name)} flex items-center justify-center text-white text-sm font-bold flex-shrink-0`}>
-                  {getInitials(customer.name)}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between">
-                    <p className="font-medium truncate">{customer.name}</p>
-                    {customer.loyaltyPoints > 0 && (
-                      <Badge className="bg-amber-100 text-amber-700 border-amber-200 text-xs ml-2">
-                        {customer.loyaltyPoints} pts
-                      </Badge>
-                    )}
+          paginatedCustomers.map((customer) => {
+            const tier = getLoyaltyTier(customer.totalSpent);
+            return (
+              <Card
+                key={customer.id}
+                className="p-4 cursor-pointer hover:shadow-sm transition-shadow"
+                onClick={() => openCustomerDetail(customer)}
+              >
+                <div className="flex items-start gap-3">
+                  <div className={`h-10 w-10 rounded-full bg-gradient-to-br ${getAvatarGradient(customer.name)} flex items-center justify-center text-white text-sm font-bold flex-shrink-0`}>
+                    {getInitials(customer.name)}
                   </div>
-                  <div className="flex flex-wrap gap-2 mt-1 text-xs text-muted-foreground">
-                    {customer.phone && (
-                      <span className="flex items-center gap-0.5">
-                        <Phone className="h-3 w-3" />
-                        {customer.phone}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between">
+                      <p className="font-medium truncate">{customer.name}</p>
+                      <LoyaltyTierBadge tier={tier} size="xs" />
+                    </div>
+                    <div className="flex flex-wrap gap-2 mt-1 text-xs text-muted-foreground">
+                      {customer.phone && (
+                        <span className="flex items-center gap-0.5">
+                          <Phone className="h-3 w-3" />
+                          {customer.phone}
+                        </span>
+                      )}
+                      {customer.email && (
+                        <span className="flex items-center gap-0.5">
+                          <Mail className="h-3 w-3" />
+                          {customer.email}
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-3 mt-2 text-sm">
+                      <span>
+                        <strong>{customer.totalOrders}</strong> orders
                       </span>
-                    )}
-                    {customer.email && (
-                      <span className="flex items-center gap-0.5">
-                        <Mail className="h-3 w-3" />
-                        {customer.email}
+                      <span>•</span>
+                      <span className="font-medium text-emerald-700">
+                        {formatCurrency(customer.totalSpent)}
                       </span>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-3 mt-2 text-sm">
-                    <span>
-                      <strong>{customer.totalOrders}</strong> orders
-                    </span>
-                    <span>•</span>
-                    <span className="font-medium text-emerald-700">
-                      {formatCurrency(customer.totalSpent)}
-                    </span>
+                      {customer.loyaltyPoints > 0 && (
+                        <>
+                          <span>•</span>
+                          <span className="text-amber-600 font-medium">{customer.loyaltyPoints} pts</span>
+                        </>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-              <Separator className="my-3" />
-              <div className="flex items-center justify-end gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-8"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    openEditCustomer(customer);
-                  }}
-                >
-                  <Edit className="h-3 w-3 mr-1" />
-                  Edit
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-8 text-destructive hover:text-destructive"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setCustomerToDelete(customer);
-                    setDeleteDialogOpen(true);
-                  }}
-                >
-                  <Trash2 className="h-3 w-3 mr-1" />
-                  Delete
-                </Button>
-              </div>
-            </Card>
-          ))
+                <Separator className="my-3" />
+                <div className="flex items-center justify-end gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      openEditCustomer(customer);
+                    }}
+                  >
+                    <Edit className="h-3 w-3 mr-1" />
+                    Edit
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 text-destructive hover:text-destructive"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setCustomerToDelete(customer);
+                      setDeleteDialogOpen(true);
+                    }}
+                  >
+                    <Trash2 className="h-3 w-3 mr-1" />
+                    Delete
+                  </Button>
+                </div>
+              </Card>
+            );
+          })
         )}
 
         {/* Mobile Pagination */}
@@ -970,23 +1275,24 @@ export default function CustomersPanel() {
       <Sheet open={detailOpen} onOpenChange={(open) => {
         setDetailOpen(open);
         if (!open) {
-          // Don't clear selectedCustomer immediately to allow animation
           setTimeout(() => setSelectedCustomer(null), 300);
         }
       }}>
         <SheetContent side="right" className="w-full sm:max-w-lg md:max-w-xl lg:max-w-2xl overflow-y-auto p-0">
-          {selectedCustomer && (
+          {selectedCustomer && selectedCustomerTier && (
             <div className="flex flex-col h-full">
               {/* ─── Customer Header ─── */}
               <div className="relative p-6 pb-4">
-                {/* Gradient background banner */}
                 <div className={`absolute inset-0 h-32 bg-gradient-to-br ${getAvatarGradient(selectedCustomer.name)} opacity-10`} />
                 <div className="relative flex flex-col items-center text-center pt-2">
-                  {/* Avatar with initials */}
                   <div className={`h-20 w-20 rounded-full bg-gradient-to-br ${getAvatarGradient(selectedCustomer.name)} flex items-center justify-center text-white text-2xl font-bold shadow-lg ring-4 ring-white dark:ring-gray-900`}>
                     {getInitials(selectedCustomer.name)}
                   </div>
                   <h2 className="text-xl font-bold mt-3">{selectedCustomer.name}</h2>
+                  {/* Tier Badge */}
+                  <div className="mt-2">
+                    <LoyaltyTierBadge tier={selectedCustomerTier} size="md" />
+                  </div>
                   <div className="flex flex-wrap items-center justify-center gap-3 mt-2 text-sm text-muted-foreground">
                     {selectedCustomer.phone && (
                       <span className="flex items-center gap-1">
@@ -1149,58 +1455,27 @@ export default function CustomersPanel() {
 
               <Separator />
 
-              {/* ─── Loyalty Tier Summary ─── */}
+              {/* ─── Loyalty Tier with Progress ─── */}
               <div className="p-4">
                 <h3 className="flex items-center gap-2 text-sm font-semibold mb-3">
                   <Crown className="h-4 w-4 text-amber-500" />
                   Loyalty Tier
                 </h3>
                 {(() => {
-                  const totalSpent = selectedCustomer.totalSpent;
-                  let tier: string;
-                  let tierColor: string;
-                  let tierBg: string;
-                  let tierIcon: React.ElementType;
-                  let nextTier: string;
-                  let nextTierThreshold: number;
-
-                  if (totalSpent >= 25000) {
-                    tier = 'Gold';
-                    tierColor = 'text-amber-600 dark:text-amber-400';
-                    tierBg = 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800/40';
-                    tierIcon = Crown;
-                    nextTier = 'Platinum';
-                    nextTierThreshold = 50000;
-                  } else if (totalSpent >= 10000) {
-                    tier = 'Silver';
-                    tierColor = 'text-gray-600 dark:text-gray-300';
-                    tierBg = 'bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700';
-                    tierIcon = Shield;
-                    nextTier = 'Gold';
-                    nextTierThreshold = 25000;
-                  } else {
-                    tier = 'Bronze';
-                    tierColor = 'text-orange-600 dark:text-orange-400';
-                    tierBg = 'bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-800/40';
-                    tierIcon = Award;
-                    nextTier = 'Silver';
-                    nextTierThreshold = 10000;
-                  }
-
-                  const TierIcon = tierIcon;
-                  const progressToNext = Math.min((totalSpent / nextTierThreshold) * 100, 100);
-                  const amountToNext = Math.max(nextTierThreshold - totalSpent, 0);
-
+                  const TierIcon = getTierLucideIcon(selectedCustomerTier.tier);
                   return (
-                    <Card className={`shadow-sm border ${tierBg}`}>
+                    <Card className={`shadow-sm border ${selectedCustomerTier.bgColor} ${selectedCustomerTier.borderColor}`}>
                       <CardContent className="p-4 space-y-3">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
-                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${tierBg}`}>
-                              <TierIcon className={`w-5 h-5 ${tierColor}`} />
+                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${selectedCustomerTier.bgColor}`}>
+                              <TierIcon className={`w-5 h-5 ${selectedCustomerTier.color}`} />
                             </div>
                             <div>
-                              <p className={`text-lg font-bold ${tierColor}`}>{tier}</p>
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-sm">{selectedCustomerTier.icon}</span>
+                                <p className={`text-lg font-bold ${selectedCustomerTier.color}`}>{selectedCustomerTier.name}</p>
+                              </div>
                               <p className="text-[10px] text-muted-foreground">Current Tier</p>
                             </div>
                           </div>
@@ -1209,17 +1484,43 @@ export default function CustomersPanel() {
                             <p className="text-[10px] text-muted-foreground">Points Balance</p>
                           </div>
                         </div>
-                        <div>
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="text-[10px] text-muted-foreground">Progress to {nextTier}</span>
-                            <span className="text-[10px] font-semibold">{Math.round(progressToNext)}%</span>
+
+                        {/* Progress to next tier */}
+                        {selectedCustomerTierProgress && selectedCustomerTierProgress.nextTier && (
+                          <div>
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-[10px] text-muted-foreground">
+                                {selectedCustomerTier.name} → {selectedCustomerTierProgress.nextTier.name}
+                              </span>
+                              <span className="text-[10px] font-semibold">{Math.round(selectedCustomerTierProgress.progress)}%</span>
+                            </div>
+                            <Progress value={selectedCustomerTierProgress.progress} className="h-2" />
+                            {selectedCustomerTierProgress.amountToNext > 0 && (
+                              <p className="text-[10px] text-muted-foreground mt-1">
+                                {formatCurrency(selectedCustomer.totalSpent)} / {formatCurrency(selectedCustomerTierProgress.nextTier.minSpend)} to {selectedCustomerTierProgress.nextTier.name}
+                                {' '}({formatCurrency(selectedCustomerTierProgress.amountToNext)} more)
+                              </p>
+                            )}
                           </div>
-                          <Progress value={progressToNext} className="h-2" />
-                          {amountToNext > 0 && (
-                            <p className="text-[10px] text-muted-foreground mt-1">
-                              Spend {formatCurrency(amountToNext)} more to reach {nextTier}
-                            </p>
-                          )}
+                        )}
+                        {selectedCustomerTier.tier === 'platinum' && (
+                          <div className="flex items-center gap-1.5 text-xs text-purple-600 dark:text-purple-400 font-medium">
+                            <Sparkles className="h-3.5 w-3.5" />
+                            Highest tier achieved! Maximum benefits unlocked.
+                          </div>
+                        )}
+
+                        {/* Benefits */}
+                        <div>
+                          <p className="text-[10px] font-medium text-muted-foreground mb-1.5">Your Benefits</p>
+                          <div className="grid grid-cols-1 gap-1">
+                            {selectedCustomerTier.benefits.map((benefit, bIdx) => (
+                              <div key={bIdx} className="flex items-center gap-1.5 text-[11px]">
+                                <CheckCircle2 className="h-3 w-3 text-emerald-500 flex-shrink-0" />
+                                <span>{benefit}</span>
+                              </div>
+                            ))}
+                          </div>
                         </div>
                       </CardContent>
                     </Card>
@@ -1233,7 +1534,7 @@ export default function CustomersPanel() {
               <div className="p-4">
                 <h3 className="flex items-center gap-2 text-sm font-semibold mb-3">
                   <ShoppingBag className="h-4 w-4" />
-                  Purchase Timeline
+                  Recent Transactions
                 </h3>
                 {loadingOrders ? (
                   <div className="space-y-3">
@@ -1253,14 +1554,12 @@ export default function CustomersPanel() {
                   <div className="relative max-h-72 overflow-y-auto pr-1 custom-scrollbar">
                     {timelineData.map((item, index) => (
                       <div key={item.id} className="flex gap-3 pb-4 last:pb-0">
-                        {/* Timeline line + dot */}
                         <div className="flex flex-col items-center flex-shrink-0">
                           <div className={`h-3 w-3 rounded-full ${getTimelineDotColor(item.status)} ring-2 ring-white dark:ring-gray-900 z-10 mt-1`} />
                           {index < timelineData.length - 1 && (
                             <div className="w-0.5 flex-1 bg-gray-200 dark:bg-gray-700 mt-1" />
                           )}
                         </div>
-                        {/* Timeline content */}
                         <div className={`flex-1 rounded-lg border ${getTimelineBorderColor(item.status)} p-3 -mt-0.5`}>
                           <div className="flex items-center justify-between mb-1">
                             <div className="flex items-center gap-2">
@@ -1300,7 +1599,6 @@ export default function CustomersPanel() {
                 </h3>
                 <Card className="shadow-sm">
                   <CardContent className="p-4 space-y-3">
-                    {/* Current points + progress */}
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-2xl font-bold">{selectedCustomer.loyaltyPoints} <span className="text-sm font-normal text-muted-foreground">pts</span></p>
@@ -1321,7 +1619,6 @@ export default function CustomersPanel() {
                           : 'Reward unlocked! 🎉'}
                       </p>
                     </div>
-                    {/* Action buttons */}
                     <div className="flex gap-2">
                       <Button
                         size="sm"
@@ -1518,7 +1815,6 @@ export default function CustomersPanel() {
           </DialogHeader>
 
           <div className="grid gap-4 py-4">
-            {/* Name */}
             <div className="grid gap-2">
               <Label htmlFor="customer-name">
                 Name <span className="text-destructive">*</span>
@@ -1531,7 +1827,6 @@ export default function CustomersPanel() {
               />
             </div>
 
-            {/* Phone + Email */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="grid gap-2">
                 <Label htmlFor="customer-phone">Phone</Label>
@@ -1554,7 +1849,6 @@ export default function CustomersPanel() {
               </div>
             </div>
 
-            {/* Address */}
             <div className="grid gap-2">
               <Label htmlFor="customer-address">Address</Label>
               <Textarea
@@ -1566,7 +1860,6 @@ export default function CustomersPanel() {
               />
             </div>
 
-            {/* GST Number */}
             <div className="grid gap-2">
               <Label htmlFor="customer-gst">GST Number</Label>
               <Input
