@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAppStore } from '@/lib/store';
 import { toast } from 'sonner';
+import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import {
   Users,
   Plus,
@@ -31,6 +32,11 @@ import {
   ArrowUpRight,
   MinusCircle,
   PlusCircle,
+  Wallet,
+  Crown,
+  Shield,
+  Award,
+  ExternalLink,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -1082,6 +1088,147 @@ export default function CustomersPanel() {
 
               <Separator />
 
+              {/* ─── Spending Chart ─── */}
+              <div className="p-4">
+                <h3 className="flex items-center gap-2 text-sm font-semibold mb-3">
+                  <TrendingUp className="h-4 w-4 text-emerald-500" />
+                  Spending Trend
+                </h3>
+                <div className="h-36">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart
+                      data={(() => {
+                        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+                        const baseSpend = selectedCustomer.totalSpent > 0 ? selectedCustomer.totalSpent / 6 : 500;
+                        return months.map((m, i) => ({
+                          month: m,
+                          amount: Math.round(baseSpend * (0.6 + ((i * 37 + 13) % 100) / 100 * 0.8)),
+                        }));
+                      })()}
+                      margin={{ top: 5, right: 5, left: -15, bottom: 0 }}
+                    >
+                      <defs>
+                        <linearGradient id="spendGradient" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
+                          <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                        </linearGradient>
+                      </defs>
+                      <XAxis
+                        dataKey="month"
+                        tick={{ fontSize: 10, fill: '#9ca3af' }}
+                        axisLine={false}
+                        tickLine={false}
+                      />
+                      <YAxis
+                        tick={{ fontSize: 10, fill: '#9ca3af' }}
+                        axisLine={false}
+                        tickLine={false}
+                        tickFormatter={(value: number) => `₹${(value / 1000).toFixed(0)}k`}
+                      />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '8px',
+                          fontSize: '11px',
+                        }}
+                        formatter={(value: number) => [`₹${value.toLocaleString('en-IN')}`, 'Spent']}
+                      />
+                      <Area
+                        type="monotone"
+                        dataKey="amount"
+                        stroke="#10b981"
+                        strokeWidth={2}
+                        fill="url(#spendGradient)"
+                        dot={{ r: 3, fill: '#10b981', strokeWidth: 2, stroke: '#fff' }}
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* ─── Loyalty Tier Summary ─── */}
+              <div className="p-4">
+                <h3 className="flex items-center gap-2 text-sm font-semibold mb-3">
+                  <Crown className="h-4 w-4 text-amber-500" />
+                  Loyalty Tier
+                </h3>
+                {(() => {
+                  const totalSpent = selectedCustomer.totalSpent;
+                  let tier: string;
+                  let tierColor: string;
+                  let tierBg: string;
+                  let tierIcon: React.ElementType;
+                  let nextTier: string;
+                  let nextTierThreshold: number;
+
+                  if (totalSpent >= 25000) {
+                    tier = 'Gold';
+                    tierColor = 'text-amber-600 dark:text-amber-400';
+                    tierBg = 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800/40';
+                    tierIcon = Crown;
+                    nextTier = 'Platinum';
+                    nextTierThreshold = 50000;
+                  } else if (totalSpent >= 10000) {
+                    tier = 'Silver';
+                    tierColor = 'text-gray-600 dark:text-gray-300';
+                    tierBg = 'bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700';
+                    tierIcon = Shield;
+                    nextTier = 'Gold';
+                    nextTierThreshold = 25000;
+                  } else {
+                    tier = 'Bronze';
+                    tierColor = 'text-orange-600 dark:text-orange-400';
+                    tierBg = 'bg-orange-50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-800/40';
+                    tierIcon = Award;
+                    nextTier = 'Silver';
+                    nextTierThreshold = 10000;
+                  }
+
+                  const TierIcon = tierIcon;
+                  const progressToNext = Math.min((totalSpent / nextTierThreshold) * 100, 100);
+                  const amountToNext = Math.max(nextTierThreshold - totalSpent, 0);
+
+                  return (
+                    <Card className={`shadow-sm border ${tierBg}`}>
+                      <CardContent className="p-4 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${tierBg}`}>
+                              <TierIcon className={`w-5 h-5 ${tierColor}`} />
+                            </div>
+                            <div>
+                              <p className={`text-lg font-bold ${tierColor}`}>{tier}</p>
+                              <p className="text-[10px] text-muted-foreground">Current Tier</p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-lg font-bold">{selectedCustomer.loyaltyPoints}</p>
+                            <p className="text-[10px] text-muted-foreground">Points Balance</p>
+                          </div>
+                        </div>
+                        <div>
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-[10px] text-muted-foreground">Progress to {nextTier}</span>
+                            <span className="text-[10px] font-semibold">{Math.round(progressToNext)}%</span>
+                          </div>
+                          <Progress value={progressToNext} className="h-2" />
+                          {amountToNext > 0 && (
+                            <p className="text-[10px] text-muted-foreground mt-1">
+                              Spend {formatCurrency(amountToNext)} more to reach {nextTier}
+                            </p>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })()}
+              </div>
+
+              <Separator />
+
               {/* ─── Purchase Timeline ─── */}
               <div className="p-4">
                 <h3 className="flex items-center gap-2 text-sm font-semibold mb-3">
@@ -1238,23 +1385,11 @@ export default function CustomersPanel() {
               {/* ─── Quick Actions at Bottom ─── */}
               <div className="p-4 mt-auto">
                 <h3 className="text-xs font-medium text-muted-foreground mb-2">Quick Actions</h3>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-2 gap-2">
                   <Button
                     variant="outline"
                     size="sm"
-                    className="flex-col h-auto py-2.5 gap-1 text-xs"
-                    onClick={() => {
-                      setDetailOpen(false);
-                      toast.success('New bill started for ' + selectedCustomer.name);
-                    }}
-                  >
-                    <Receipt className="h-4 w-4 text-emerald-600" />
-                    New Bill
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="flex-col h-auto py-2.5 gap-1 text-xs"
+                    className="flex items-center gap-1.5 text-xs h-9"
                     onClick={() => {
                       if (selectedCustomer.phone) {
                         const phone = selectedCustomer.phone.replace(/\D/g, '');
@@ -1264,19 +1399,47 @@ export default function CustomersPanel() {
                       }
                     }}
                   >
-                    <MessageSquare className="h-4 w-4 text-green-600" />
-                    WhatsApp
+                    <MessageSquare className="h-3.5 w-3.5 text-green-600" />
+                    Send WhatsApp
                   </Button>
                   <Button
                     variant="outline"
                     size="sm"
-                    className="flex-col h-auto py-2.5 gap-1 text-xs"
+                    className="flex items-center gap-1.5 text-xs h-9"
                     onClick={() => {
-                      toast.success('Note added for ' + selectedCustomer.name);
+                      toast.success(`Credit added for ${selectedCustomer.name}`);
                     }}
                   >
-                    <StickyNote className="h-4 w-4 text-amber-600" />
-                    Add Note
+                    <Wallet className="h-3.5 w-3.5 text-emerald-600" />
+                    Add Credit
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex items-center gap-1.5 text-xs h-9"
+                    onClick={() => {
+                      setDetailOpen(false);
+                      setTimeout(() => {
+                        const { setDashboardTab } = useAppStore.getState();
+                        setDashboardTab('orders');
+                      }, 300);
+                      toast.info('Viewing orders for ' + selectedCustomer.name);
+                    }}
+                  >
+                    <ExternalLink className="h-3.5 w-3.5 text-sky-600" />
+                    View Orders
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex items-center gap-1.5 text-xs h-9"
+                    onClick={() => {
+                      setDetailOpen(false);
+                      toast.success('New bill started for ' + selectedCustomer.name);
+                    }}
+                  >
+                    <Receipt className="h-3.5 w-3.5 text-violet-600" />
+                    New Bill
                   </Button>
                 </div>
               </div>

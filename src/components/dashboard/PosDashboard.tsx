@@ -391,6 +391,9 @@ function DashboardOverview({ storeId, niche }: { storeId: string; niche: string 
   // Order status counts
   const [orderStatusCounts, setOrderStatusCounts] = useState({ completed: 0, pending: 0, cancelled: 0 });
 
+  // Heatmap hover state
+  const [heatmapHover, setHeatmapHover] = useState<{ hour: string; day: string; val: number } | null>(null);
+
   // Top selling products
   const [topProducts, setTopProducts] = useState<Array<{ name: string; quantity: number; revenue: number }>>([]);
 
@@ -1234,7 +1237,7 @@ function DashboardOverview({ storeId, niche }: { storeId: string; niche: string 
             </CardContent>
           </Card>
 
-          {/* Top Selling Products */}
+          {/* Top Selling Products Donut Chart */}
           <Card className="shadow-sm">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
@@ -1249,32 +1252,35 @@ function DashboardOverview({ storeId, niche }: { storeId: string; niche: string 
                   Reports
                 </Button>
               </div>
-              <CardDescription>Best performing products this week</CardDescription>
+              <CardDescription>Revenue breakdown by product</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="h-52">
+              <div className="h-56 relative">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart
-                    data={displayTopProducts.map(p => ({ ...p, name: p.name.length > 14 ? p.name.slice(0, 14) + '…' : p.name }))}
-                    layout="vertical"
-                    margin={{ top: 0, right: 40, left: 0, bottom: 0 }}
-                  >
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" className="dark:opacity-20" horizontal={false} />
-                    <XAxis
-                      type="number"
-                      tick={{ fontSize: 10, fill: '#9ca3af' }}
-                      axisLine={false}
-                      tickLine={false}
-                      tickFormatter={(value: number) => `₹${(value / 1000).toFixed(0)}k`}
-                    />
-                    <YAxis
-                      type="category"
-                      dataKey="name"
-                      tick={{ fontSize: 11, fill: '#6b7280' }}
-                      axisLine={false}
-                      tickLine={false}
-                      width={80}
-                    />
+                  <PieChart>
+                    <Pie
+                      data={displayTopProducts.map(p => ({ name: p.name, value: p.revenue }))}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={55}
+                      outerRadius={80}
+                      paddingAngle={3}
+                      dataKey="value"
+                      strokeWidth={0}
+                    >
+                      {displayTopProducts.map((_, index) => (
+                        <Cell
+                          key={`donut-cell-${index}`}
+                          fill={
+                            index === 0 ? '#10b981' :
+                            index === 1 ? '#14b8a6' :
+                            index === 2 ? '#f59e0b' :
+                            index === 3 ? '#f43f5e' :
+                            '#0ea5e9'
+                          }
+                        />
+                      ))}
+                    </Pie>
                     <Tooltip
                       contentStyle={{
                         backgroundColor: 'rgba(255, 255, 255, 0.95)',
@@ -1283,49 +1289,110 @@ function DashboardOverview({ storeId, niche }: { storeId: string; niche: string 
                         boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)',
                         fontSize: '12px',
                       }}
-                      formatter={(value: number) => [`₹${value.toLocaleString('en-IN')}`, 'Revenue']}
+                      formatter={(value: number, name: string) => [`₹${value.toLocaleString('en-IN')}`, name]}
                     />
-                    <Bar
-                      dataKey="revenue"
-                      radius={[0, 4, 4, 0]}
-                      barSize={18}
-                    >
-                      {displayTopProducts.map((_, index) => (
-                        <Cell
-                          key={`cell-${index}`}
-                          fill={
-                            index === 0 ? '#10b981' :
-                            index === 1 ? '#34d399' :
-                            index === 2 ? '#6ee7b7' :
-                            index === 3 ? '#a7f3d0' :
-                            '#d1fae5'
-                          }
-                        />
-                      ))}
-                    </Bar>
-                  </BarChart>
+                  </PieChart>
                 </ResponsiveContainer>
+                {/* Center Label */}
+                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                  <span className="text-lg font-bold text-gray-900 dark:text-gray-100">
+                    ₹{displayTopProducts.reduce((s, p) => s + p.revenue, 0).toLocaleString('en-IN')}
+                  </span>
+                  <span className="text-[10px] text-gray-400">Total Revenue</span>
+                </div>
               </div>
-              {/* Revenue labels summary */}
-              <div className="mt-2 pt-2 border-t dark:border-gray-700 flex flex-wrap gap-x-4 gap-y-1">
+              {/* Legend */}
+              <div className="mt-2 pt-2 border-t dark:border-gray-700 flex flex-wrap gap-x-3 gap-y-1.5">
                 {displayTopProducts.map((product, idx) => (
                   <div key={product.name} className="flex items-center gap-1.5 text-[11px]">
                     <span
-                      className="w-2 h-2 rounded-full shrink-0"
+                      className="w-2.5 h-2.5 rounded-sm shrink-0"
                       style={{
                         backgroundColor:
                           idx === 0 ? '#10b981' :
-                          idx === 1 ? '#34d399' :
-                          idx === 2 ? '#6ee7b7' :
-                          idx === 3 ? '#a7f3d0' :
-                          '#d1fae5'
+                          idx === 1 ? '#14b8a6' :
+                          idx === 2 ? '#f59e0b' :
+                          idx === 3 ? '#f43f5e' :
+                          '#0ea5e9'
                       }}
                     />
-                    <span className="text-gray-500 dark:text-gray-400 truncate max-w-[80px]">{product.name}</span>
+                    <span className="text-gray-500 dark:text-gray-400 truncate max-w-[70px]">{product.name}</span>
                     <span className="font-semibold text-gray-700 dark:text-gray-300">₹{product.revenue.toLocaleString('en-IN')}</span>
                   </div>
                 ))}
               </div>
+            </CardContent>
+          </Card>
+
+          {/* Inventory Alert Widget */}
+          <Card className="shadow-sm border-amber-200 dark:border-amber-800/40">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <PackageX className="w-5 h-5 text-amber-500" />
+                  <CardTitle className="text-lg font-semibold">Inventory Alerts</CardTitle>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setDashboardTab('products')}
+                  className={accent}
+                >
+                  View All
+                  <ArrowRight className="w-4 h-4 ml-1" />
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {lowStockProducts.length === 0 ? (
+                <div className="text-center py-6">
+                  <CheckCircle2 className="w-10 h-10 mx-auto mb-2 text-emerald-500" />
+                  <p className="text-sm font-medium text-emerald-600 dark:text-emerald-400">All stocked up!</p>
+                  <p className="text-xs text-gray-400 mt-1">No low stock or out-of-stock items</p>
+                </div>
+              ) : (
+                <>
+                  {/* Alert Counts */}
+                  <div className="flex gap-3 mb-4">
+                    <div className="flex-1 p-2.5 rounded-lg bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800/40">
+                      <p className="text-xl font-bold text-red-600 dark:text-red-400">
+                        {lowStockProducts.filter(p => p.stock === 0).length}
+                      </p>
+                      <p className="text-[10px] text-gray-500 dark:text-gray-400">Out of Stock</p>
+                    </div>
+                    <div className="flex-1 p-2.5 rounded-lg bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800/40">
+                      <p className="text-xl font-bold text-amber-600 dark:text-amber-400">
+                        {lowStockProducts.filter(p => p.stock > 0).length}
+                      </p>
+                      <p className="text-[10px] text-gray-500 dark:text-gray-400">Low Stock</p>
+                    </div>
+                  </div>
+                  {/* Top 3 Low Stock Items */}
+                  <div className="space-y-2.5">
+                    {lowStockProducts.slice(0, 3).map((product) => {
+                      const severity = getStockSeverity(product.stock, product.lowStockThreshold);
+                      const stockPct = product.lowStockThreshold > 0 ? Math.round((product.stock / product.lowStockThreshold) * 100) : 0;
+                      return (
+                        <div key={product.id} className={`p-2.5 rounded-lg ${severity.bg} border ${severity.border}`}>
+                          <div className="flex items-center justify-between mb-1.5">
+                            <p className="text-sm font-medium truncate">{product.name}</p>
+                            <Badge className={`${severity.badge} border-0 text-[10px] shrink-0 ml-2`}>
+                              {product.stock} left
+                            </Badge>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Progress
+                              value={Math.min(stockPct, 100)}
+                              className="h-1.5 flex-1"
+                            />
+                            <span className="text-[10px] text-gray-400 shrink-0">/ {product.lowStockThreshold}</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </>
+              )}
             </CardContent>
           </Card>
 
@@ -1443,6 +1510,104 @@ function DashboardOverview({ storeId, niche }: { storeId: string; niche: string 
           </Card>
         </div>
       </div>
+
+      {/* ─── Hourly Sales Heatmap ─── */}
+      <Card className="shadow-sm">
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Clock className="w-5 h-5 text-emerald-500" />
+              <CardTitle className="text-lg font-semibold">Sales Heatmap</CardTitle>
+            </div>
+            <CardDescription>Hourly sales density by day of week</CardDescription>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            {/* Day Headers */}
+            <div className="flex items-center gap-1 mb-1.5 pl-14">
+              {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day) => (
+                <div key={day} className="w-10 text-center text-[10px] font-medium text-gray-500 dark:text-gray-400 shrink-0">
+                  {day}
+                </div>
+              ))}
+            </div>
+            {/* Heatmap Rows */}
+            {(() => {
+              const hours = ['6AM', '7AM', '8AM', '9AM', '10AM', '11AM', '12PM', '1PM', '2PM', '3PM', '4PM', '5PM', '6PM', '7PM', '8PM', '9PM', '10PM', '11PM'];
+              const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+              // Generate deterministic mock heatmap data (18 hours × 7 days)
+              const heatmapData = hours.map((_, hIdx) => {
+                return Array.from({ length: 7 }, (_, dIdx) => {
+                  const isLunchRush = hIdx >= 6 && hIdx <= 8;
+                  const isDinnerRush = hIdx >= 12 && hIdx <= 14;
+                  const isWeekend = dIdx >= 5;
+                  let base = ((hIdx * 37 + dIdx * 53 + 42) % 2000) + 500;
+                  if (isLunchRush) base = Math.round(base * 2.2);
+                  if (isDinnerRush) base = Math.round(base * 2.8);
+                  if (isWeekend) base = Math.round(base * 1.4);
+                  if (hIdx < 3) base = Math.round(base * 0.3);
+                  return base;
+                });
+              });
+              const maxVal = Math.max(...heatmapData.flat());
+              const getColorIntensity = (val: number) => {
+                const ratio = val / maxVal;
+                if (ratio < 0.1) return 'bg-emerald-50 dark:bg-emerald-950/20';
+                if (ratio < 0.25) return 'bg-emerald-100 dark:bg-emerald-900/30';
+                if (ratio < 0.4) return 'bg-emerald-200 dark:bg-emerald-800/40';
+                if (ratio < 0.55) return 'bg-emerald-300 dark:bg-emerald-700/50';
+                if (ratio < 0.7) return 'bg-emerald-400 dark:bg-emerald-600/60';
+                if (ratio < 0.85) return 'bg-emerald-500 dark:bg-emerald-500/70';
+                return 'bg-emerald-600 dark:bg-emerald-400/80';
+              };
+              const getTextColor = (val: number) => {
+                const ratio = val / maxVal;
+                if (ratio < 0.4) return 'text-gray-600 dark:text-gray-400';
+                if (ratio < 0.7) return 'text-emerald-900 dark:text-emerald-100';
+                return 'text-white dark:text-emerald-950';
+              };
+
+              return (
+                <div className="space-y-1 relative">
+                  {hours.map((hour, hIdx) => (
+                    <div key={hour} className="flex items-center gap-1">
+                      <div className="w-12 text-right text-[10px] text-gray-500 dark:text-gray-400 pr-1 shrink-0">
+                        {hour}
+                      </div>
+                      {heatmapData[hIdx].map((val, dIdx) => (
+                        <div
+                          key={`${hIdx}-${dIdx}`}
+                          className={`w-10 h-7 rounded-sm flex items-center justify-center text-[9px] font-medium cursor-default transition-all duration-150 ${getColorIntensity(val)} ${getTextColor(val)} hover:ring-2 hover:ring-emerald-400 hover:ring-offset-1`}
+                          onMouseEnter={() => setHeatmapHover({ hour, day: days[dIdx], val })}
+                          onMouseLeave={() => setHeatmapHover(null)}
+                        >
+                          {val >= maxVal * 0.3 ? `₹${(val / 1000).toFixed(1)}k` : ''}
+                        </div>
+                      ))}
+                    </div>
+                  ))}
+                  {/* Tooltip */}
+                  {heatmapHover && (
+                    <div className="absolute top-0 right-0 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 px-3 py-2 text-xs pointer-events-none z-10">
+                      <p className="font-semibold">{heatmapHover.day}, {heatmapHover.hour}</p>
+                      <p className="text-emerald-600 dark:text-emerald-400 font-bold">₹{heatmapHover.val.toLocaleString('en-IN')}</p>
+                    </div>
+                  )}
+                  {/* Legend */}
+                  <div className="flex items-center justify-center gap-2 mt-3 pt-3 border-t dark:border-gray-700">
+                    <span className="text-[10px] text-gray-400">Low</span>
+                    {['bg-emerald-50 dark:bg-emerald-950/20', 'bg-emerald-100 dark:bg-emerald-900/30', 'bg-emerald-200 dark:bg-emerald-800/40', 'bg-emerald-300 dark:bg-emerald-700/50', 'bg-emerald-400 dark:bg-emerald-600/60', 'bg-emerald-500 dark:bg-emerald-500/70', 'bg-emerald-600 dark:bg-emerald-400/80'].map((c, i) => (
+                      <div key={i} className={`w-4 h-3 rounded-sm ${c}`} />
+                    ))}
+                    <span className="text-[10px] text-gray-400">High</span>
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* ─── Full-Width: Low Stock Alerts (Enhanced) ─── */}
       {lowStockProducts.length > 0 && (
