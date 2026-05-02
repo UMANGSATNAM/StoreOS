@@ -41,6 +41,13 @@ import {
   HeadphonesIcon,
   Globe,
   Building2,
+  Store,
+  ShoppingBag,
+  Stethoscope,
+  Mail,
+  BadgeCheck,
+  TrendingUp,
+  Activity,
 } from 'lucide-react';
 
 // ─── Animation Helpers ────────────────────────────────────────
@@ -259,6 +266,27 @@ function getNicheBorderTop(color: string): string {
   return map[color] || 'border-t-gray-500';
 }
 
+function getNicheGlowShadow(color: string): string {
+  const map: Record<string, string> = {
+    orange: 'hover:shadow-orange-500/20',
+    pink: 'hover:shadow-pink-500/20',
+    emerald: 'hover:shadow-emerald-500/20',
+    violet: 'hover:shadow-violet-500/20',
+    green: 'hover:shadow-green-500/20',
+    cyan: 'hover:shadow-cyan-500/20',
+    blue: 'hover:shadow-blue-500/20',
+    red: 'hover:shadow-red-500/20',
+    slate: 'hover:shadow-slate-500/20',
+    amber: 'hover:shadow-amber-500/20',
+    zinc: 'hover:shadow-zinc-500/20',
+    yellow: 'hover:shadow-yellow-500/20',
+    lime: 'hover:shadow-lime-500/20',
+    teal: 'hover:shadow-teal-500/20',
+    indigo: 'hover:shadow-indigo-500/20',
+  };
+  return map[color] || 'hover:shadow-gray-500/20';
+}
+
 // ─── Testimonials Data ────────────────────────────────────────
 
 const TESTIMONIALS = [
@@ -266,6 +294,7 @@ const TESTIMONIALS = [
     quote: "StoreOS transformed my kirana store. I can now manage inventory, generate GST bills, and track payments — all from my phone. The ₹99 price is unbeatable!",
     name: 'Rajesh Kumar',
     business: 'Grocery Store',
+    businessIcon: ShoppingBag,
     city: 'Delhi',
     rating: 5,
     initials: 'RK',
@@ -275,6 +304,7 @@ const TESTIMONIALS = [
     quote: "As a restaurant owner, KOT printing and table management were game changers. My staff learned the system in just 30 minutes. Highly recommend!",
     name: 'Priya Sharma',
     business: 'Restaurant',
+    businessIcon: Store,
     city: 'Mumbai',
     rating: 5,
     initials: 'PS',
@@ -284,6 +314,7 @@ const TESTIMONIALS = [
     quote: "The pharmacy-specific features like batch tracking and expiry alerts saved me from huge losses. Best POS for medical stores in India.",
     name: 'Dr. Ahmed Khan',
     business: 'Medical Store',
+    businessIcon: Stethoscope,
     city: 'Hyderabad',
     rating: 5,
     initials: 'AK',
@@ -605,6 +636,75 @@ export default function LandingPage() {
         .step-float-1 { animation: stepFloat 3s ease-in-out infinite; }
         .step-float-2 { animation: stepFloat 3s ease-in-out 0.5s infinite; }
         .step-float-3 { animation: stepFloat 3s ease-in-out 1s infinite; }
+        @keyframes gradientShimmer {
+          0% { background-position: -200% center; }
+          100% { background-position: 200% center; }
+        }
+        .autopilot-shimmer {
+          background: linear-gradient(90deg, #059669, #14b8a6, #0ea5e9, #14b8a6, #059669);
+          background-size: 200% auto;
+          -webkit-background-clip: text;
+          background-clip: text;
+          -webkit-text-fill-color: transparent;
+          animation: gradientShimmer 3s linear infinite;
+        }
+        @keyframes livePulse {
+          0%, 100% { opacity: 1; transform: scale(1); }
+          50% { opacity: 0.5; transform: scale(1.5); }
+        }
+        .live-dot {
+          animation: livePulse 2s ease-in-out infinite;
+        }
+        @keyframes floatBadge1 {
+          0%, 100% { transform: translate(0, 0); }
+          50% { transform: translate(-4px, -8px); }
+        }
+        @keyframes floatBadge2 {
+          0%, 100% { transform: translate(0, 0); }
+          50% { transform: translate(4px, -6px); }
+        }
+        @keyframes floatBadge3 {
+          0%, 100% { transform: translate(0, 0); }
+          50% { transform: translate(-6px, -4px); }
+        }
+        .float-badge-1 { animation: floatBadge1 3s ease-in-out infinite; }
+        .float-badge-2 { animation: floatBadge2 4s ease-in-out infinite 0.5s; }
+        .float-badge-3 { animation: floatBadge3 3.5s ease-in-out infinite 1s; }
+        @keyframes ribbonBounce {
+          0%, 100% { transform: translateX(-50%) translateY(0); }
+          50% { transform: translateX(-50%) translateY(-3px); }
+        }
+        .popular-ribbon-bounce {
+          animation: ribbonBounce 2s ease-in-out infinite;
+        }
+        .glassmorphism {
+          background: rgba(255, 255, 255, 0.15);
+          backdrop-filter: blur(16px);
+          -webkit-backdrop-filter: blur(16px);
+          border: 1px solid rgba(255, 255, 255, 0.25);
+        }
+        .dark .glassmorphism {
+          background: rgba(255, 255, 255, 0.06);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .glass-card {
+          background: rgba(255, 255, 255, 0.7);
+          backdrop-filter: blur(12px);
+          -webkit-backdrop-filter: blur(12px);
+          border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        .dark .glass-card {
+          background: rgba(31, 41, 55, 0.6);
+          border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        @keyframes shimmerSweep {
+          0% { transform: translateX(-100%) skewX(-15deg); }
+          100% { transform: translateX(250%) skewX(-15deg); }
+        }
+        .section-divider {
+          height: 1px;
+          background: linear-gradient(90deg, transparent, rgba(16, 185, 129, 0.3), rgba(20, 184, 166, 0.3), rgba(16, 185, 129, 0.3), transparent);
+        }
       `}</style>
       {/* ═══════════════════ NAVBAR ═══════════════════ */}
       <nav
@@ -759,7 +859,7 @@ export default function LandingPage() {
               <FadeIn delay={0.1}>
                 <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-tight tracking-tight">
                   Run Your Store on{' '}
-                  <span className="bg-gradient-to-r from-emerald-600 to-teal-500 bg-clip-text text-transparent">
+                  <span className="autopilot-shimmer relative">
                     Autopilot
                   </span>
                 </h1>
@@ -798,20 +898,22 @@ export default function LandingPage() {
               </FadeIn>
 
               <FadeIn delay={0.4}>
-                <div className="mt-10 flex flex-wrap gap-x-8 gap-y-3">
-                  {[
-                    { value: '10,000+', label: 'Stores', animated: true },
-                    { value: '15', label: 'Business Types', animated: false },
-                    { value: '₹99', label: '/month', animated: false },
-                    { value: '14-Day', label: 'Free Trial', animated: false },
-                  ].map((stat) => (
-                    <div key={stat.label} className="flex items-baseline gap-1.5">
-                      <span className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
-                        {stat.animated ? <><AnimatedCounter target={10000} />+</> : stat.value}
-                      </span>
-                      <span className="text-sm text-gray-500 dark:text-gray-400">{stat.label}</span>
-                    </div>
-                  ))}
+                <div className="mt-10 glass-card rounded-2xl px-6 py-5 shadow-lg">
+                  <div className="flex flex-wrap gap-x-8 gap-y-3 justify-center sm:justify-start">
+                    {[
+                      { value: '10,000+', label: 'Stores', animated: true },
+                      { value: '15', label: 'Business Types', animated: false },
+                      { value: '₹99', label: '/month', animated: false },
+                      { value: '14-Day', label: 'Free Trial', animated: false },
+                    ].map((stat) => (
+                      <div key={stat.label} className="flex items-baseline gap-1.5">
+                        <span className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
+                          {stat.animated ? <><AnimatedCounter target={10000} />+</> : stat.value}
+                        </span>
+                        <span className="text-sm text-gray-500 dark:text-gray-400">{stat.label}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </FadeIn>
 
@@ -907,15 +1009,47 @@ export default function LandingPage() {
                     </div>
                   </div>
                 </div>
+
+                {/* Floating Live Badges around mockup */}
+                <div className="absolute -top-4 -left-4 float-badge-1 z-20">
+                  <div className="glass-card rounded-xl px-3 py-2 shadow-lg flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-emerald-500 live-dot" />
+                    <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-300 whitespace-nowrap">Live Sales ₹24,580</span>
+                    <TrendingUp className="w-3 h-3 text-emerald-500" />
+                  </div>
+                </div>
+                <div className="absolute -top-2 -right-6 float-badge-2 z-20">
+                  <div className="glass-card rounded-xl px-3 py-2 shadow-lg flex items-center gap-2">
+                    <Activity className="w-3 h-3 text-sky-500" />
+                    <span className="text-xs font-semibold text-sky-700 dark:text-sky-300 whitespace-nowrap">142 Orders Today</span>
+                  </div>
+                </div>
+                <div className="absolute -bottom-3 -right-4 float-badge-3 z-20">
+                  <div className="glass-card rounded-xl px-3 py-2 shadow-lg flex items-center gap-2">
+                    <BadgeCheck className="w-3 h-3 text-amber-500" />
+                    <span className="text-xs font-semibold text-amber-700 dark:text-amber-300 whitespace-nowrap">₹99/mo · No Lock-in</span>
+                  </div>
+                </div>
               </div>
             </FadeIn>
           </div>
         </div>
       </section>
 
+      {/* Section Divider */}
+      <div className="section-divider" />
+
       {/* ═══════════════════ NICHES SECTION ═══════════════════ */}
-      <section id="niches" className="py-20 sm:py-28 bg-gray-50 dark:bg-gray-900/50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section id="niches" className="py-20 sm:py-28 bg-gray-50 dark:bg-gray-900/50 relative overflow-hidden">
+        {/* Background pattern */}
+        <div className="absolute inset-0 opacity-[0.015] dark:opacity-[0.03]" style={{
+          backgroundImage: 'radial-gradient(circle, #10b981 1px, transparent 1px)',
+          backgroundSize: '24px 24px',
+        }} />
+        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-emerald-200/20 dark:bg-emerald-800/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4" />
+        <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-teal-200/20 dark:bg-teal-800/5 rounded-full blur-3xl translate-y-1/2 -translate-x-1/4" />
+
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <FadeIn>
             <div className="text-center max-w-2xl mx-auto">
               <Badge className="mb-4 bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 border-0 rounded-full px-3 py-1">
@@ -938,13 +1072,13 @@ export default function LandingPage() {
               const isPopular = niche.slug === 'restaurant' || niche.slug === 'grocery';
               return (
                 <StaggerItem key={niche.slug}>
-                  <Card className={`group hover:shadow-xl hover:-translate-y-2 hover:scale-[1.02] transition-all duration-300 cursor-pointer border-gray-200 dark:border-gray-800 h-full border-t-4 ${getNicheBorderTop(niche.color)} niche-shimmer gradient-border relative`}>
+                  <Card className={`group hover:shadow-xl hover:-translate-y-2 hover:scale-[1.02] transition-all duration-300 cursor-pointer border-gray-200 dark:border-gray-800 h-full border-t-4 ${getNicheBorderTop(niche.color)} ${getNicheGlowShadow(niche.color)} niche-shimmer gradient-border relative`}>
                     {/* Popular Badge */}
                     {isPopular && (
-                      <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-20">
+                      <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-20 popular-ribbon-bounce">
                         <Badge className="bg-gradient-to-r from-amber-500 to-orange-500 text-white border-0 rounded-full px-2.5 py-0.5 text-[10px] font-bold shadow-md shadow-amber-500/25">
                           <Sparkles className="w-2.5 h-2.5 mr-0.5" />
-                          Popular
+                          Most Popular
                         </Badge>
                       </div>
                     )}
@@ -957,7 +1091,7 @@ export default function LandingPage() {
                         {niche.icon}
                       </motion.div>
                       <h3 className="font-semibold text-sm leading-tight">{niche.name}</h3>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 leading-snug">{niche.description}</p>
+                      <p className="text-[13px] text-gray-500 dark:text-gray-400 leading-snug">{niche.description}</p>
                     </CardContent>
                   </Card>
                 </StaggerItem>
@@ -966,6 +1100,9 @@ export default function LandingPage() {
           </StaggerContainer>
         </div>
       </section>
+
+      {/* Section Divider */}
+      <div className="section-divider" />
 
       {/* ═══════════════════ FEATURES SECTION ═══════════════════ */}
       <section id="features" className="py-20 sm:py-28">
@@ -991,6 +1128,9 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+
+      {/* Section Divider */}
+      <div className="section-divider" />
 
       {/* ═══════════════════ HOW IT WORKS ═══════════════════ */}
       <section className="py-20 sm:py-28 bg-gray-50 dark:bg-gray-900/50">
@@ -1083,6 +1223,9 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Section Divider */}
+      <div className="section-divider" />
+
       {/* ═══════════════════ PRICING SECTION ═══════════════════ */}
       <section id="pricing" className="py-20 sm:py-28">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -1106,15 +1249,27 @@ export default function LandingPage() {
               {PRICING_TIERS.map((tier) => (
                 <Card
                   key={tier.name}
-                  className={`relative transition-all duration-300 hover:shadow-xl ${
+                  className={`relative transition-all duration-300 ${
                     tier.popular
-                      ? 'border-2 border-emerald-500 dark:border-emerald-600 shadow-xl shadow-emerald-500/10 pricing-glow md:scale-105 md:z-10'
-                      : 'border-gray-200 dark:border-gray-800 hover:-translate-y-1'
+                      ? 'border-0 shadow-xl pricing-glow md:scale-105 md:z-10'
+                      : 'border-gray-200 dark:border-gray-800 hover:shadow-xl hover:-translate-y-1'
                   }`}
+                  style={tier.popular ? {
+                    background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.05), rgba(20, 184, 166, 0.08))',
+                  } : undefined}
                 >
+                  {/* Gradient border wrapper for popular card */}
+                  {tier.popular && (
+                    <div className="absolute -inset-[2px] rounded-xl bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 -z-10 opacity-60" />
+                  )}
+                  {/* Another background layer */}
+                  {tier.popular && (
+                    <div className="absolute inset-0 rounded-xl bg-white dark:bg-gray-900" />
+                  )}
+
                   {/* Most Popular Ribbon */}
                   {tier.popular && (
-                    <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-20">
+                    <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-20 popular-ribbon-bounce">
                       <div className="relative">
                         <Badge className="bg-gradient-to-r from-emerald-600 to-teal-500 text-white border-0 rounded-full px-5 py-1.5 text-sm font-bold shadow-lg shadow-emerald-600/30 whitespace-nowrap">
                           <Sparkles className="w-3.5 h-3.5 mr-1" />
@@ -1124,25 +1279,34 @@ export default function LandingPage() {
                     </div>
                   )}
 
-                  <CardHeader className={`text-center pb-2 ${tier.popular ? 'pt-8' : 'pt-6'}`}>
+                  <CardHeader className={`text-center pb-2 ${tier.popular ? 'pt-8 relative z-10' : 'pt-6'}`}>
                     <CardTitle className="text-xl font-bold">{tier.name}</CardTitle>
                     <CardDescription>{tier.description}</CardDescription>
                     <div className="mt-4">
                       <div className="flex items-baseline justify-center gap-1">
-                        {tier.price > 0 && <IndianRupee className={`w-6 h-6 ${tier.popular ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-600 dark:text-gray-400'}`} />}
-                        <span className={`${tier.popular ? 'text-5xl' : 'text-4xl'} font-extrabold`}>{tier.price > 0 ? tier.price : 'Free'}</span>
+                        {tier.price > 0 && <IndianRupee className={`w-7 h-7 ${tier.popular ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-600 dark:text-gray-400'}`} />}
+                        <span className={`${tier.popular ? 'text-6xl' : 'text-5xl'} font-extrabold tracking-tight`}>{tier.price > 0 ? tier.price : 'Free'}</span>
                         {tier.price > 0 && <span className="text-gray-500 dark:text-gray-400 text-lg">{tier.period}</span>}
                         {tier.price === 0 && <span className="text-gray-500 dark:text-gray-400 text-lg ml-1">{tier.period}</span>}
                       </div>
                       {tier.popular && (
-                        <Badge className="mt-3 bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 border-0 rounded-full">
-                          14-day free trial
-                        </Badge>
+                        <div className="mt-3 flex items-center justify-center gap-2">
+                          <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 border-0 rounded-full">
+                            14-day free trial
+                          </Badge>
+                          <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 border-0 rounded-full text-[11px]">
+                            <Zap className="w-3 h-3 mr-0.5" />
+                            Best Value
+                          </Badge>
+                        </div>
+                      )}
+                      {!tier.popular && tier.price > 0 && (
+                        <p className="mt-2 text-xs text-gray-400 dark:text-gray-500">Billed annually: ₹{tier.name === 'Enterprise' ? '4,990' : '990'}/yr <span className="text-emerald-500 font-medium">Save 17%</span></p>
                       )}
                     </div>
                   </CardHeader>
 
-                  <CardContent className="pb-2">
+                  <CardContent className={`pb-2 ${tier.popular ? 'relative z-10' : ''}`}>
                     <div className="space-y-3">
                       {tier.features.map((feature) => (
                         <div key={feature.name} className="flex items-start gap-3">
@@ -1163,7 +1327,7 @@ export default function LandingPage() {
                     </div>
                   </CardContent>
 
-                  <CardFooter className="flex flex-col gap-3 pt-4 pb-6">
+                  <CardFooter className={`flex flex-col gap-3 pt-4 pb-6 ${tier.popular ? 'relative z-10' : ''}`}>
                     <Button
                       size="lg"
                       className={`w-full rounded-full h-12 text-base ${
@@ -1216,9 +1380,15 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Section Divider */}
+      <div className="section-divider" />
+
       {/* ═══════════════════ TESTIMONIALS ═══════════════════ */}
-      <section className="py-20 sm:py-28 bg-gray-50 dark:bg-gray-900/50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="py-20 sm:py-28 bg-gray-50 dark:bg-gray-900/50 relative overflow-hidden">
+        <div className="absolute top-0 left-0 w-[400px] h-[400px] bg-emerald-100/30 dark:bg-emerald-900/10 rounded-full blur-3xl -translate-x-1/4 -translate-y-1/4" />
+        <div className="absolute bottom-0 right-0 w-[350px] h-[350px] bg-teal-100/30 dark:bg-teal-900/10 rounded-full blur-3xl translate-x-1/4 translate-y-1/4" />
+
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <FadeIn>
             <div className="text-center max-w-2xl mx-auto">
               <Badge className="mb-4 bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 border-0 rounded-full px-3 py-1">
@@ -1234,45 +1404,56 @@ export default function LandingPage() {
           </FadeIn>
 
           <div className="mt-14 grid md:grid-cols-3 gap-6">
-            {TESTIMONIALS.map((t, i) => (
-              <FadeIn key={t.name} delay={i * 0.1}>
-                <TiltCard className="h-full">
-                  <Card className="h-full border-gray-200 dark:border-gray-800 hover:shadow-xl transition-shadow duration-300 overflow-hidden relative">
-                    {/* Subtle gradient top border */}
-                    <div className={`h-1 bg-gradient-to-r ${t.color}`} />
-                    <CardContent className="p-6">
-                      {/* Star Ratings */}
-                      <div className="flex gap-0.5 mb-3">
-                        {Array.from({ length: t.rating }).map((_, i) => (
-                          <Star key={i} className="w-4 h-4 fill-amber-400 text-amber-400" />
-                        ))}
-                        {Array.from({ length: 5 - t.rating }).map((_, i) => (
-                          <Star key={`e-${i}`} className="w-4 h-4 text-gray-300 dark:text-gray-600" />
-                        ))}
+            {TESTIMONIALS.map((t, i) => {
+              const BusinessIcon = t.businessIcon;
+              return (
+                <FadeIn key={t.name} delay={i * 0.1}>
+                  <TiltCard className="h-full">
+                    <Card className="h-full border-gray-200 dark:border-gray-800 hover:shadow-xl transition-shadow duration-300 overflow-hidden relative glass-card">
+                      {/* Decorative quote mark */}
+                      <div className="absolute top-3 right-4 text-6xl font-serif text-emerald-500/10 dark:text-emerald-400/10 leading-none select-none pointer-events-none">
+                        &ldquo;
                       </div>
-                      <p className="text-gray-700 dark:text-gray-300 leading-relaxed text-sm mb-6">
-                        &ldquo;{t.quote}&rdquo;
-                      </p>
-                      <div className="flex items-center gap-3">
-                        {/* Avatar with initials */}
-                        <div className={`w-11 h-11 rounded-full bg-gradient-to-br ${t.color} flex items-center justify-center text-white font-bold text-sm shadow-md`}>
-                          {t.initials}
+                      {/* Subtle gradient top border */}
+                      <div className={`h-1.5 bg-gradient-to-r ${t.color}`} />
+                      <CardContent className="p-6">
+                        {/* Star Ratings */}
+                        <div className="flex gap-0.5 mb-3">
+                          {Array.from({ length: t.rating }).map((_, i) => (
+                            <Star key={i} className="w-4 h-4 fill-amber-400 text-amber-400" />
+                          ))}
+                          {Array.from({ length: 5 - t.rating }).map((_, i) => (
+                            <Star key={`e-${i}`} className="w-4 h-4 text-gray-300 dark:text-gray-600" />
+                          ))}
                         </div>
-                        <div>
-                          <p className="font-semibold text-sm">{t.name}</p>
-                          <p className="text-xs text-gray-500 dark:text-gray-400">
-                            {t.business} · {t.city}
-                          </p>
+                        <p className="text-gray-700 dark:text-gray-300 leading-relaxed text-sm mb-6">
+                          &ldquo;{t.quote}&rdquo;
+                        </p>
+                        <div className="flex items-center gap-3">
+                          {/* Avatar with initials */}
+                          <div className={`w-11 h-11 rounded-full bg-gradient-to-br ${t.color} flex items-center justify-center text-white font-bold text-sm shadow-md`}>
+                            {t.initials}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold text-sm">{t.name}</p>
+                            <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
+                              <BusinessIcon className="w-3 h-3 shrink-0" />
+                              <span className="truncate">{t.business} · {t.city}</span>
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </TiltCard>
-              </FadeIn>
-            ))}
+                      </CardContent>
+                    </Card>
+                  </TiltCard>
+                </FadeIn>
+              );
+            })}
           </div>
         </div>
       </section>
+
+      {/* Section Divider */}
+      <div className="section-divider" />
 
       {/* ═══════════════════ CTA SECTION ═══════════════════ */}
       <section className="py-20 sm:py-28 relative overflow-hidden">
@@ -1321,8 +1502,30 @@ export default function LandingPage() {
       {/* ═══════════════════ FOOTER ═══════════════════ */}
       <footer id="contact" className="bg-gray-900 dark:bg-gray-950 text-gray-400 pt-16 pb-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Trust Badge Banner */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pb-10 border-b border-gray-800 mb-10">
+            <div className="flex items-center gap-2.5 bg-gray-800/60 rounded-full px-5 py-2.5">
+              <div className="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center">
+                <Shield className="w-4 h-4 text-emerald-400" />
+              </div>
+              <div>
+                <p className="text-white text-sm font-semibold">Trusted by 10,000+ Stores</p>
+                <p className="text-[11px] text-gray-500">SOC 2 Compliant · Data Encrypted</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2.5 bg-gray-800/60 rounded-full px-5 py-2.5">
+              <div className="w-8 h-8 rounded-full bg-amber-500/20 flex items-center justify-center">
+                <BadgeCheck className="w-4 h-4 text-amber-400" />
+              </div>
+              <div>
+                <p className="text-white text-sm font-semibold">Made in India 🇮🇳</p>
+                <p className="text-[11px] text-gray-500">GST Ready · UPI Payments</p>
+              </div>
+            </div>
+          </div>
+
           <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-10 pb-12 border-b border-gray-800">
-            {/* Brand */}
+            {/* Brand + Newsletter */}
             <div className="sm:col-span-2 lg:col-span-2">
               <div className="flex items-center gap-2 mb-4">
                 <div className="w-8 h-8 rounded-lg bg-emerald-500 flex items-center justify-center">
@@ -1350,6 +1553,24 @@ export default function LandingPage() {
                     <Icon className="w-4 h-4" />
                   </a>
                 ))}
+              </div>
+              {/* Newsletter Signup */}
+              <div className="mt-6">
+                <p className="text-sm font-medium text-white mb-2">Stay updated</p>
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                    <input
+                      type="email"
+                      placeholder="Enter your email"
+                      className="w-full pl-10 pr-3 py-2.5 rounded-lg bg-gray-800 border border-gray-700 text-sm text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all"
+                    />
+                  </div>
+                  <Button className="rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white shrink-0 px-4">
+                    Subscribe
+                  </Button>
+                </div>
+                <p className="text-[11px] text-gray-600 mt-1.5">No spam. Unsubscribe anytime.</p>
               </div>
             </div>
 

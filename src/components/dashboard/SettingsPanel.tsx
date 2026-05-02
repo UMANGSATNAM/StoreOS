@@ -44,6 +44,12 @@ import {
   RefreshCw,
   Shield,
   Globe,
+  Clock,
+  ImagePlus,
+  Type,
+  Code,
+  Archive,
+  CalendarDays,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslation } from '@/lib/i18n';
@@ -229,6 +235,25 @@ export default function SettingsPanel() {
   // Branding
   const [primaryColor, setPrimaryColor] = useState('#10b981');
   const [accentColor, setAccentColor] = useState('#059669');
+
+  // Branding - font & CSS
+  const [selectedFont, setSelectedFont] = useState<'classic' | 'modern' | 'minimal'>('modern');
+  const [customCSS, setCustomCSS] = useState('');
+
+  // Operating hours
+  const [operatingHours, setOperatingHours] = useState<Record<string, { open: string; close: string; closed: boolean }>>({
+    Monday: { open: '09:00', close: '21:00', closed: false },
+    Tuesday: { open: '09:00', close: '21:00', closed: false },
+    Wednesday: { open: '09:00', close: '21:00', closed: false },
+    Thursday: { open: '09:00', close: '21:00', closed: false },
+    Friday: { open: '09:00', close: '21:00', closed: false },
+    Saturday: { open: '09:00', close: '22:00', closed: false },
+    Sunday: { open: '10:00', close: '20:00', closed: false },
+  });
+
+  // Backup
+  const [lastBackupDate, setLastBackupDate] = useState<string>('');
+  const [backingUp, setBackingUp] = useState(false);
 
   // Data management
   const [resetDialogOpen, setResetDialogOpen] = useState(false);
@@ -453,92 +478,232 @@ export default function SettingsPanel() {
 
         {/* Store Profile */}
         <TabsContent value="profile">
-          <Card>
-            <CardHeader>
-              <CardTitle>Store Profile</CardTitle>
-              <CardDescription>Basic information about your store</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid sm:grid-cols-2 gap-4">
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Store Profile</CardTitle>
+                <CardDescription>Basic information about your store</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Logo Upload Area */}
                 <div className="space-y-2">
-                  <Label htmlFor="storeName">Store Name</Label>
-                  <div className="relative">
-                    <Store className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                    <Input id="storeName" value={storeName} onChange={(e) => setStoreName(e.target.value)} className="pl-9" placeholder="My Store" />
+                  <Label>Store Logo</Label>
+                  <div className="flex items-start gap-4">
+                    <div className="w-24 h-24 rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-600 flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-800 shrink-0 overflow-hidden">
+                      {logo ? (
+                        <img src={logo} alt="Store logo" className="w-full h-full object-cover" />
+                      ) : (
+                        <>
+                          <ImagePlus className="w-8 h-8 text-gray-400 mb-1" />
+                          <span className="text-[10px] text-gray-400">No logo</span>
+                        </>
+                      )}
+                    </div>
+                    <div className="flex-1 space-y-2">
+                      <Button variant="outline" size="sm" onClick={() => {
+                        const url = prompt('Enter logo URL:');
+                        if (url) setLogo(url);
+                      }}>
+                        <Upload className="w-4 h-4 mr-2" />
+                        Upload Logo
+                      </Button>
+                      {logo && (
+                        <Button variant="ghost" size="sm" onClick={() => setLogo('')} className="text-red-500 hover:text-red-600">
+                          <Trash2 className="w-3 h-3 mr-1" />
+                          Remove
+                        </Button>
+                      )}
+                      <p className="text-xs text-gray-500">Recommended: 200×200px, PNG or JPG</p>
+                    </div>
                   </div>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="ownerName">Owner Name</Label>
-                  <div className="relative">
-                    <Zap className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                    <Input id="ownerName" value={ownerName} onChange={(e) => setOwnerName(e.target.value)} className="pl-9" placeholder="Owner Name" />
-                  </div>
-                </div>
-              </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="address">Address</Label>
-                <div className="relative">
-                  <MapPin className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
-                  <Textarea id="address" value={address} onChange={(e) => setAddress(e.target.value)} className="pl-9 min-h-[80px]" placeholder="Store address" />
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="storeName">Store Name</Label>
+                    <div className="relative">
+                      <Store className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                      <Input id="storeName" value={storeName} onChange={(e) => setStoreName(e.target.value)} className="pl-9" placeholder="My Store" />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="ownerName">Owner Name</Label>
+                    <div className="relative">
+                      <Zap className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                      <Input id="ownerName" value={ownerName} onChange={(e) => setOwnerName(e.target.value)} className="pl-9" placeholder="Owner Name" />
+                    </div>
+                  </div>
                 </div>
-              </div>
 
-              <div className="grid sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="city">City</Label>
-                  <Input id="city" value={city} onChange={(e) => setCity(e.target.value)} placeholder="City" />
+                  <Label htmlFor="address">Address</Label>
+                  <div className="relative">
+                    <MapPin className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
+                    <Textarea id="address" value={address} onChange={(e) => setAddress(e.target.value)} className="pl-9 min-h-[80px]" placeholder="Store address" />
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="state">State</Label>
-                  <Select value={state} onValueChange={setState}>
-                    <SelectTrigger id="state">
-                      <SelectValue placeholder="Select state" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {indianStates.map((s) => (
-                        <SelectItem key={s} value={s}>{s}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
 
-              <div className="grid sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="gst">GST Number</Label>
-                  <div className="relative">
-                    <FileText className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                    <Input id="gst" value={gstNumber} onChange={(e) => setGstNumber(e.target.value)} className="pl-9" placeholder="22AAAAA0000A1Z5" />
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="city">City</Label>
+                    <Input id="city" value={city} onChange={(e) => setCity(e.target.value)} placeholder="City" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="state">State</Label>
+                    <Select value={state} onValueChange={setState}>
+                      <SelectTrigger id="state">
+                        <SelectValue placeholder="Select state" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {indianStates.map((s) => (
+                          <SelectItem key={s} value={s}>{s}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="logo">Logo URL</Label>
-                  <div className="relative">
-                    <Camera className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                    <Input id="logo" value={logo} onChange={(e) => setLogo(e.target.value)} className="pl-9" placeholder="https://..." />
-                  </div>
-                </div>
-              </div>
 
-              <div className="grid sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="phone">Phone</Label>
-                  <div className="relative">
-                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                    <Input id="phone" value={storePhone} onChange={(e) => setStorePhone(e.target.value)} className="pl-9" placeholder="9876543210" />
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="gst">GST Number</Label>
+                    <div className="relative">
+                      <FileText className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                      <Input id="gst" value={gstNumber} onChange={(e) => setGstNumber(e.target.value)} className="pl-9" placeholder="22AAAAA0000A1Z5" />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="phone">Phone</Label>
+                    <div className="relative">
+                      <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                      <Input id="phone" value={storePhone} onChange={(e) => setStorePhone(e.target.value)} className="pl-9" placeholder="9876543210" />
+                    </div>
                   </div>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                    <Input id="email" type="email" value={storeEmail} onChange={(e) => setStoreEmail(e.target.value)} className="pl-9" placeholder="store@example.com" />
+
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email</Label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                      <Input id="email" type="email" value={storeEmail} onChange={(e) => setStoreEmail(e.target.value)} className="pl-9" placeholder="store@example.com" />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="logoUrl">Logo URL</Label>
+                    <div className="relative">
+                      <Camera className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                      <Input id="logoUrl" value={logo} onChange={(e) => setLogo(e.target.value)} className="pl-9" placeholder="https://..." />
+                    </div>
                   </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+
+            {/* Operating Hours */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Clock className="w-5 h-5 text-emerald-600" />
+                  Operating Hours
+                </CardTitle>
+                <CardDescription>Set your store opening and closing times</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {Object.entries(operatingHours).map(([day, hours]) => (
+                  <div key={day} className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 p-3 rounded-lg bg-gray-50 dark:bg-gray-800">
+                    <div className="flex items-center gap-3 sm:w-36 shrink-0">
+                      <Switch
+                        checked={!hours.closed}
+                        onCheckedChange={(checked) =>
+                          setOperatingHours((prev) => ({
+                            ...prev,
+                            [day]: { ...prev[day], closed: !checked },
+                          }))
+                        }
+                        className="data-[state=checked]:bg-emerald-600"
+                      />
+                      <span className={`text-sm font-medium ${hours.closed ? 'text-gray-400 line-through' : ''}`}>{day}</span>
+                    </div>
+                    {!hours.closed ? (
+                      <div className="flex items-center gap-2">
+                        <Input
+                          type="time"
+                          value={hours.open}
+                          onChange={(e) =>
+                            setOperatingHours((prev) => ({
+                              ...prev,
+                              [day]: { ...prev[day], open: e.target.value },
+                            }))
+                          }
+                          className="w-32 text-sm"
+                        />
+                        <span className="text-gray-400 text-sm">to</span>
+                        <Input
+                          type="time"
+                          value={hours.close}
+                          onChange={(e) =>
+                            setOperatingHours((prev) => ({
+                              ...prev,
+                              [day]: { ...prev[day], close: e.target.value },
+                            }))
+                          }
+                          className="w-32 text-sm"
+                        />
+                      </div>
+                    ) : (
+                      <span className="text-sm text-gray-400 italic">Closed</span>
+                    )}
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+
+            {/* Receipt Preview */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Receipt className="w-5 h-5 text-emerald-600" />
+                  Receipt Name Preview
+                </CardTitle>
+                <CardDescription>See how your store name appears on receipts</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="border border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 bg-white dark:bg-gray-900 max-w-xs mx-auto">
+                  <div className="text-center space-y-2">
+                    {logo && (
+                      <div className="w-12 h-12 mx-auto rounded-lg overflow-hidden">
+                        <img src={logo} alt="Logo" className="w-full h-full object-cover" />
+                      </div>
+                    )}
+                    {!logo && (
+                      <div className="w-12 h-12 mx-auto bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center">
+                        <Store className="w-6 h-6 text-gray-400" />
+                      </div>
+                    )}
+                    <p className="font-bold text-lg">{storeName || 'Store Name'}</p>
+                    {address && <p className="text-xs text-gray-500">{address}</p>}
+                    {city && <p className="text-xs text-gray-500">{city}{state ? `, ${state}` : ''}</p>}
+                    {storePhone && <p className="text-xs text-gray-500">Ph: {storePhone}</p>}
+                    {gstNumber && <p className="text-xs text-gray-400">GSTIN: {gstNumber}</p>}
+                    <Separator />
+                    <div className="text-xs text-left space-y-1 text-gray-500">
+                      <p>─────────────────────────────</p>
+                      <p>Receipt #001</p>
+                      <p>Date: {new Date().toLocaleDateString('en-IN')}</p>
+                      <p>─────────────────────────────</p>
+                      <p>Item 1 × 2 &nbsp;&nbsp;&nbsp; ₹200</p>
+                      <p>Item 2 × 1 &nbsp;&nbsp;&nbsp; ₹150</p>
+                      <p>─────────────────────────────</p>
+                    </div>
+                    <p className="text-sm font-bold">Total: ₹350</p>
+                    <Separator />
+                    <p className="text-[10px] text-gray-400">Thank you! Visit again! 🙏</p>
+                    <p className="text-[10px] text-gray-400">Powered by StoreOS</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
 
         {/* Tax Configuration */}
@@ -764,81 +929,236 @@ export default function SettingsPanel() {
 
         {/* Branding */}
         <TabsContent value="branding">
-          <Card>
-            <CardHeader>
-              <CardTitle>Branding & Theme</CardTitle>
-              <CardDescription>Customize your store appearance</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="grid sm:grid-cols-2 gap-6">
-                <div className="space-y-3">
-                  <Label>Primary Color</Label>
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Palette className="w-5 h-5 text-emerald-600" />
+                  Branding & Theme
+                </CardTitle>
+                <CardDescription>Customize your store appearance</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Color Picker Grid */}
+                <div>
+                  <Label className="text-sm font-medium mb-3 block">Primary Brand Color</Label>
+                  <div className="grid grid-cols-8 sm:grid-cols-12 gap-2 mb-3">
+                    {[
+                      '#10b981', '#059669', '#047857', '#f97316', '#ea580c', '#c2410c',
+                      '#8b5cf6', '#7c3aed', '#6d28d9', '#0ea5e9', '#0284c7', '#0369a1',
+                      '#f43f5e', '#e11d48', '#be123c', '#f59e0b', '#d97706', '#b45309',
+                      '#84cc16', '#65a30d', '#4d7c0f', '#64748b', '#475569', '#334155',
+                      '#ec4899', '#db2777', '#be185d', '#14b8a6', '#0d9488', '#0f766e',
+                    ].map((color) => (
+                      <button
+                        key={color}
+                        onClick={() => setPrimaryColor(color)}
+                        className={`w-8 h-8 rounded-lg border-2 transition-all hover:scale-110 ${
+                          primaryColor === color
+                            ? 'border-gray-900 dark:border-white scale-110 shadow-md'
+                            : 'border-transparent'
+                        }`}
+                        style={{ backgroundColor: color }}
+                        title={color}
+                      />
+                    ))}
+                  </div>
                   <div className="flex items-center gap-3">
-                    <input
-                      type="color"
-                      value={primaryColor}
-                      onChange={(e) => setPrimaryColor(e.target.value)}
-                      className="w-12 h-12 rounded-lg border-2 border-gray-200 dark:border-gray-700 cursor-pointer"
+                    <div
+                      className="w-12 h-12 rounded-lg border border-gray-200 dark:border-gray-700 shrink-0"
+                      style={{ backgroundColor: primaryColor }}
                     />
                     <Input
                       value={primaryColor}
                       onChange={(e) => setPrimaryColor(e.target.value)}
-                      className="flex-1"
+                      className="flex-1 max-w-[180px]"
                       placeholder="#10b981"
                     />
+                    <input
+                      type="color"
+                      value={primaryColor}
+                      onChange={(e) => setPrimaryColor(e.target.value)}
+                      className="w-10 h-10 rounded-lg border-2 border-gray-200 dark:border-gray-700 cursor-pointer"
+                    />
                   </div>
-                  <div className="w-full h-16 rounded-lg" style={{ backgroundColor: primaryColor }} />
                 </div>
 
-                <div className="space-y-3">
-                  <Label>Accent Color</Label>
+                <div>
+                  <Label className="text-sm font-medium mb-3 block">Accent Color</Label>
                   <div className="flex items-center gap-3">
+                    <div
+                      className="w-12 h-12 rounded-lg border border-gray-200 dark:border-gray-700 shrink-0"
+                      style={{ backgroundColor: accentColor }}
+                    />
+                    <Input
+                      value={accentColor}
+                      onChange={(e) => setAccentColor(e.target.value)}
+                      className="flex-1 max-w-[180px]"
+                      placeholder="#059669"
+                    />
                     <input
                       type="color"
                       value={accentColor}
                       onChange={(e) => setAccentColor(e.target.value)}
-                      className="w-12 h-12 rounded-lg border-2 border-gray-200 dark:border-gray-700 cursor-pointer"
+                      className="w-10 h-10 rounded-lg border-2 border-gray-200 dark:border-gray-700 cursor-pointer"
                     />
                   </div>
-                  <div className="w-full h-16 rounded-lg" style={{ backgroundColor: accentColor }} />
                 </div>
-              </div>
 
-              <Separator />
+                <Separator />
 
-              <div>
-                <p className="font-medium mb-3">Quick Themes</p>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  {[
-                    { name: 'Emerald', primary: '#10b981', accent: '#059669' },
-                    { name: 'Orange', primary: '#f97316', accent: '#ea580c' },
-                    { name: 'Violet', primary: '#8b5cf6', accent: '#7c3aed' },
-                    { name: 'Sky', primary: '#0ea5e9', accent: '#0284c7' },
-                    { name: 'Rose', primary: '#f43f5e', accent: '#e11d48' },
-                    { name: 'Amber', primary: '#f59e0b', accent: '#d97706' },
-                    { name: 'Slate', primary: '#64748b', accent: '#475569' },
-                    { name: 'Lime', primary: '#84cc16', accent: '#65a30d' },
-                  ].map((theme) => (
-                    <button
-                      key={theme.name}
-                      onClick={() => {
-                        setPrimaryColor(theme.primary);
-                        setAccentColor(theme.accent);
-                        toast.success(`${theme.name} theme applied`);
-                      }}
-                      className="p-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 transition-all text-center"
-                    >
-                      <div className="flex gap-1 justify-center mb-2">
-                        <div className="w-6 h-6 rounded-full" style={{ backgroundColor: theme.primary }} />
-                        <div className="w-6 h-6 rounded-full" style={{ backgroundColor: theme.accent }} />
+                {/* Quick Themes */}
+                <div>
+                  <p className="font-medium mb-3">Quick Themes</p>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    {[
+                      { name: 'Emerald', primary: '#10b981', accent: '#059669' },
+                      { name: 'Orange', primary: '#f97316', accent: '#ea580c' },
+                      { name: 'Violet', primary: '#8b5cf6', accent: '#7c3aed' },
+                      { name: 'Sky', primary: '#0ea5e9', accent: '#0284c7' },
+                      { name: 'Rose', primary: '#f43f5e', accent: '#e11d48' },
+                      { name: 'Amber', primary: '#f59e0b', accent: '#d97706' },
+                      { name: 'Slate', primary: '#64748b', accent: '#475569' },
+                      { name: 'Lime', primary: '#84cc16', accent: '#65a30d' },
+                    ].map((theme) => (
+                      <button
+                        key={theme.name}
+                        onClick={() => {
+                          setPrimaryColor(theme.primary);
+                          setAccentColor(theme.accent);
+                          toast.success(`${theme.name} theme applied`);
+                        }}
+                        className="p-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 transition-all text-center"
+                      >
+                        <div className="flex gap-1 justify-center mb-2">
+                          <div className="w-6 h-6 rounded-full" style={{ backgroundColor: theme.primary }} />
+                          <div className="w-6 h-6 rounded-full" style={{ backgroundColor: theme.accent }} />
+                        </div>
+                        <span className="text-xs font-medium">{theme.name}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Font Selection */}
+                <div>
+                  <Label className="text-sm font-medium mb-3 block flex items-center gap-2">
+                    <Type className="w-4 h-4" />
+                    Receipt Font Style
+                  </Label>
+                  <div className="grid grid-cols-3 gap-3">
+                    {[
+                      { id: 'classic' as const, name: 'Classic', desc: 'Serif, traditional', fontClass: 'font-serif' },
+                      { id: 'modern' as const, name: 'Modern', desc: 'Clean, sans-serif', fontClass: 'font-sans' },
+                      { id: 'minimal' as const, name: 'Minimal', desc: 'Light, condensed', fontClass: 'font-mono' },
+                    ].map((font) => (
+                      <button
+                        key={font.id}
+                        onClick={() => {
+                          setSelectedFont(font.id);
+                          toast.success(`${font.name} font selected`);
+                        }}
+                        className={`p-4 rounded-lg border-2 text-left transition-all ${
+                          selectedFont === font.id
+                            ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20 shadow-sm'
+                            : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                        }`}
+                      >
+                        <p className={`text-lg font-medium ${font.fontClass}`}>{font.name}</p>
+                        <p className="text-xs text-gray-500 mt-1">{font.desc}</p>
+                        {selectedFont === font.id && (
+                          <Check className="w-4 h-4 text-emerald-600 mt-2" />
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Custom CSS */}
+                <div>
+                  <Label className="text-sm font-medium mb-3 block flex items-center gap-2">
+                    <Code className="w-4 h-4" />
+                    Custom CSS
+                    <Badge variant="secondary" className="text-[10px]">Advanced</Badge>
+                  </Label>
+                  <Textarea
+                    value={customCSS}
+                    onChange={(e) => setCustomCSS(e.target.value)}
+                    placeholder={`/* Custom styles for your store */\n.receipt-header {\n  font-size: 18px;\n  font-weight: bold;\n}`}
+                    className="min-h-[120px] font-mono text-sm"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Add custom CSS to override default styles. Applies to receipts and invoices.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Live Brand Preview */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Receipt className="w-5 h-5 text-emerald-600" />
+                  Live Brand Preview
+                </CardTitle>
+                <CardDescription>See how your brand colors look on a sample receipt</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="max-w-xs mx-auto rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 shadow-sm">
+                  {/* Header with brand color */}
+                  <div className="p-3 text-center text-white" style={{ backgroundColor: primaryColor }}>
+                    <p className={`text-sm font-bold ${selectedFont === 'classic' ? 'font-serif' : selectedFont === 'minimal' ? 'font-mono' : 'font-sans'}`}>
+                      {storeName || 'Store Name'}
+                    </p>
+                    <p className="text-[10px] opacity-80">Tax Invoice</p>
+                  </div>
+                  {/* Body */}
+                  <div className="p-4 bg-white dark:bg-gray-900 space-y-2 text-xs">
+                    <div className="flex justify-between text-gray-500">
+                      <span>Invoice #INV-001</span>
+                      <span>{new Date().toLocaleDateString('en-IN')}</span>
+                    </div>
+                    <Separator />
+                    <div className="space-y-1">
+                      <div className="flex justify-between">
+                        <span>Butter Chicken × 2</span>
+                        <span>₹640</span>
                       </div>
-                      <span className="text-xs font-medium">{theme.name}</span>
-                    </button>
-                  ))}
+                      <div className="flex justify-between">
+                        <span>Naan × 4</span>
+                        <span>₹200</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Dal Makhani × 1</span>
+                        <span>₹220</span>
+                      </div>
+                    </div>
+                    <Separator />
+                    <div className="flex justify-between text-gray-500">
+                      <span>Subtotal</span>
+                      <span>₹1,060</span>
+                    </div>
+                    <div className="flex justify-between text-gray-500">
+                      <span>GST (5%)</span>
+                      <span>₹53</span>
+                    </div>
+                    <Separator />
+                    <div className="flex justify-between font-bold text-sm">
+                      <span>Total</span>
+                      <span style={{ color: primaryColor }}>₹1,113</span>
+                    </div>
+                    {/* Accent color bar */}
+                    <div className="h-1 rounded-full mt-2" style={{ backgroundColor: accentColor }} />
+                    <p className="text-center text-[10px] text-gray-400 mt-1">Thank you! Visit again! 🙏</p>
+                  </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
 
         {/* Subscription */}
@@ -984,57 +1304,137 @@ export default function SettingsPanel() {
 
         {/* Data Management */}
         <TabsContent value="data">
-          <Card>
-            <CardHeader>
-              <CardTitle>Data Management</CardTitle>
-              <CardDescription>Export, import, and manage your store data</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                <div className="flex items-center gap-3">
-                  <Download className="w-5 h-5 text-emerald-600" />
-                  <div>
-                    <p className="font-medium">Export All Data</p>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Download all store data as JSON</p>
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Database className="w-5 h-5 text-emerald-600" />
+                  Data Management
+                </CardTitle>
+                <CardDescription>Export, import, and manage your store data</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <Download className="w-5 h-5 text-emerald-600" />
+                    <div>
+                      <p className="font-medium">Export All Data</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">Download all store data as JSON</p>
+                    </div>
+                  </div>
+                  <Button onClick={handleExportData} variant="outline" size="sm">
+                    <Download className="w-4 h-4 mr-2" />
+                    Export
+                  </Button>
+                </div>
+
+                <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <Upload className="w-5 h-5 text-sky-600" />
+                    <div>
+                      <p className="font-medium">Import Data</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">Import data from JSON file</p>
+                    </div>
+                  </div>
+                  <Button onClick={() => setImportDialogOpen(true)} variant="outline" size="sm">
+                    <Upload className="w-4 h-4 mr-2" />
+                    Import
+                  </Button>
+                </div>
+
+                <Separator />
+
+                <div className="flex items-center justify-between p-4 bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <Trash2 className="w-5 h-5 text-red-600" />
+                    <div>
+                      <p className="font-medium text-red-700 dark:text-red-400">Reset Store Data</p>
+                      <p className="text-sm text-red-600 dark:text-red-500">Delete all products, orders, and customers</p>
+                    </div>
+                  </div>
+                  <Button onClick={() => setResetDialogOpen(true)} variant="destructive" size="sm">
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Reset
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Backup Section */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Archive className="w-5 h-5 text-emerald-600" />
+                  Backup & Recovery
+                </CardTitle>
+                <CardDescription>Keep your data safe with regular backups</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between p-4 bg-emerald-50 dark:bg-emerald-900/10 border border-emerald-200 dark:border-emerald-800 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <CalendarDays className="w-5 h-5 text-emerald-600" />
+                    <div>
+                      <p className="font-medium">Last Backup</p>
+                      <p className="text-sm text-emerald-600 dark:text-emerald-400">
+                        {lastBackupDate
+                          ? new Date(lastBackupDate).toLocaleString('en-IN', {
+                              dateStyle: 'medium',
+                              timeStyle: 'short',
+                            })
+                          : 'No backup yet'}
+                      </p>
+                    </div>
+                  </div>
+                  <Button
+                    onClick={async () => {
+                      setBackingUp(true);
+                      // Simulate backup
+                      await new Promise((resolve) => setTimeout(resolve, 1500));
+                      setLastBackupDate(new Date().toISOString());
+                      setBackingUp(false);
+                      toast.success('Backup completed successfully');
+                    }}
+                    disabled={backingUp}
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                    size="sm"
+                  >
+                    {backingUp ? (
+                      <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <Archive className="w-4 h-4 mr-2" />
+                    )}
+                    {backingUp ? 'Backing up...' : 'Backup Now'}
+                  </Button>
+                </div>
+
+                <div className="grid sm:grid-cols-3 gap-3">
+                  <div className="p-3 rounded-lg border border-gray-200 dark:border-gray-700 text-center">
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Total Backups</p>
+                    <p className="text-lg font-bold mt-1">{lastBackupDate ? '1' : '0'}</p>
+                  </div>
+                  <div className="p-3 rounded-lg border border-gray-200 dark:border-gray-700 text-center">
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Storage Used</p>
+                    <p className="text-lg font-bold mt-1">{lastBackupDate ? '2.4 MB' : '0 MB'}</p>
+                  </div>
+                  <div className="p-3 rounded-lg border border-gray-200 dark:border-gray-700 text-center">
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Auto Backup</p>
+                    <p className="text-lg font-bold mt-1 text-amber-500">Off</p>
                   </div>
                 </div>
-                <Button onClick={handleExportData} variant="outline" size="sm">
-                  <Download className="w-4 h-4 mr-2" />
-                  Export
-                </Button>
-              </div>
 
-              <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                <div className="flex items-center gap-3">
-                  <Upload className="w-5 h-5 text-sky-600" />
-                  <div>
-                    <p className="font-medium">Import Data</p>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Import data from JSON file</p>
+                <div className="flex items-center justify-between p-3 bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <Shield className="w-4 h-4 text-amber-600" />
+                    <div>
+                      <p className="text-sm font-medium text-amber-700 dark:text-amber-400">Auto Backup</p>
+                      <p className="text-xs text-amber-600 dark:text-amber-500">Daily automatic backups (Pro feature)</p>
+                    </div>
                   </div>
+                  <Badge variant="secondary" className="text-xs">Pro</Badge>
                 </div>
-                <Button onClick={() => setImportDialogOpen(true)} variant="outline" size="sm">
-                  <Upload className="w-4 h-4 mr-2" />
-                  Import
-                </Button>
-              </div>
-
-              <Separator />
-
-              <div className="flex items-center justify-between p-4 bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800 rounded-lg">
-                <div className="flex items-center gap-3">
-                  <Trash2 className="w-5 h-5 text-red-600" />
-                  <div>
-                    <p className="font-medium text-red-700 dark:text-red-400">Reset Store Data</p>
-                    <p className="text-sm text-red-600 dark:text-red-500">Delete all products, orders, and customers</p>
-                  </div>
-                </div>
-                <Button onClick={() => setResetDialogOpen(true)} variant="destructive" size="sm">
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  Reset
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
       </Tabs>
 

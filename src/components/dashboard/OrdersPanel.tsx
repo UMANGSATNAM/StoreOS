@@ -1561,24 +1561,62 @@ export default function OrdersPanel() {
       {/* ─── Enhanced Order Detail Dialog ─── */}
       <Dialog open={detailDialogOpen} onOpenChange={setDetailDialogOpen}>
         <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
+          {selectedOrder && (
+          <>
+          <DialogHeader className="pb-0">
             <DialogTitle className="flex items-center gap-2">
               <ShoppingBag className="h-5 w-5 text-emerald-600" />
-              Order #{selectedOrder?.orderNumber.slice(-8)}
+              Order #{selectedOrder.orderNumber.slice(-8)}
             </DialogTitle>
             <DialogDescription>
-              {selectedOrder && (
-                <span>
-                  {formatDate(selectedOrder.createdAt)} at {formatTime(selectedOrder.createdAt)}
-                </span>
-              )}
+              {formatDate(selectedOrder.createdAt)} at {formatTime(selectedOrder.createdAt)}
             </DialogDescription>
           </DialogHeader>
 
-          {selectedOrder && (
-            <div className="space-y-5">
-              {/* Status + Payment + Type */}
-              <div className="flex items-center gap-2 flex-wrap">
+          <div className="space-y-5">
+            {/* Order Summary Card */}
+              <Card className="border-2 border-emerald-200 dark:border-emerald-800 bg-gradient-to-br from-emerald-50/80 to-white dark:from-emerald-900/20 dark:to-gray-900">
+                <CardContent className="p-5">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1">
+                      <p className="text-3xl font-bold text-emerald-700 dark:text-emerald-400">
+                        {formatCurrency(selectedOrder.totalAmount)}
+                      </p>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        #{selectedOrder.orderNumber.slice(-8)}
+                      </p>
+                    </div>
+                    <div className="text-right space-y-2">
+                      <OrderStatusBadge status={selectedOrder.status} />
+                      <div className="flex items-center gap-1.5 justify-end">
+                        <PaymentMethodBadge method={selectedOrder.paymentMethod} />
+                      </div>
+                      <div className="flex items-center gap-1.5 justify-end">
+                        <OrderTypeBadge type={selectedOrder.type} />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4 mt-3 pt-3 border-t border-emerald-200/50 dark:border-emerald-800/50">
+                    <p className="text-xs text-muted-foreground flex items-center gap-1">
+                      <Clock className="h-3 w-3" />
+                      {formatRelativeTime(selectedOrder.createdAt)}
+                    </p>
+                    <p className="text-xs text-muted-foreground flex items-center gap-1">
+                      <ShoppingBag className="h-3 w-3" />
+                      {selectedOrder.items?.length || 0} items
+                    </p>
+                    {selectedOrder.customer && (
+                      <p className="text-xs text-muted-foreground flex items-center gap-1">
+                        <User className="h-3 w-3" />
+                        {selectedOrder.customer.name}
+                      </p>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Status + Payment + Type (mobile summary) */}
+              <div className="flex items-center gap-2 flex-wrap sm:hidden">
                 <OrderStatusBadge status={selectedOrder.status} />
                 <PaymentMethodBadge method={selectedOrder.paymentMethod} />
                 <OrderTypeBadge type={selectedOrder.type} />
@@ -1761,6 +1799,7 @@ export default function OrdersPanel() {
                 </Card>
               )}
             </div>
+          </>
           )}
 
           {/* Action Buttons */}

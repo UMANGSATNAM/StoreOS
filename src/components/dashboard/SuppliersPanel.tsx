@@ -19,6 +19,13 @@ import {
   XCircle,
   Clock,
   IndianRupee,
+  Star,
+  Building2,
+  StickyNote,
+  Calendar,
+  Package,
+  ShoppingCart,
+  Tag,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -79,6 +86,8 @@ interface Supplier {
   lastOrderDate: string | null;
   totalOrders: number;
   notes: string;
+  category: string;
+  rating: number;
   createdAt: string;
 }
 
@@ -90,6 +99,8 @@ interface SupplierFormData {
   address: string;
   gstNumber: string;
   paymentTerms: string;
+  category: string;
+  rating: number;
   notes: string;
 }
 
@@ -101,6 +112,8 @@ const emptySupplierForm: SupplierFormData = {
   address: '',
   gstNumber: '',
   paymentTerms: 'net30',
+  category: 'raw-materials',
+  rating: 0,
   notes: '',
 };
 
@@ -123,6 +136,8 @@ const MOCK_SUPPLIERS: Supplier[] = [
     lastOrderDate: '2025-03-02T10:30:00.000Z',
     totalOrders: 48,
     notes: 'Primary vegetable supplier. Delivers on Mon/Thu.',
+    category: 'raw-materials',
+    rating: 4,
     createdAt: '2024-06-15T08:00:00.000Z',
   },
   {
@@ -141,6 +156,8 @@ const MOCK_SUPPLIERS: Supplier[] = [
     lastOrderDate: '2025-02-28T14:00:00.000Z',
     totalOrders: 35,
     notes: 'Bulk spice supplier. Good quality turmeric and cumin.',
+    category: 'raw-materials',
+    rating: 5,
     createdAt: '2024-07-20T09:00:00.000Z',
   },
   {
@@ -159,6 +176,8 @@ const MOCK_SUPPLIERS: Supplier[] = [
     lastOrderDate: '2025-03-03T06:00:00.000Z',
     totalOrders: 92,
     notes: 'Daily dairy delivery. Fresh paneer and cream.',
+    category: 'raw-materials',
+    rating: 4,
     createdAt: '2024-05-10T07:30:00.000Z',
   },
   {
@@ -177,6 +196,8 @@ const MOCK_SUPPLIERS: Supplier[] = [
     lastOrderDate: '2025-02-20T11:00:00.000Z',
     totalOrders: 22,
     notes: 'Rice and wheat flour supplier. 50kg bags only.',
+    category: 'raw-materials',
+    rating: 3,
     createdAt: '2024-08-05T10:00:00.000Z',
   },
   {
@@ -195,6 +216,8 @@ const MOCK_SUPPLIERS: Supplier[] = [
     lastOrderDate: '2025-01-15T09:00:00.000Z',
     totalOrders: 14,
     notes: 'Packaging materials. Currently on hold due to quality issues.',
+    category: 'packaging',
+    rating: 2,
     createdAt: '2024-09-12T12:00:00.000Z',
   },
   {
@@ -213,11 +236,69 @@ const MOCK_SUPPLIERS: Supplier[] = [
     lastOrderDate: '2025-03-01T16:00:00.000Z',
     totalOrders: 67,
     notes: 'Cold drinks, juices, and water bottles.',
+    category: 'finished-goods',
+    rating: 4,
     createdAt: '2024-04-22T08:30:00.000Z',
   },
 ];
 
 const PAGE_SIZE = 10;
+
+// ─── Helper: Category info ───
+
+const SUPPLIER_CATEGORIES: Record<string, { label: string; color: string }> = {
+  'raw-materials': { label: 'Raw Materials', color: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400' },
+  'packaging': { label: 'Packaging', color: 'bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-400' },
+  'finished-goods': { label: 'Finished Goods', color: 'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400' },
+  'services': { label: 'Services', color: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' },
+};
+
+// ─── Star Rating Component ───
+
+function StarRating({ rating, onChange, size = 'sm' }: { rating: number; onChange?: (r: number) => void; size?: 'sm' | 'md' | 'lg' }) {
+  const sizeClasses = { sm: 'h-3.5 w-3.5', md: 'h-4.5 w-4.5', lg: 'h-5 w-5' };
+  return (
+    <div className="flex items-center gap-0.5">
+      {[1, 2, 3, 4, 5].map((star) => (
+        <button
+          key={star}
+          type="button"
+          className={`${onChange ? 'cursor-pointer hover:scale-110' : 'cursor-default'} transition-transform`}
+          onClick={() => onChange?.(star)}
+          disabled={!onChange}
+        >
+          <Star
+            className={`${sizeClasses[size]} ${star <= rating ? 'text-amber-400 fill-amber-400' : 'text-gray-300 dark:text-gray-600'}`}
+          />
+        </button>
+      ))}
+    </div>
+  );
+}
+
+// ─── Avatar initials helper ───
+
+function getInitials(name: string) {
+  const parts = name.trim().split(/\s+/);
+  if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  return name.charAt(0).toUpperCase();
+}
+
+function getAvatarGradient(name: string) {
+  const gradients = [
+    'from-emerald-400 to-teal-500',
+    'from-violet-400 to-purple-500',
+    'from-orange-400 to-amber-500',
+    'from-sky-400 to-cyan-500',
+    'from-rose-400 to-pink-500',
+    'from-lime-400 to-green-500',
+  ];
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return gradients[Math.abs(hash) % gradients.length];
+}
 
 // ─── Main Component ───
 
@@ -241,6 +322,10 @@ export default function SuppliersPanel() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [supplierToDelete, setSupplierToDelete] = useState<Supplier | null>(null);
 
+  // Detail dialog
+  const [detailDialogOpen, setDetailDialogOpen] = useState(false);
+  const [detailSupplier, setDetailSupplier] = useState<Supplier | null>(null);
+
   // Form state
   const [editingSupplier, setEditingSupplier] = useState<Supplier | null>(null);
   const [supplierForm, setSupplierForm] = useState<SupplierFormData>(emptySupplierForm);
@@ -250,7 +335,6 @@ export default function SuppliersPanel() {
 
   const fetchSuppliers = useCallback(async () => {
     if (!storeId) {
-      // Use mock data when no store
       setSuppliers(MOCK_SUPPLIERS.map(s => ({ ...s, storeId })));
       setLoading(false);
       return;
@@ -265,15 +349,12 @@ export default function SuppliersPanel() {
         if (data.suppliers && data.suppliers.length > 0) {
           setSuppliers(data.suppliers);
         } else {
-          // Use mock data as fallback
           setSuppliers(MOCK_SUPPLIERS.map(s => ({ ...s, storeId })));
         }
       } else {
-        // Fallback to mock data
         setSuppliers(MOCK_SUPPLIERS.map(s => ({ ...s, storeId })));
       }
     } catch {
-      // Fallback to mock data
       setSuppliers(MOCK_SUPPLIERS.map(s => ({ ...s, storeId })));
     } finally {
       setLoading(false);
@@ -341,9 +422,16 @@ export default function SuppliersPanel() {
       address: supplier.address || '',
       gstNumber: supplier.gstNumber || '',
       paymentTerms: supplier.paymentTerms || 'net30',
+      category: supplier.category || 'raw-materials',
+      rating: supplier.rating || 0,
       notes: supplier.notes || '',
     });
     setSupplierDialogOpen(true);
+  }
+
+  function openSupplierDetail(supplier: Supplier) {
+    setDetailSupplier(supplier);
+    setDetailDialogOpen(true);
   }
 
   async function saveSupplier() {
@@ -352,10 +440,18 @@ export default function SuppliersPanel() {
       return;
     }
 
+    // GST validation
+    if (supplierForm.gstNumber.trim()) {
+      const gstPattern = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
+      if (!gstPattern.test(supplierForm.gstNumber.trim())) {
+        toast.error('Invalid GST number format (e.g., 22AAAAA0000A1Z5)');
+        return;
+      }
+    }
+
     setSaving(true);
     try {
       if (editingSupplier) {
-        // PATCH - update supplier via API
         try {
           const res = await fetch(`/api/suppliers/${editingSupplier.id}`, {
             method: 'PATCH',
@@ -377,7 +473,6 @@ export default function SuppliersPanel() {
         } catch {
           // Fallback to local update
         }
-        // Local fallback
         setSuppliers(prev =>
           prev.map(s =>
             s.id === editingSupplier.id
@@ -390,6 +485,8 @@ export default function SuppliersPanel() {
                   address: supplierForm.address.trim() || null,
                   gstNumber: supplierForm.gstNumber.trim() || null,
                   paymentTerms: supplierForm.paymentTerms,
+                  category: supplierForm.category,
+                  rating: supplierForm.rating,
                   notes: supplierForm.notes.trim(),
                 }
               : s
@@ -398,7 +495,6 @@ export default function SuppliersPanel() {
         toast.success('Supplier updated');
         setSupplierDialogOpen(false);
       } else {
-        // POST - create supplier via API
         try {
           const res = await fetch('/api/suppliers', {
             method: 'POST',
@@ -421,7 +517,6 @@ export default function SuppliersPanel() {
         } catch {
           // Fallback to local create
         }
-        // Local fallback
         const newSupplier: Supplier = {
           id: `sup-${Date.now()}`,
           storeId,
@@ -438,6 +533,8 @@ export default function SuppliersPanel() {
           lastOrderDate: null,
           totalOrders: 0,
           notes: supplierForm.notes.trim(),
+          category: supplierForm.category,
+          rating: supplierForm.rating,
           createdAt: new Date().toISOString(),
         };
         setSuppliers(prev => [...prev, newSupplier]);
@@ -454,7 +551,6 @@ export default function SuppliersPanel() {
   async function deleteSupplier() {
     if (!supplierToDelete) return;
     try {
-      // Try API delete first
       try {
         const res = await fetch(`/api/suppliers/${supplierToDelete.id}`, { method: 'DELETE' });
         if (res.ok) {
@@ -467,7 +563,6 @@ export default function SuppliersPanel() {
       } catch {
         // Fallback to local delete
       }
-      // Local fallback
       setSuppliers(prev => prev.filter(s => s.id !== supplierToDelete.id));
       toast.success('Supplier deleted');
       setDeleteDialogOpen(false);
@@ -499,12 +594,24 @@ export default function SuppliersPanel() {
   function getPaymentTermsLabel(terms: string) {
     const map: Record<string, string> = {
       cod: 'Cash on Delivery',
+      advance: 'Advance Payment',
       net15: 'Net 15',
       net30: 'Net 30',
       net45: 'Net 45',
       net60: 'Net 60',
     };
     return map[terms] || terms;
+  }
+
+  function getCategoryBadge(category: string) {
+    const cat = SUPPLIER_CATEGORIES[category];
+    if (!cat) return null;
+    return (
+      <Badge className={`${cat.color} border-0 text-[10px] h-5`}>
+        <Tag className="h-2.5 w-2.5 mr-0.5" />
+        {cat.label}
+      </Badge>
+    );
   }
 
   // ─── Render ───
@@ -649,17 +756,23 @@ export default function SuppliersPanel() {
                     <TableHead className="text-center hidden md:table-cell">Products</TableHead>
                     <TableHead className="hidden lg:table-cell">Last Order</TableHead>
                     <TableHead className="text-center">Status</TableHead>
+                    <TableHead className="text-center hidden md:table-cell">Category</TableHead>
+                    <TableHead className="text-center hidden md:table-cell">Rating</TableHead>
                     <TableHead className="text-right hidden lg:table-cell">Total Orders</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {paginatedSuppliers.map((supplier) => (
-                    <TableRow key={supplier.id} className="hover:scale-[1.005] transition-transform duration-150">
+                    <TableRow
+                      key={supplier.id}
+                      className="cursor-pointer hover:scale-[1.005] transition-transform duration-150"
+                      onClick={() => openSupplierDetail(supplier)}
+                    >
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <div className="h-8 w-8 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-700 dark:text-emerald-400 text-xs font-bold flex-shrink-0">
-                            {supplier.name.charAt(0).toUpperCase()}
+                          <div className={`h-8 w-8 rounded-lg bg-gradient-to-br ${getAvatarGradient(supplier.name)} flex items-center justify-center text-white text-xs font-bold flex-shrink-0`}>
+                            {getInitials(supplier.name)}
                           </div>
                           <div>
                             <span className="font-medium block">{supplier.name}</span>
@@ -671,8 +784,15 @@ export default function SuppliersPanel() {
                           </div>
                         </div>
                       </TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {supplier.contactPerson || '—'}
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          {supplier.contactPerson && (
+                            <div className="h-6 w-6 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-gray-600 dark:text-gray-400 text-[10px] font-bold flex-shrink-0">
+                              {getInitials(supplier.contactPerson)}
+                            </div>
+                          )}
+                          <span className="text-muted-foreground">{supplier.contactPerson || '—'}</span>
+                        </div>
                       </TableCell>
                       <TableCell className="text-muted-foreground hidden lg:table-cell">
                         {supplier.phone ? (
@@ -706,11 +826,26 @@ export default function SuppliersPanel() {
                           </Badge>
                         )}
                       </TableCell>
+                      <TableCell className="text-center hidden md:table-cell">
+                        {getCategoryBadge(supplier.category)}
+                      </TableCell>
+                      <TableCell className="text-center hidden md:table-cell">
+                        <StarRating rating={supplier.rating} />
+                      </TableCell>
                       <TableCell className="text-right hidden lg:table-cell font-medium">
                         {supplier.totalOrders}
                       </TableCell>
                       <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-1">
+                        <div className="flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={() => openSupplierDetail(supplier)}
+                            title="View Details"
+                          >
+                            <Building2 className="h-4 w-4" />
+                          </Button>
                           <Button
                             variant="ghost"
                             size="icon"
@@ -808,10 +943,14 @@ export default function SuppliersPanel() {
           </div>
         ) : (
           paginatedSuppliers.map((supplier) => (
-            <Card key={supplier.id} className="p-4">
+            <Card
+              key={supplier.id}
+              className="p-4 cursor-pointer hover:shadow-sm transition-shadow"
+              onClick={() => openSupplierDetail(supplier)}
+            >
               <div className="flex items-start gap-3">
-                <div className="h-10 w-10 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-700 dark:text-emerald-400 text-sm font-bold flex-shrink-0">
-                  {supplier.name.charAt(0).toUpperCase()}
+                <div className={`h-10 w-10 rounded-lg bg-gradient-to-br ${getAvatarGradient(supplier.name)} flex items-center justify-center text-white text-sm font-bold flex-shrink-0`}>
+                  {getInitials(supplier.name)}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between">
@@ -826,7 +965,12 @@ export default function SuppliersPanel() {
                       </Badge>
                     )}
                   </div>
-                  <p className="text-xs text-muted-foreground mt-0.5">{supplier.contactPerson}</p>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    {supplier.contactPerson && (
+                      <span className="text-xs text-muted-foreground">{supplier.contactPerson}</span>
+                    )}
+                    {getCategoryBadge(supplier.category)}
+                  </div>
                   <div className="flex flex-wrap gap-2 mt-1 text-xs text-muted-foreground">
                     {supplier.phone && (
                       <span className="flex items-center gap-0.5">
@@ -854,10 +998,13 @@ export default function SuppliersPanel() {
                       </>
                     )}
                   </div>
+                  <div className="flex items-center gap-2 mt-1">
+                    <StarRating rating={supplier.rating} />
+                  </div>
                 </div>
               </div>
               <Separator className="my-3" />
-              <div className="flex items-center justify-end gap-2">
+              <div className="flex items-center justify-end gap-2" onClick={(e) => e.stopPropagation()}>
                 <Button
                   variant="outline"
                   size="sm"
@@ -909,6 +1056,208 @@ export default function SuppliersPanel() {
           </div>
         )}
       </div>
+
+      {/* ═══════════════════════════════════════════════════════════ */}
+      {/* ═══ SUPPLIER DETAIL DIALOG ══════════════════════════════ */}
+      {/* ═══════════════════════════════════════════════════════════ */}
+
+      <Dialog open={detailDialogOpen} onOpenChange={setDetailDialogOpen}>
+        <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+          {detailSupplier && (
+            <>
+              <DialogHeader>
+                <div className="flex items-center gap-3">
+                  <div className={`h-12 w-12 rounded-xl bg-gradient-to-br ${getAvatarGradient(detailSupplier.name)} flex items-center justify-center text-white text-lg font-bold shadow-md`}>
+                    {getInitials(detailSupplier.name)}
+                  </div>
+                  <div>
+                    <DialogTitle className="text-lg">{detailSupplier.name}</DialogTitle>
+                    <DialogDescription className="flex items-center gap-2">
+                      {detailSupplier.status === 'active' ? (
+                        <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border-0 text-xs">
+                          <CheckCircle2 className="w-3 h-3 mr-1" />
+                          Active
+                        </Badge>
+                      ) : (
+                        <Badge className="bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400 border-0 text-xs">
+                          <XCircle className="w-3 h-3 mr-1" />
+                          Inactive
+                        </Badge>
+                      )}
+                      {getCategoryBadge(detailSupplier.category)}
+                    </DialogDescription>
+                  </div>
+                </div>
+              </DialogHeader>
+
+              <div className="space-y-4 py-2">
+                {/* Company Info */}
+                <div className="space-y-2">
+                  <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Company Information</h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {detailSupplier.contactPerson && (
+                      <div className="flex items-center gap-2 text-sm">
+                        <div className="h-7 w-7 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-gray-600 dark:text-gray-400 text-[10px] font-bold flex-shrink-0">
+                          {getInitials(detailSupplier.contactPerson)}
+                        </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground">Contact Person</p>
+                          <p className="font-medium">{detailSupplier.contactPerson}</p>
+                        </div>
+                      </div>
+                    )}
+                    {detailSupplier.phone && (
+                      <div className="flex items-center gap-2 text-sm">
+                        <Phone className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                        <div>
+                          <p className="text-xs text-muted-foreground">Phone</p>
+                          <p className="font-medium">{detailSupplier.phone}</p>
+                        </div>
+                      </div>
+                    )}
+                    {detailSupplier.email && (
+                      <div className="flex items-center gap-2 text-sm">
+                        <Mail className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                        <div>
+                          <p className="text-xs text-muted-foreground">Email</p>
+                          <p className="font-medium">{detailSupplier.email}</p>
+                        </div>
+                      </div>
+                    )}
+                    {detailSupplier.gstNumber && (
+                      <div className="flex items-center gap-2 text-sm">
+                        <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                        <div>
+                          <p className="text-xs text-muted-foreground">GST Number</p>
+                          <p className="font-medium font-mono text-xs">{detailSupplier.gstNumber}</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Address */}
+                {detailSupplier.address && (
+                  <div className="space-y-1">
+                    <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Address</h4>
+                    <div className="flex items-start gap-2 text-sm">
+                      <MapPin className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                      <p>{detailSupplier.address}</p>
+                    </div>
+                  </div>
+                )}
+
+                <Separator />
+
+                {/* Payment Terms */}
+                <div className="space-y-1">
+                  <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Payment Terms</h4>
+                  <div className="flex items-center gap-2">
+                    <IndianRupee className="h-4 w-4 text-muted-foreground" />
+                    <Badge variant="outline" className="font-medium">
+                      {getPaymentTermsLabel(detailSupplier.paymentTerms)}
+                    </Badge>
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Order Stats */}
+                <div className="space-y-2">
+                  <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Order Statistics</h4>
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="rounded-lg border p-3 text-center">
+                      <ShoppingCart className="h-4 w-4 mx-auto text-emerald-600 mb-1" />
+                      <p className="text-lg font-bold">{detailSupplier.totalOrders}</p>
+                      <p className="text-[10px] text-muted-foreground">Total Orders</p>
+                    </div>
+                    <div className="rounded-lg border p-3 text-center">
+                      <Package className="h-4 w-4 mx-auto text-sky-600 mb-1" />
+                      <p className="text-lg font-bold">{detailSupplier.productsSupplied}</p>
+                      <p className="text-[10px] text-muted-foreground">Products</p>
+                    </div>
+                    <div className="rounded-lg border p-3 text-center">
+                      <IndianRupee className="h-4 w-4 mx-auto text-red-600 mb-1" />
+                      <p className="text-lg font-bold text-red-600">{formatCurrency(detailSupplier.balance)}</p>
+                      <p className="text-[10px] text-muted-foreground">Balance Due</p>
+                    </div>
+                  </div>
+                  {detailSupplier.lastOrderDate && (
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <Calendar className="h-3 w-3" />
+                      Last order: {formatDate(detailSupplier.lastOrderDate)}
+                    </div>
+                  )}
+                </div>
+
+                <Separator />
+
+                {/* Rating */}
+                <div className="space-y-2">
+                  <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Rating</h4>
+                  <div className="flex items-center gap-2">
+                    <StarRating
+                      rating={detailSupplier.rating}
+                      onChange={(newRating) => {
+                        setDetailSupplier({ ...detailSupplier, rating: newRating });
+                        setSuppliers(prev =>
+                          prev.map(s =>
+                            s.id === detailSupplier.id ? { ...s, rating: newRating } : s
+                          )
+                        );
+                        toast.success(`Rating updated to ${newRating} star${newRating > 1 ? 's' : ''}`);
+                      }}
+                      size="lg"
+                    />
+                    <span className="text-sm text-muted-foreground">
+                      ({detailSupplier.rating}/5)
+                    </span>
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Notes */}
+                {detailSupplier.notes && (
+                  <div className="space-y-1">
+                    <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Notes</h4>
+                    <div className="flex items-start gap-2 text-sm">
+                      <StickyNote className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                      <p className="text-muted-foreground">{detailSupplier.notes}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Actions */}
+              <div className="flex items-center gap-2 pt-2">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => {
+                    setDetailDialogOpen(false);
+                    setTimeout(() => openEditSupplier(detailSupplier), 200);
+                  }}
+                >
+                  <Edit className="h-4 w-4 mr-1" />
+                  Edit Supplier
+                </Button>
+                <Button
+                  variant="outline"
+                  className="text-destructive hover:text-destructive"
+                  onClick={() => {
+                    setDetailDialogOpen(false);
+                    setSupplierToDelete(detailSupplier);
+                    setTimeout(() => setDeleteDialogOpen(true), 200);
+                  }}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* ─── Add/Edit Supplier Dialog ─── */}
       <Dialog open={supplierDialogOpen} onOpenChange={setSupplierDialogOpen}>
@@ -983,13 +1332,20 @@ export default function SuppliersPanel() {
             {/* GST Number + Payment Terms */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="grid gap-2">
-                <Label htmlFor="supplier-gst">GST Number</Label>
+                <Label htmlFor="supplier-gst">
+                  GST Number
+                  {supplierForm.gstNumber && !/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/.test(supplierForm.gstNumber.trim()) && (
+                    <span className="text-amber-600 text-xs ml-1">(Invalid format)</span>
+                  )}
+                </Label>
                 <Input
                   id="supplier-gst"
                   placeholder="22AAAAA0000A1Z5"
                   value={supplierForm.gstNumber}
-                  onChange={(e) => setSupplierForm((f) => ({ ...f, gstNumber: e.target.value }))}
+                  onChange={(e) => setSupplierForm((f) => ({ ...f, gstNumber: e.target.value.toUpperCase() }))}
+                  className={supplierForm.gstNumber && !/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/.test(supplierForm.gstNumber.trim()) ? 'border-amber-400 focus-visible:ring-amber-400' : ''}
                 />
+                <p className="text-[10px] text-muted-foreground">Format: 2 digits + 5 letters + 4 digits + 1 letter + 1 char + Z + 1 char</p>
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="supplier-terms">Payment Terms</Label>
@@ -1001,6 +1357,7 @@ export default function SuppliersPanel() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="advance">Advance Payment</SelectItem>
                     <SelectItem value="cod">Cash on Delivery</SelectItem>
                     <SelectItem value="net15">Net 15</SelectItem>
                     <SelectItem value="net30">Net 30</SelectItem>
@@ -1008,6 +1365,40 @@ export default function SuppliersPanel() {
                     <SelectItem value="net60">Net 60</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+            </div>
+
+            {/* Category + Rating */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="supplier-category">Category / Type</Label>
+                <Select
+                  value={supplierForm.category}
+                  onValueChange={(v) => setSupplierForm((f) => ({ ...f, category: v }))}
+                >
+                  <SelectTrigger id="supplier-category">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="raw-materials">Raw Materials</SelectItem>
+                    <SelectItem value="packaging">Packaging</SelectItem>
+                    <SelectItem value="finished-goods">Finished Goods</SelectItem>
+                    <SelectItem value="services">Services</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid gap-2">
+                <Label>Rating</Label>
+                <div className="flex items-center gap-2 pt-1">
+                  <StarRating
+                    rating={supplierForm.rating}
+                    onChange={(r) => setSupplierForm((f) => ({ ...f, rating: r }))}
+                    size="lg"
+                  />
+                  <span className="text-sm text-muted-foreground">
+                    {supplierForm.rating > 0 ? `${supplierForm.rating}/5` : 'Not rated'}
+                  </span>
+                </div>
               </div>
             </div>
 

@@ -19,6 +19,10 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   Printer,
+  Wallet,
+  Percent,
+  Warehouse,
+  Gem,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -398,6 +402,43 @@ export default function ReportsPanel() {
     }
   }
 
+  // Category data with interactive legend
+  const [activeCategory, setActiveCategory] = useState<string | null>(null);
+
+  // ─── Heatmap data ───
+
+  const heatmapData = React.useMemo(() => {
+    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    const periods = ['Morning', 'Afternoon', 'Evening', 'Night'];
+    const data: { day: string; period: string; amount: number }[] = [];
+    days.forEach((day) => {
+      periods.forEach((period) => {
+        let base = Math.floor(Math.random() * 8000) + 2000;
+        // Lunch/dinner rush
+        if (period === 'Afternoon' || period === 'Evening') base += 5000;
+        // Weekend boost
+        if (day === 'Sat' || day === 'Sun') base += 3000;
+        // Night is lower
+        if (period === 'Night') base = Math.floor(base * 0.3);
+        data.push({ day, period, amount: base });
+      });
+    });
+    return data;
+  }, []);
+
+  // ─── Inventory mock data ───
+
+  const inventoryData = React.useMemo(() => ({
+    totalValue: 245000,
+    productCount: 25,
+    avgValue: 9800,
+    topItems: [
+      { name: 'Prawn Masala', value: 48000, stock: 2, costPrice: 24000 },
+      { name: 'Butter Chicken', value: 38400, stock: 48, costPrice: 800 },
+      { name: 'Biryani Rice', value: 28500, stock: 30, costPrice: 950 },
+    ],
+  }), []);
+
   // ─── Render ───
 
   return (
@@ -455,6 +496,58 @@ export default function ReportsPanel() {
           </DropdownMenu>
         </div>
       </div>
+
+      {/* Profit & Loss Summary Card */}
+      <Card className="shadow-sm border-l-4 border-l-emerald-500">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base font-semibold flex items-center gap-2">
+            <Wallet className="h-4 w-4 text-emerald-600" />
+            Profit & Loss Summary
+          </CardTitle>
+          <CardDescription>{getPeriodLabel()}'s financial overview</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="p-4 rounded-lg bg-emerald-50 dark:bg-emerald-900/10 border border-emerald-200 dark:border-emerald-800">
+              <p className="text-xs font-medium text-emerald-600 dark:text-emerald-400">Total Revenue</p>
+              <p className="text-xl sm:text-2xl font-bold mt-1">{formatCurrency(totalRevenue)}</p>
+            </div>
+            <div className="p-4 rounded-lg bg-orange-50 dark:bg-orange-900/10 border border-orange-200 dark:border-orange-800">
+              <p className="text-xs font-medium text-orange-600 dark:text-orange-400">Total Cost</p>
+              <p className="text-xl sm:text-2xl font-bold mt-1">{formatCurrency(Math.round(totalRevenue * 0.55))}</p>
+            </div>
+            <div className="p-4 rounded-lg bg-sky-50 dark:bg-sky-900/10 border border-sky-200 dark:border-sky-800">
+              <p className="text-xs font-medium text-sky-600 dark:text-sky-400">Gross Profit</p>
+              <p className="text-xl sm:text-2xl font-bold mt-1">{formatCurrency(Math.round(totalRevenue * 0.45))}</p>
+            </div>
+            <div className="p-4 rounded-lg border border-gray-200 dark:border-gray-700">
+              <p className="text-xs font-medium text-gray-500">Profit Margin</p>
+              <div className="flex items-center gap-2 mt-1">
+                <p className="text-xl sm:text-2xl font-bold">45%</p>
+                <Badge className={
+                  45 > 20
+                    ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border-0'
+                    : 45 > 10
+                      ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border-0'
+                      : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 border-0'
+                }>
+                  {45 > 20 ? 'Healthy' : 45 > 10 ? 'Moderate' : 'Low'}
+                </Badge>
+              </div>
+              <div className="flex items-center gap-1 mt-1">
+                <div className="flex-1 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                  <div
+                    className={`h-full rounded-full ${
+                      45 > 20 ? 'bg-emerald-500' : 45 > 10 ? 'bg-amber-500' : 'bg-red-500'
+                    }`}
+                    style={{ width: `${Math.min(45, 100)}%` }}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Revenue Section */}
       <div>
@@ -691,10 +784,13 @@ export default function ReportsPanel() {
             </CardContent>
           </Card>
 
-          {/* Revenue by Category */}
+          {/* Category-wise Sales Breakdown with Interactive Legend */}
           <Card className="shadow-sm">
             <CardHeader className="pb-2">
-              <CardTitle className="text-base font-semibold">Revenue by Category</CardTitle>
+              <CardTitle className="text-base font-semibold flex items-center gap-2">
+                <Percent className="h-4 w-4 text-emerald-600" />
+                Category-wise Sales
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="h-64">
@@ -708,15 +804,19 @@ export default function ReportsPanel() {
                       outerRadius={80}
                       dataKey="value"
                       nameKey="name"
-                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                      labelLine={true}
+                      labelLine={false}
                     >
                       {categoryData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
+                        <Cell
+                          key={`cell-${index}`}
+                          fill={entry.color}
+                          opacity={activeCategory === null || activeCategory === entry.name ? 1 : 0.3}
+                          style={{ transition: 'opacity 0.2s', cursor: 'pointer' }}
+                        />
                       ))}
                     </Pie>
                     <Tooltip
-                      formatter={(value: number) => [`${value}%`, 'Share']}
+                      formatter={(value: number, name: string) => [`${value}%`, name]}
                       contentStyle={{
                         fontSize: '12px',
                         borderRadius: '8px',
@@ -725,6 +825,33 @@ export default function ReportsPanel() {
                     />
                   </PieChart>
                 </ResponsiveContainer>
+              </div>
+              {/* Interactive Legend */}
+              <div className="flex flex-wrap gap-2 mt-3 justify-center">
+                {categoryData.map((cat) => (
+                  <button
+                    key={cat.name}
+                    onClick={() => setActiveCategory(activeCategory === cat.name ? null : cat.name)}
+                    className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${
+                      activeCategory === cat.name
+                        ? 'shadow-md scale-105'
+                        : activeCategory === null
+                          ? 'border-gray-200 dark:border-gray-700 hover:shadow-sm'
+                          : 'border-gray-200 dark:border-gray-700 opacity-50'
+                    }`}
+                    style={{
+                      backgroundColor: activeCategory === cat.name ? cat.color + '20' : 'transparent',
+                      borderColor: activeCategory === cat.name ? cat.color : undefined,
+                    }}
+                  >
+                    <div
+                      className="w-3 h-3 rounded-full shrink-0"
+                      style={{ backgroundColor: cat.color }}
+                    />
+                    <span>{cat.name}</span>
+                    <span className="font-bold">{cat.value}%</span>
+                  </button>
+                ))}
               </div>
             </CardContent>
           </Card>
@@ -746,7 +873,7 @@ export default function ReportsPanel() {
           </Card>
           <Card className="shadow-sm">
             <CardContent className="p-6 text-center">
-              <div className="h-6 w-6 mx-auto rounded-full bg-sky-100 flex items-center justify-center mb-2">
+              <div className="h-6 w-6 mx-auto rounded-full bg-sky-100 dark:bg-sky-900/30 flex items-center justify-center mb-2">
                 <span className="text-[10px] font-bold text-sky-700">C</span>
               </div>
               <p className="text-2xl font-bold">{formatCurrency(cgst)}</p>
@@ -755,11 +882,182 @@ export default function ReportsPanel() {
           </Card>
           <Card className="shadow-sm">
             <CardContent className="p-6 text-center">
-              <div className="h-6 w-6 mx-auto rounded-full bg-amber-100 flex items-center justify-center mb-2">
+              <div className="h-6 w-6 mx-auto rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center mb-2">
                 <span className="text-[10px] font-bold text-amber-700">S</span>
               </div>
               <p className="text-2xl font-bold">{formatCurrency(sgst)}</p>
               <p className="text-sm text-muted-foreground">SGST (9%)</p>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
+      {/* Hourly Sales Heatmap */}
+      <div>
+        <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+          Hourly Sales Heatmap
+        </h3>
+        <Card className="shadow-sm">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base font-semibold flex items-center gap-2">
+              <Clock className="h-4 w-4 text-emerald-600" />
+              Sales by Day & Time Period
+            </CardTitle>
+            <CardDescription>Color intensity shows sales volume across time periods</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse">
+                <thead>
+                  <tr>
+                    <th className="p-2 text-xs font-medium text-gray-500 dark:text-gray-400 text-left w-24"></th>
+                    {['Morning', 'Afternoon', 'Evening', 'Night'].map((period) => (
+                      <th key={period} className="p-2 text-xs font-medium text-gray-500 dark:text-gray-400 text-center">
+                        {period}
+                        <br />
+                        <span className="text-[10px] text-gray-400">
+                          {period === 'Morning' ? '6-12' : period === 'Afternoon' ? '12-17' : period === 'Evening' ? '17-22' : '22-6'}
+                        </span>
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day) => (
+                    <tr key={day}>
+                      <td className="p-2 text-xs font-medium text-gray-600 dark:text-gray-300">{day}</td>
+                      {['Morning', 'Afternoon', 'Evening', 'Night'].map((period) => {
+                        const cell = heatmapData.find((d) => d.day === day && d.period === period);
+                        const amount = cell?.amount || 0;
+                        const maxAmount = 20000;
+                        const intensity = Math.min(amount / maxAmount, 1);
+                        return (
+                          <td key={`${day}-${period}`} className="p-1">
+                            <div
+                              className="relative group rounded-lg p-2 text-center cursor-default transition-all hover:scale-105"
+                              style={{
+                                backgroundColor: `rgba(16, 185, 129, ${0.1 + intensity * 0.7})`,
+                                minHeight: '40px',
+                              }}
+                            >
+                              <span className={`text-xs font-bold ${intensity > 0.5 ? 'text-white' : 'text-emerald-800 dark:text-emerald-200'}`}>
+                                {formatCompactCurrency(amount)}
+                              </span>
+                              {/* Tooltip on hover */}
+                              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-1.5 bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10 shadow-lg">
+                                {day} {period}: {formatCurrency(amount)}
+                              </div>
+                            </div>
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            {/* Heatmap Legend */}
+            <div className="flex items-center gap-3 mt-4 justify-center">
+              <span className="text-xs text-gray-500">Low</span>
+              <div className="flex gap-0.5">
+                {[0.1, 0.25, 0.4, 0.55, 0.7, 0.85, 1].map((intensity) => (
+                  <div
+                    key={intensity}
+                    className="w-8 h-4 rounded-sm"
+                    style={{ backgroundColor: `rgba(16, 185, 129, ${0.1 + intensity * 0.7})` }}
+                  />
+                ))}
+              </div>
+              <span className="text-xs text-gray-500">High</span>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Inventory Value Card */}
+      <div>
+        <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+          Inventory Value
+        </h3>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <Card className="shadow-sm border-l-4 border-l-amber-500">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base font-semibold flex items-center gap-2">
+                <Warehouse className="h-4 w-4 text-amber-600" />
+                Inventory Overview
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-3 gap-3 mb-4">
+                <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800 text-center">
+                  <p className="text-xs text-amber-600 dark:text-amber-400 font-medium">Total Value</p>
+                  <p className="text-lg font-bold mt-1">{formatCurrency(inventoryData.totalValue)}</p>
+                </div>
+                <div className="p-3 rounded-lg bg-sky-50 dark:bg-sky-900/10 border border-sky-200 dark:border-sky-800 text-center">
+                  <p className="text-xs text-sky-600 dark:text-sky-400 font-medium">Products</p>
+                  <p className="text-lg font-bold mt-1">{inventoryData.productCount}</p>
+                </div>
+                <div className="p-3 rounded-lg bg-emerald-50 dark:bg-emerald-900/10 border border-emerald-200 dark:border-emerald-800 text-center">
+                  <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">Avg. Value</p>
+                  <p className="text-lg font-bold mt-1">{formatCurrency(inventoryData.avgValue)}</p>
+                </div>
+              </div>
+              <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                <div className="flex items-center justify-between text-sm mb-1">
+                  <span className="text-gray-500 dark:text-gray-400">Inventory Health</span>
+                  <span className="font-medium text-emerald-600">Good</span>
+                </div>
+                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                  <div className="bg-emerald-500 h-2 rounded-full" style={{ width: '72%' }} />
+                </div>
+                <p className="text-xs text-gray-400 mt-1">72% of products in stock</p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="shadow-sm">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base font-semibold flex items-center gap-2">
+                <Gem className="h-4 w-4 text-amber-600" />
+                Top 3 Most Valuable Items
+              </CardTitle>
+              <CardDescription>Products with highest inventory value (cost × stock)</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {inventoryData.topItems.map((item, i) => (
+                <div key={item.name} className="flex items-center gap-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-800">
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold shrink-0 ${
+                    i === 0
+                      ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400'
+                      : i === 1
+                        ? 'bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
+                        : 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400'
+                  }`}>
+                    {i + 1}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{item.name}</p>
+                    <p className="text-xs text-gray-500">
+                      Stock: {item.stock} × {formatCurrency(item.costPrice)} each
+                    </p>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <p className="text-sm font-bold">{formatCurrency(item.value)}</p>
+                    <p className="text-[10px] text-gray-400">inventory value</p>
+                  </div>
+                </div>
+              ))}
+              <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-500">Total top 3 value</span>
+                  <span className="font-bold">
+                    {formatCurrency(inventoryData.topItems.reduce((sum, item) => sum + item.value, 0))}
+                  </span>
+                </div>
+                <p className="text-xs text-gray-400 mt-0.5">
+                  {Math.round((inventoryData.topItems.reduce((sum, item) => sum + item.value, 0) / inventoryData.totalValue) * 100)}% of total inventory
+                </p>
+              </div>
             </CardContent>
           </Card>
         </div>

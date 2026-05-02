@@ -21,6 +21,11 @@ import {
   MoreHorizontal,
   LayoutGrid,
   List,
+  Download,
+  FileSpreadsheet,
+  CheckCircle,
+  AlertCircle,
+  FileUp,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -205,6 +210,13 @@ export default function ProductsPanel() {
 
   // View mode
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
+
+  // CSV Import state
+  const [csvFile, setCsvFile] = useState<File | null>(null);
+  const [csvPreview, setCsvPreview] = useState<Record<string, string>[]>([]);
+  const [csvImporting, setCsvImporting] = useState(false);
+  const [csvResult, setCsvResult] = useState<{ success: number; errors: string[] } | null>(null);
+  const [csvDragOver, setCsvDragOver] = useState(false);
 
   // Category form
   const [categoryName, setCategoryName] = useState('');
@@ -547,13 +559,157 @@ export default function ProductsPanel() {
     }
   }
 
-  // ─── CSV Import (Mock) ───
+  // ─── CSV Import ───
 
-  function handleCSVUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    toast.success(`Imported "${file.name}" — 0 products created (mock)`);
-    setCsvDialogOpen(false);
+  const CSV_HEADERS = ['name', 'sku', 'price', 'costPrice', 'stock', 'unit', 'category', 'barcode'];
+
+  function downloadCSVTemplate() {
+    const header = CSV_HEADERS.join(',');
+    const rows = [
+      'Butter Chicken,BC001,320,180,50,piece,Main Course,8901234567890',
+      'Paneer Tikka,PT002,250,140,30,piece,Starters,8901234567891',
+      'Dal Makhani,DM003,220,90,40,piece,Main Course,8901234567892',
+    ];
+    const csv = [header, ...rows].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'storeos-product-template.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success('Template downloaded');
+  }
+
+  function parseCSV(text: string): Record<string, string>[] {
+    const lines = text.split(/\r?\n/).filter((l) => l.trim());
+    if (lines.length < 2) return [];
+    const headers = lines[0].split(',').map((h) => h.trim().replace(/^"|"$/g, ''));
+    const rows: Record<string, string>[] = [];
+    for (let i = 1; i < lines.length; i++) {
+      const values: string[] = [];
+      let current = '';
+      let inQuotes = false;
+      for (const char of lines[i]) {
+        if (char === '"') {
+          inQuotes = !inQuotes;
+        } else if (char === ',' && !inQuotes) {
+          values.push(current.trim());
+          current = '';
+        } else {
+          current += char;
+        }
+      }
+      values.push(current.trim());
+      const row: Record<string, string> = {};
+      headers.forEach((h, idx) => {
+        row[h] = values[idx] || '';
+      });
+      rows.push(row);
+    }
+    return rows;
+  }
+
+  function handleCSVFileSelect(file: File) {
+    if (!file.name.endsWith('.csv')) {
+      toast.error('Please select a CSV file');
+      return;
+    }
+    setCsvFile(file);
+    setCsvResult(null);
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const text = e.target?.result as string;
+      const rows = parseCSV(text);
+      setCsvPreview(rows.slice(0, 5));
+    };
+    reader.readAsText(file);
+  }
+
+  async function executeCSVImport() {
+    if (!csvFile) return;
+    setCsvImporting(true);
+    setCsvResult(null);
+    try {
+      const text = await csvFile.text();
+      const rows = parseCSV(text);
+      let success = 0;
+      const errors: string[] = [];
+      for (let i = 0; i < rows.length; i++) {
+        const row = rows[i];
+        if (!row.name?.trim()) {
+          errors.push(`Row ${i + 2}: Missing product name`);
+          continue;
+        }
+        if (!row.price || isNaN(Number(row.price))) {
+          errors.push(`Row ${i + 2}: Invalid price for "${row.name}"`);
+          continue;
+        }
+        let categoryId: string | null = null;
+        if (row.category?.trim()) {
+          const existing = categories.find(
+            (c) => c.name.toLowerCase() === row.category.trim().toLowerCase()
+          );
+          if (existing) {
+            categoryId = existing.id;
+          } else {
+            try {
+              const catRes = await fetch('/api/categories', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ storeId, name: row.category.trim() }),
+              });
+              if (catRes.ok) {
+                const catData = await catRes.json();
+                categoryId = catData.category?.id || catData.id || null;
+              }
+            } catch {
+              // skip category creation error
+            }
+          }
+        }
+        try {
+          const res = await fetch('/api/products', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              storeId,
+              name: row.name.trim(),
+              sku: row.sku?.trim() || null,
+              price: parseFloat(row.price),
+              costPrice: row.costPrice ? parseFloat(row.costPrice) : 0,
+              stock: row.stock ? parseFloat(row.stock) : 0,
+              unit: row.unit?.trim() || 'piece',
+              categoryId,
+              barcode: row.barcode?.trim() || null,
+            }),
+          });
+          if (res.ok) {
+            success++;
+          } else {
+            const data = await res.json();
+            errors.push(`Row ${i + 2}: ${data.error || 'Failed to create'}`);
+          }
+        } catch {
+          errors.push(`Row ${i + 2}: Network error`);
+        }
+      }
+      setCsvResult({ success, errors });
+      fetchProducts();
+      fetchCategories();
+    } catch {
+      toast.error('Failed to read CSV file');
+    } finally {
+      setCsvImporting(false);
+    }
+  }
+
+  function resetCSVImport() {
+    setCsvFile(null);
+    setCsvPreview([]);
+    setCsvResult(null);
+    setCsvImporting(false);
+    setCsvDragOver(false);
   }
 
   // ─── Format helpers ───
@@ -1552,42 +1708,182 @@ export default function ProductsPanel() {
       </AlertDialog>
 
       {/* ─── CSV Import Dialog ─── */}
-      <Dialog open={csvDialogOpen} onOpenChange={setCsvDialogOpen}>
-        <DialogContent className="sm:max-w-md">
+      <Dialog open={csvDialogOpen} onOpenChange={(open) => { if (!open) resetCSVImport(); setCsvDialogOpen(open); }}>
+        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Import Products from CSV</DialogTitle>
-            <DialogDescription>Upload a CSV file to bulk import products</DialogDescription>
+            <DialogTitle className="flex items-center gap-2">
+              <FileSpreadsheet className="h-5 w-5 text-emerald-600" />
+              Import Products from CSV
+            </DialogTitle>
+            <DialogDescription>Upload a CSV file to bulk import products into your catalog</DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4 py-4">
-            {/* Upload area */}
-            <label className="flex flex-col items-center justify-center border-2 border-dashed border-muted-foreground/25 rounded-lg p-8 cursor-pointer hover:border-emerald-400 hover:bg-emerald-50/50 transition-colors">
-              <Upload className="h-8 w-8 text-muted-foreground mb-2" />
-              <p className="text-sm font-medium">Click to upload CSV file</p>
-              <p className="text-xs text-muted-foreground mt-1">.csv files only</p>
+          <div className="space-y-4 py-2">
+            {/* Download Template + Format Info */}
+            <div className="flex flex-col sm:flex-row gap-3">
+              <Button variant="outline" size="sm" onClick={downloadCSVTemplate} className="shrink-0">
+                <Download className="h-4 w-4 mr-1" />
+                Download Template
+              </Button>
+              <div className="rounded-md bg-muted/50 p-3 flex-1">
+                <p className="text-xs font-medium mb-1.5">Expected columns:</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {CSV_HEADERS.map((h) => (
+                    <Badge key={h} variant="outline" className="text-[10px] h-5">
+                      {h === 'name' || h === 'price' ? <span className="text-red-500 mr-0.5">*</span> : null}
+                      {h}
+                    </Badge>
+                  ))}
+                </div>
+                <p className="text-[10px] text-muted-foreground mt-1.5">
+                  <span className="text-red-500">*</span> Required fields &middot; Category will be auto-created if not found
+                </p>
+              </div>
+            </div>
+
+            {/* Drag & Drop Zone */}
+            <div
+              className={`relative border-2 border-dashed rounded-lg p-8 text-center transition-all cursor-pointer ${
+                csvDragOver
+                  ? 'border-emerald-500 bg-emerald-50/50 dark:bg-emerald-900/20'
+                  : csvFile
+                  ? 'border-emerald-400 bg-emerald-50/30 dark:bg-emerald-900/10'
+                  : 'border-muted-foreground/25 hover:border-emerald-400 hover:bg-emerald-50/30'
+              }`}
+              onDragOver={(e) => { e.preventDefault(); setCsvDragOver(true); }}
+              onDragLeave={() => setCsvDragOver(false)}
+              onDrop={(e) => {
+                e.preventDefault();
+                setCsvDragOver(false);
+                const file = e.dataTransfer.files[0];
+                if (file) handleCSVFileSelect(file);
+              }}
+              onClick={() => {
+                const input = document.getElementById('csv-file-input') as HTMLInputElement;
+                input?.click();
+              }}
+            >
               <input
+                id="csv-file-input"
                 type="file"
                 accept=".csv"
                 className="hidden"
-                onChange={handleCSVUpload}
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleCSVFileSelect(file);
+                  e.target.value = '';
+                }}
               />
-            </label>
-
-            {/* Expected format */}
-            <div className="rounded-md bg-muted/50 p-4">
-              <p className="text-xs font-medium mb-2">Expected CSV format:</p>
-              <code className="text-xs block whitespace-pre-wrap text-muted-foreground">
-                {`name,sku,category,price,costPrice,unit,stock,lowStockAlert,barcode
-Tomato,TOM-001,Vegetables,40,25,kg,100,10,8901234567890
-Rice,RIC-001,Grains,60,45,kg,200,20,8901234567891`}
-              </code>
+              {csvFile ? (
+                <div className="flex flex-col items-center gap-2">
+                  <div className="w-12 h-12 rounded-full bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center">
+                    <CheckCircle className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
+                  </div>
+                  <p className="text-sm font-medium">{csvFile.name}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {(csvFile.size / 1024).toFixed(1)} KB &middot; Click or drop to replace
+                  </p>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center gap-2">
+                  <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
+                    <FileUp className="h-6 w-6 text-muted-foreground" />
+                  </div>
+                  <p className="text-sm font-medium">
+                    {csvDragOver ? 'Drop your CSV file here' : 'Drag & drop your CSV file here'}
+                  </p>
+                  <p className="text-xs text-muted-foreground">or click to browse &middot; .csv files only</p>
+                </div>
+              )}
             </div>
+
+            {/* Preview Table */}
+            {csvPreview.length > 0 && !csvResult && (
+              <div className="space-y-2">
+                <p className="text-sm font-medium">
+                  Preview <span className="text-muted-foreground font-normal">(first {csvPreview.length} rows)</span>
+                </p>
+                <div className="overflow-x-auto rounded-md border">
+                  <table className="w-full text-xs">
+                    <thead>
+                      <tr className="bg-muted/50">
+                        {CSV_HEADERS.map((h) => (
+                          <th key={h} className="px-2 py-1.5 text-left font-medium whitespace-nowrap">
+                            {h}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {csvPreview.map((row, i) => (
+                        <tr key={i} className="border-t">
+                          {CSV_HEADERS.map((h) => (
+                            <td key={h} className="px-2 py-1.5 whitespace-nowrap max-w-[120px] truncate">
+                              {row[h] || <span className="text-muted-foreground">—</span>}
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {/* Import Progress */}
+            {csvImporting && (
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <div className="h-2 flex-1 bg-muted rounded-full overflow-hidden">
+                    <div className="h-full bg-emerald-500 rounded-full animate-pulse" style={{ width: '60%' }} />
+                  </div>
+                  <span className="text-xs text-muted-foreground">Importing...</span>
+                </div>
+              </div>
+            )}
+
+            {/* Result Summary */}
+            {csvResult && (
+              <div className={`rounded-lg p-4 ${csvResult.errors.length > 0 ? 'bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800' : 'bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800'}`}>
+                <div className="flex items-center gap-2 mb-2">
+                  {csvResult.errors.length === 0 ? (
+                    <CheckCircle className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+                  ) : (
+                    <AlertCircle className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+                  )}
+                  <p className="text-sm font-medium">
+                    Import Complete: {csvResult.success} product{csvResult.success !== 1 ? 's' : ''} created
+                    {csvResult.errors.length > 0 && `, ${csvResult.errors.length} error${csvResult.errors.length !== 1 ? 's' : ''}`}
+                  </p>
+                </div>
+                {csvResult.errors.length > 0 && (
+                  <ScrollArea className="max-h-32">
+                    <ul className="space-y-0.5">
+                      {csvResult.errors.map((err, i) => (
+                        <li key={i} className="text-xs text-amber-700 dark:text-amber-400">{err}</li>
+                      ))}
+                    </ul>
+                  </ScrollArea>
+                )}
+              </div>
+            )}
           </div>
 
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setCsvDialogOpen(false)}>
-              Close
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => { resetCSVImport(); setCsvDialogOpen(false); }}>
+              {csvResult ? 'Close' : 'Cancel'}
             </Button>
+            {csvFile && !csvResult && !csvImporting && (
+              <Button onClick={executeCSVImport} disabled={csvImporting} className="bg-emerald-600 hover:bg-emerald-700">
+                <Upload className="h-4 w-4 mr-1" />
+                Import {csvPreview.length > 0 ? `(${csvPreview.length}+ rows)` : ''}
+              </Button>
+            )}
+            {csvResult && csvResult.success > 0 && (
+              <Button onClick={() => { resetCSVImport(); setCsvDialogOpen(false); }} className="bg-emerald-600 hover:bg-emerald-700">
+                Done
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -5,7 +5,7 @@ import { useAppStore } from '@/lib/store';
 import { useTheme } from 'next-themes';
 import { NICHES, getNicheBySlug } from '@/lib/types';
 import type { NicheSlug } from '@/lib/types';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ComposedChart, Line, Bar, PieChart, Pie, Cell } from 'recharts';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ComposedChart, Line, Bar, BarChart, PieChart, Pie, Cell } from 'recharts';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -427,16 +427,16 @@ function DashboardOverview({ storeId, niche }: { storeId: string; niche: string 
 
   // ─── Sparkline data per stat card ───────────────────────────
   const sparklineData = useMemo(() => ({
-    sales: [8200, 9100, 7800, 11200, 10450, 12100, reports?.todaySales || 12450],
-    orders: [12, 15, 10, 18, 14, 20, reports?.ordersCount || 22],
+    sales: [8200, 9100, 7800, 11200, 10450, 12100, reports?.todaySales ?? 12450],
+    orders: [12, 15, 10, 18, 14, 20, reports?.ordersCount ?? 22],
     products: [25, 25, 26, 26, 25, 25, productCount],
     customers: [8, 9, 10, 10, 11, 12, customerCount],
   }), [reports, productCount, customerCount]);
 
   // ─── Yesterday comparison values ────────────────────────────
   const yesterdayValues = useMemo(() => ({
-    sales: Math.round((reports?.todaySales || 12450) * 0.87),
-    orders: Math.round((reports?.ordersCount || 22) * 0.92),
+    sales: reports?.todaySales != null && reports.todaySales > 0 ? Math.round(reports.todaySales * 0.87) : 0,
+    orders: reports?.ordersCount != null && reports.ordersCount > 0 ? Math.round(reports.ordersCount * 0.92) : 0,
     products: productCount,
     customers: customerCount > 0 ? Math.round(customerCount * 0.94) : 0,
   }), [reports, productCount, customerCount]);
@@ -483,7 +483,7 @@ function DashboardOverview({ storeId, niche }: { storeId: string; niche: string 
         const res = await fetch(`/api/reports?storeId=${storeId}&period=${period}`);
         if (res.ok) {
           const data = await res.json();
-          if (data.dailyData && Array.isArray(data.dailyData)) {
+          if (data.dailyData && Array.isArray(data.dailyData) && data.dailyData.length > 0) {
             setChartData(data.dailyData);
           } else {
             setChartData(generateFallbackChartData(salesPeriod, data));
@@ -627,8 +627,6 @@ function DashboardOverview({ storeId, niche }: { storeId: string; niche: string 
     ];
   }, [topProducts]);
 
-  const maxRevenue = displayTopProducts.length > 0 ? Math.max(...displayTopProducts.map(p => p.revenue)) : 1;
-
   const store = useAppStore((s) => s.store);
   const subscription = useAppStore((s) => s.subscription);
   const setDashboardTab = useAppStore((s) => s.setDashboardTab);
@@ -648,11 +646,17 @@ function DashboardOverview({ storeId, niche }: { storeId: string; niche: string 
   };
 
   // ─── Stat Cards with sparklines and vs yesterday ────────────
+  // Helper: format display value, showing "—" when value is 0 and loading is done
+  const formatStatValue = (value: number, prefix: string = '') => {
+    if (!loading && value === 0) return '—';
+    return `${prefix}${value.toLocaleString('en-IN')}`;
+  };
+
   const statCards = [
     {
       title: "Today's Sales",
       value: reports ? reports.todaySales : 0,
-      displayValue: reports ? `₹${reports.todaySales.toLocaleString('en-IN')}` : '₹0',
+      displayValue: loading ? '₹0' : formatStatValue(reports?.todaySales || 0, '₹'),
       yesterdayValue: yesterdayValues.sales,
       icon: TrendingUp,
       color: 'text-emerald-600 dark:text-emerald-400',
@@ -665,7 +669,7 @@ function DashboardOverview({ storeId, niche }: { storeId: string; niche: string 
     {
       title: 'Orders Today',
       value: reports?.ordersCount || 0,
-      displayValue: reports?.ordersCount?.toString() || '0',
+      displayValue: loading ? '0' : formatStatValue(reports?.ordersCount || 0),
       yesterdayValue: yesterdayValues.orders,
       icon: ShoppingCart,
       color: 'text-sky-600 dark:text-sky-400',
@@ -678,7 +682,7 @@ function DashboardOverview({ storeId, niche }: { storeId: string; niche: string 
     {
       title: 'Products',
       value: productCount,
-      displayValue: productCount.toString(),
+      displayValue: loading ? '0' : formatStatValue(productCount),
       yesterdayValue: yesterdayValues.products,
       icon: Package,
       color: 'text-amber-600 dark:text-amber-400',
@@ -691,7 +695,7 @@ function DashboardOverview({ storeId, niche }: { storeId: string; niche: string 
     {
       title: 'Customers',
       value: customerCount,
-      displayValue: customerCount.toString(),
+      displayValue: loading ? '0' : formatStatValue(customerCount),
       yesterdayValue: yesterdayValues.customers,
       icon: Users,
       color: 'text-purple-600 dark:text-purple-400',
@@ -817,8 +821,16 @@ function DashboardOverview({ storeId, niche }: { storeId: string; niche: string 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {statCards.map((stat) => {
           const Icon = stat.icon;
+          const bothZero = stat.value === 0 && stat.yesterdayValue === 0;
           const diff = stat.yesterdayValue > 0 ? Math.round(((stat.value - stat.yesterdayValue) / stat.yesterdayValue) * 100) : 0;
           const trendUp = diff >= 0;
+          // Determine what to show in the trend area
+          const trendText = bothZero
+            ? 'No data yet'
+            : stat.yesterdayValue === 0
+              ? '—'
+              : `${trendUp ? '+' : ''}${diff}% vs yesterday`;
+          const showTrendIcon = !bothZero && stat.yesterdayValue > 0;
           return (
             <Card key={stat.title} className={`border border-gray-200 dark:border-gray-700 ${stat.leftBorder} border-l-4 shadow-sm bg-gradient-to-br ${stat.gradient} hover:shadow-md hover:scale-[1.02] transition-all duration-200`}>
               <CardContent className="p-4">
@@ -836,9 +848,17 @@ function DashboardOverview({ storeId, niche }: { storeId: string; niche: string 
                   <>
                     <p className="text-xl sm:text-2xl font-bold">{stat.displayValue}</p>
                     <div className="flex items-center justify-between mt-1">
-                      <span className={`text-[11px] font-semibold flex items-center gap-0.5 ${trendUp ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500 dark:text-red-400'}`}>
-                        {trendUp ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-                        {trendUp ? '+' : ''}{diff}% vs yesterday
+                      <span className={`text-[11px] font-semibold flex items-center gap-0.5 ${
+                        bothZero
+                          ? 'text-gray-400 dark:text-gray-500'
+                          : stat.yesterdayValue === 0
+                            ? 'text-gray-400 dark:text-gray-500'
+                            : trendUp
+                              ? 'text-emerald-600 dark:text-emerald-400'
+                              : 'text-red-500 dark:text-red-400'
+                      }`}>
+                        {showTrendIcon && (trendUp ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />)}
+                        {trendText}
                       </span>
                       <svg width="80" height="28" className="opacity-60">
                         <path
@@ -1043,8 +1063,108 @@ function DashboardOverview({ storeId, niche }: { storeId: string; niche: string 
           </Card>
         </div>
 
-        {/* ─── RIGHT COLUMN: Activity Feed + Top Sellers + Customer Insights ─── */}
+        {/* ─── RIGHT COLUMN: Store Health + Activity Feed + Top Sellers + Customer Insights ─── */}
         <div className="space-y-6">
+          {/* ─── Store Health Card ─── */}
+          <Card className="shadow-sm">
+            <CardHeader className="pb-3">
+              <div className="flex items-center gap-2">
+                <Activity className="w-5 h-5 text-emerald-500" />
+                <CardTitle className="text-lg font-semibold">Store Health</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {(() => {
+                // Calculate health score
+                const productsInStock = productCount > 0 ? Math.max(0, productCount - lowStockProducts.length) : 0;
+                const inStockPct = productCount > 0 ? Math.round((productsInStock / productCount) * 100) : 100;
+                const completedPctHealth = totalStatusOrders > 0 ? Math.round((orderStatusCounts.completed / totalStatusOrders) * 100) : 100;
+                const satisfactionPct = customerInsights.returning;
+                const healthScore = Math.round((inStockPct * 0.35) + (completedPctHealth * 0.35) + (satisfactionPct * 0.30));
+                const healthColor = healthScore > 80 ? '#10b981' : healthScore > 50 ? '#f59e0b' : '#ef4444';
+                const healthLabel = healthScore > 80 ? 'Excellent' : healthScore > 50 ? 'Good' : 'Needs Attention';
+                const healthLabelColor = healthScore > 80 ? 'text-emerald-600 dark:text-emerald-400' : healthScore > 50 ? 'text-amber-600 dark:text-amber-400' : 'text-red-600 dark:text-red-400';
+
+                // SVG circular progress
+                const radius = 52;
+                const circumference = 2 * Math.PI * radius;
+                const offset = circumference - (healthScore / 100) * circumference;
+
+                return (
+                  <div>
+                    <div className="flex items-center gap-4">
+                      {/* Circular Progress Indicator */}
+                      <div className="relative shrink-0">
+                        <svg width="120" height="120" className="-rotate-90">
+                          <circle
+                            cx="60"
+                            cy="60"
+                            r={radius}
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="8"
+                            className="text-gray-100 dark:text-gray-800"
+                          />
+                          <circle
+                            cx="60"
+                            cy="60"
+                            r={radius}
+                            fill="none"
+                            stroke={healthColor}
+                            strokeWidth="8"
+                            strokeLinecap="round"
+                            strokeDasharray={circumference}
+                            strokeDashoffset={offset}
+                            className="transition-all duration-1000 ease-out"
+                          />
+                        </svg>
+                        <div className="absolute inset-0 flex flex-col items-center justify-center">
+                          <span className="text-3xl font-bold" style={{ color: healthColor }}>{healthScore}</span>
+                          <span className="text-[10px] text-gray-400 -mt-1">/ 100</span>
+                        </div>
+                      </div>
+                      {/* Health Details */}
+                      <div className="flex-1 space-y-3">
+                        <div>
+                          <p className={`text-sm font-semibold ${healthLabelColor}`}>{healthLabel}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">Overall store health</p>
+                        </div>
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="text-gray-500 dark:text-gray-400">Stock Health</span>
+                            <span className="font-semibold">{inStockPct}%</span>
+                          </div>
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="text-gray-500 dark:text-gray-400">Order Completion</span>
+                            <span className="font-semibold">{completedPctHealth}%</span>
+                          </div>
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="text-gray-500 dark:text-gray-400">Satisfaction</span>
+                            <span className="font-semibold">{satisfactionPct}%</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    {/* Quick Metrics */}
+                    <div className="grid grid-cols-3 gap-2 mt-4 pt-3 border-t dark:border-gray-700">
+                      <div className="text-center p-2 rounded-lg bg-amber-50 dark:bg-amber-900/10">
+                        <p className="text-lg font-bold text-amber-600 dark:text-amber-400">{lowStockProducts.length}</p>
+                        <p className="text-[10px] text-gray-500 dark:text-gray-400">Low Stock</p>
+                      </div>
+                      <div className="text-center p-2 rounded-lg bg-sky-50 dark:bg-sky-900/10">
+                        <p className="text-lg font-bold text-sky-600 dark:text-sky-400">{orderStatusCounts.pending}</p>
+                        <p className="text-[10px] text-gray-500 dark:text-gray-400">Pending</p>
+                      </div>
+                      <div className="text-center p-2 rounded-lg bg-purple-50 dark:bg-purple-900/10">
+                        <p className="text-lg font-bold text-purple-600 dark:text-purple-400">{customerInsights.newThisWeek}</p>
+                        <p className="text-[10px] text-gray-500 dark:text-gray-400">New Customers</p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+            </CardContent>
+          </Card>
           {/* Recent Activity Feed */}
           <Card className="shadow-sm">
             <CardHeader className="pb-3">
@@ -1052,6 +1172,11 @@ function DashboardOverview({ storeId, niche }: { storeId: string; niche: string 
                 <div className="flex items-center gap-2">
                   <Activity className="w-5 h-5 text-emerald-500" />
                   <CardTitle className="text-lg font-semibold">Recent Activity</CardTitle>
+                  {/* Live pulsing dot */}
+                  <span className="relative flex h-2.5 w-2.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500" />
+                  </span>
                 </div>
                 <Badge variant="secondary" className="text-[10px]">Live</Badge>
               </div>
@@ -1061,10 +1186,22 @@ function DashboardOverview({ storeId, niche }: { storeId: string; niche: string 
                 {activityFeed.map((item, idx) => {
                   const ItemIcon = item.icon;
                   return (
-                    <div key={item.id} className="flex gap-3">
+                    <div
+                      key={item.id}
+                      className="flex gap-3 group cursor-pointer animate-[fadeInSlide_0.3s_ease-out] hover:bg-gray-50 dark:hover:bg-gray-800/50 -mx-2 px-2 py-1 rounded-lg transition-colors"
+                      onClick={() => {
+                        if (item.type === 'order' || item.type === 'payment') {
+                          setDashboardTab('orders');
+                        } else if (item.type === 'alert') {
+                          setDashboardTab('products');
+                        } else if (item.type === 'customer') {
+                          setDashboardTab('customers');
+                        }
+                      }}
+                    >
                       {/* Timeline connector */}
                       <div className="flex flex-col items-center">
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${item.bg}`}>
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${item.bg} group-hover:scale-110 transition-transform`}>
                           <ItemIcon className={`w-3.5 h-3.5 ${item.color}`} />
                         </div>
                         {idx < activityFeed.length - 1 && (
@@ -1072,13 +1209,27 @@ function DashboardOverview({ storeId, niche }: { storeId: string; niche: string 
                         )}
                       </div>
                       {/* Content */}
-                      <div className={`pb-4 ${idx === activityFeed.length - 1 ? 'pb-0' : ''}`}>
-                        <p className="text-sm text-gray-700 dark:text-gray-300 leading-snug">{item.description}</p>
+                      <div className={`pb-4 flex-1 min-w-0 ${idx === activityFeed.length - 1 ? 'pb-0' : ''}`}>
+                        <p className="text-sm text-gray-700 dark:text-gray-300 leading-snug group-hover:text-gray-900 dark:group-hover:text-gray-100 transition-colors">{item.description}</p>
                         <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5">{item.time}</p>
                       </div>
+                      {/* Hover arrow */}
+                      <ArrowUpRight className="w-3.5 h-3.5 text-gray-300 dark:text-gray-600 self-center opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
                     </div>
                   );
                 })}
+              </div>
+              {/* View All Link */}
+              <div className="mt-3 pt-3 border-t dark:border-gray-700">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="w-full text-xs text-sky-600 dark:text-sky-400 hover:text-sky-700 dark:hover:text-sky-300"
+                  onClick={() => setDashboardTab('notifications')}
+                >
+                  View All Activity
+                  <ArrowRight className="w-3.5 h-3.5 ml-1" />
+                </Button>
               </div>
             </CardContent>
           </Card>
@@ -1101,27 +1252,77 @@ function DashboardOverview({ storeId, niche }: { storeId: string; niche: string 
               <CardDescription>Best performing products this week</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
+              <div className="h-52">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={displayTopProducts.map(p => ({ ...p, name: p.name.length > 14 ? p.name.slice(0, 14) + '…' : p.name }))}
+                    layout="vertical"
+                    margin={{ top: 0, right: 40, left: 0, bottom: 0 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" className="dark:opacity-20" horizontal={false} />
+                    <XAxis
+                      type="number"
+                      tick={{ fontSize: 10, fill: '#9ca3af' }}
+                      axisLine={false}
+                      tickLine={false}
+                      tickFormatter={(value: number) => `₹${(value / 1000).toFixed(0)}k`}
+                    />
+                    <YAxis
+                      type="category"
+                      dataKey="name"
+                      tick={{ fontSize: 11, fill: '#6b7280' }}
+                      axisLine={false}
+                      tickLine={false}
+                      width={80}
+                    />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '8px',
+                        boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)',
+                        fontSize: '12px',
+                      }}
+                      formatter={(value: number) => [`₹${value.toLocaleString('en-IN')}`, 'Revenue']}
+                    />
+                    <Bar
+                      dataKey="revenue"
+                      radius={[0, 4, 4, 0]}
+                      barSize={18}
+                    >
+                      {displayTopProducts.map((_, index) => (
+                        <Cell
+                          key={`cell-${index}`}
+                          fill={
+                            index === 0 ? '#10b981' :
+                            index === 1 ? '#34d399' :
+                            index === 2 ? '#6ee7b7' :
+                            index === 3 ? '#a7f3d0' :
+                            '#d1fae5'
+                          }
+                        />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+              {/* Revenue labels summary */}
+              <div className="mt-2 pt-2 border-t dark:border-gray-700 flex flex-wrap gap-x-4 gap-y-1">
                 {displayTopProducts.map((product, idx) => (
-                  <div key={product.name} className="flex items-center gap-3">
-                    <span className="text-xs font-bold text-gray-400 w-4 text-right">{idx + 1}</span>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between mb-1">
-                        <p className="text-sm font-medium truncate">{product.name}</p>
-                        <span className="text-sm font-semibold text-gray-900 dark:text-gray-100 ml-2 shrink-0">
-                          ₹{product.revenue.toLocaleString('en-IN')}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className="flex-1 h-2 rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden">
-                          <div
-                            className="h-full rounded-full bg-emerald-500 transition-all duration-500"
-                            style={{ width: `${(product.revenue / maxRevenue) * 100}%` }}
-                          />
-                        </div>
-                        <span className="text-[11px] text-gray-400 shrink-0">{product.quantity} sold</span>
-                      </div>
-                    </div>
+                  <div key={product.name} className="flex items-center gap-1.5 text-[11px]">
+                    <span
+                      className="w-2 h-2 rounded-full shrink-0"
+                      style={{
+                        backgroundColor:
+                          idx === 0 ? '#10b981' :
+                          idx === 1 ? '#34d399' :
+                          idx === 2 ? '#6ee7b7' :
+                          idx === 3 ? '#a7f3d0' :
+                          '#d1fae5'
+                      }}
+                    />
+                    <span className="text-gray-500 dark:text-gray-400 truncate max-w-[80px]">{product.name}</span>
+                    <span className="font-semibold text-gray-700 dark:text-gray-300">₹{product.revenue.toLocaleString('en-IN')}</span>
                   </div>
                 ))}
               </div>
@@ -1702,7 +1903,7 @@ export default function PosDashboard() {
         <SidebarSeparator />
 
         {/* Navigation */}
-        <SidebarContent>
+        <SidebarContent className="overflow-y-auto">
           <SidebarGroup>
             <SidebarGroupLabel>Menu</SidebarGroupLabel>
             <SidebarGroupContent>
@@ -1722,8 +1923,8 @@ export default function PosDashboard() {
                             : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:scale-[1.02] hover:bg-gray-100 dark:hover:bg-gray-800/50'
                         }`}
                       >
-                        <Icon className="w-4 h-4" />
-                        <span>{tabLabelMap[item.tab] ? t(tabLabelMap[item.tab]) : item.label}</span                      >
+                        <Icon className="w-4 h-4 shrink-0" />
+                        <span className="whitespace-nowrap">{tabLabelMap[item.tab] ? t(tabLabelMap[item.tab]) : item.label}</span>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                   );

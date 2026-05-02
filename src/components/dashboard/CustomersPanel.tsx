@@ -17,9 +17,20 @@ import {
   FileText,
   Star,
   CreditCard,
-  ArrowLeft,
   Package,
   ShoppingBag,
+  Calendar,
+  TrendingUp,
+  Gift,
+  MessageSquare,
+  StickyNote,
+  Receipt,
+  CheckCircle2,
+  Clock,
+  XCircle,
+  ArrowUpRight,
+  MinusCircle,
+  PlusCircle,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -52,9 +63,17 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from '@/components/ui/sheet';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Textarea } from '@/components/ui/textarea';
+import { Progress } from '@/components/ui/progress';
 
 // ─── Types ───
 
@@ -82,7 +101,126 @@ interface Order {
   createdAt: string;
 }
 
+interface LoyaltyHistoryEntry {
+  id: string;
+  type: 'earned' | 'redeemed';
+  points: number;
+  description: string;
+  date: string;
+}
+
 const PAGE_SIZE = 10;
+
+// ─── Gradient helper ───
+
+function getAvatarGradient(name: string) {
+  const gradients = [
+    'from-emerald-400 to-teal-500',
+    'from-violet-400 to-purple-500',
+    'from-orange-400 to-amber-500',
+    'from-sky-400 to-cyan-500',
+    'from-rose-400 to-pink-500',
+    'from-lime-400 to-green-500',
+    'from-fuchsia-400 to-purple-600',
+    'from-yellow-400 to-orange-500',
+  ];
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return gradients[Math.abs(hash) % gradients.length];
+}
+
+function getInitials(name: string) {
+  const parts = name.trim().split(/\s+/);
+  if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  return name.charAt(0).toUpperCase();
+}
+
+// ─── Mock Loyalty History ───
+
+function generateMockLoyaltyHistory(customer: Customer): LoyaltyHistoryEntry[] {
+  const entries: LoyaltyHistoryEntry[] = [];
+  const now = new Date();
+  if (customer.loyaltyPoints > 0) {
+    // Add some earned entries
+    const earnCount = Math.min(customer.totalOrders || 2, 5);
+    for (let i = 0; i < earnCount; i++) {
+      const d = new Date(now);
+      d.setDate(d.getDate() - (i * 7 + Math.floor(Math.random() * 5)));
+      entries.push({
+        id: `lh-earned-${i}`,
+        type: 'earned',
+        points: Math.floor(Math.random() * 50) + 10,
+        description: `Order #${1000 + Math.floor(Math.random() * 100)} points`,
+        date: d.toISOString(),
+      });
+    }
+    if (customer.loyaltyPoints < 100) {
+      entries.push({
+        id: 'lh-redeemed-1',
+        type: 'redeemed',
+        points: 50,
+        description: 'Redeemed on purchase',
+        date: new Date(now.getTime() - 14 * 86400000).toISOString(),
+      });
+    }
+  }
+  return entries.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+}
+
+// ─── Mock Purchase Timeline Data ───
+
+interface TimelineItem {
+  id: string;
+  orderNumber: string;
+  date: string;
+  items: string[];
+  amount: number;
+  status: 'completed' | 'pending' | 'cancelled';
+}
+
+function generateMockTimeline(customer: Customer, orders: Order[]): TimelineItem[] {
+  if (orders.length > 0) {
+    return orders.map((o) => ({
+      id: o.id,
+      orderNumber: o.orderNumber,
+      date: o.createdAt,
+      items: ['Order items'],
+      amount: o.totalAmount,
+      status: o.status as 'completed' | 'pending' | 'cancelled',
+    }));
+  }
+  // Generate mock timeline entries based on customer data
+  const timeline: TimelineItem[] = [];
+  const mockItems = [
+    ['Butter Chicken', 'Naan', 'Raita'],
+    ['Paneer Tikka', 'Dal Makhani', 'Rice'],
+    ['Masala Dosa', 'Filter Coffee'],
+    ['Biryani', 'Raita', 'Gulab Jamun'],
+    ['Chole Bhature', 'Lassi'],
+    ['Samosa', 'Chai', 'Pav Bhaji'],
+  ];
+  const count = Math.max(customer.totalOrders || 3, 1);
+  const displayCount = Math.min(count, 6);
+  const now = new Date();
+  for (let i = 0; i < displayCount; i++) {
+    const d = new Date(now);
+    d.setDate(d.getDate() - i * Math.floor(Math.random() * 7 + 3));
+    const statusRoll = Math.random();
+    const status: 'completed' | 'pending' | 'cancelled' =
+      statusRoll < 0.7 ? 'completed' : statusRoll < 0.9 ? 'pending' : 'cancelled';
+    timeline.push({
+      id: `tl-${i}`,
+      orderNumber: `#${1000 + Math.floor(Math.random() * 9000)}`,
+      date: d.toISOString(),
+      items: mockItems[i % mockItems.length],
+      amount: Math.floor(Math.random() * 800 + 150),
+      status,
+    });
+  }
+  return timeline;
+}
 
 // ─── Skeleton Loader ───
 
@@ -141,10 +279,16 @@ export default function CustomersPanel() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [customerToDelete, setCustomerToDelete] = useState<Customer | null>(null);
 
-  // Detail view
+  // Detail drawer
+  const [detailOpen, setDetailOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [customerOrders, setCustomerOrders] = useState<Order[]>([]);
   const [loadingOrders, setLoadingOrders] = useState(false);
+
+  // Loyalty modal
+  const [loyaltyModalOpen, setLoyaltyModalOpen] = useState(false);
+  const [loyaltyModalType, setLoyaltyModalType] = useState<'add' | 'redeem'>('add');
+  const [loyaltyAmount, setLoyaltyAmount] = useState('');
 
   // Form state
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
@@ -230,7 +374,6 @@ export default function CustomersPanel() {
     setSaving(true);
     try {
       if (editingCustomer) {
-        // PATCH - use the API for update
         const res = await fetch(`/api/customers/${editingCustomer.id}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
@@ -245,6 +388,17 @@ export default function CustomersPanel() {
         if (res.ok) {
           toast.success('Customer updated');
           setCustomerDialogOpen(false);
+          // Also update selected customer if it's the one being edited
+          if (selectedCustomer?.id === editingCustomer.id) {
+            setSelectedCustomer({
+              ...selectedCustomer,
+              name: customerForm.name.trim(),
+              phone: customerForm.phone.trim() || null,
+              email: customerForm.email.trim() || null,
+              address: customerForm.address.trim() || null,
+              gstNumber: customerForm.gstNumber.trim() || null,
+            });
+          }
           fetchCustomers();
         } else {
           const data = await res.json();
@@ -287,6 +441,10 @@ export default function CustomersPanel() {
         toast.success('Customer deleted');
         setDeleteDialogOpen(false);
         setCustomerToDelete(null);
+        if (selectedCustomer?.id === customerToDelete.id) {
+          setDetailOpen(false);
+          setSelectedCustomer(null);
+        }
         fetchCustomers();
       } else {
         toast.error('Failed to delete customer');
@@ -296,10 +454,11 @@ export default function CustomersPanel() {
     }
   }
 
-  // ─── Customer Detail ───
+  // ─── Customer Detail Drawer ───
 
   async function openCustomerDetail(customer: Customer) {
     setSelectedCustomer(customer);
+    setDetailOpen(true);
     setLoadingOrders(true);
     try {
       const params = new URLSearchParams({ storeId, customerId: customer.id });
@@ -335,234 +494,104 @@ export default function CustomersPanel() {
     });
   }
 
-  // ─── Customer Detail View ───
-
-  if (selectedCustomer) {
-    return (
-      <div className="space-y-4 p-4 md:p-6">
-        {/* Back button */}
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => setSelectedCustomer(null)}
-          className="mb-2"
-        >
-          <ArrowLeft className="h-4 w-4 mr-1" />
-          Back to Customers
-        </Button>
-
-        {/* Profile Card */}
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex flex-col sm:flex-row items-start gap-4">
-              <div className="h-16 w-16 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 text-xl font-bold flex-shrink-0">
-                {selectedCustomer.name.charAt(0).toUpperCase()}
-              </div>
-              <div className="flex-1 min-w-0">
-                <h2 className="text-xl font-bold">{selectedCustomer.name}</h2>
-                <div className="flex flex-wrap gap-3 mt-2 text-sm text-muted-foreground">
-                  {selectedCustomer.phone && (
-                    <span className="flex items-center gap-1">
-                      <Phone className="h-3.5 w-3.5" />
-                      {selectedCustomer.phone}
-                    </span>
-                  )}
-                  {selectedCustomer.email && (
-                    <span className="flex items-center gap-1">
-                      <Mail className="h-3.5 w-3.5" />
-                      {selectedCustomer.email}
-                    </span>
-                  )}
-                  {selectedCustomer.address && (
-                    <span className="flex items-center gap-1">
-                      <MapPin className="h-3.5 w-3.5" />
-                      {selectedCustomer.address}
-                    </span>
-                  )}
-                  {selectedCustomer.gstNumber && (
-                    <span className="flex items-center gap-1">
-                      <FileText className="h-3.5 w-3.5" />
-                      GST: {selectedCustomer.gstNumber}
-                    </span>
-                  )}
-                </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Customer since {formatDate(selectedCustomer.createdAt)}
-                </p>
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  openEditCustomer(selectedCustomer);
-                  setSelectedCustomer(null);
-                }}
-              >
-                <Edit className="h-4 w-4 mr-1" />
-                Edit
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <Card>
-            <CardContent className="p-4 text-center">
-              <ShoppingBag className="h-5 w-5 mx-auto text-emerald-600 mb-1" />
-              <p className="text-2xl font-bold">{selectedCustomer.totalOrders}</p>
-              <p className="text-xs text-muted-foreground">Total Orders</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4 text-center">
-              <Package className="h-5 w-5 mx-auto text-emerald-600 mb-1" />
-              <p className="text-2xl font-bold">{formatCurrency(selectedCustomer.totalSpent)}</p>
-              <p className="text-xs text-muted-foreground">Total Spent</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4 text-center">
-              <Star className="h-5 w-5 mx-auto text-amber-500 mb-1" />
-              <p className="text-2xl font-bold">{selectedCustomer.loyaltyPoints}</p>
-              <p className="text-xs text-muted-foreground">Loyalty Points</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4 text-center">
-              <CreditCard className="h-5 w-5 mx-auto text-red-500 mb-1" />
-              <p className="text-2xl font-bold">{formatCurrency(selectedCustomer.creditBalance)}</p>
-              <p className="text-xs text-muted-foreground">Credit Balance</p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Loyalty & Credit Summary */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Star className="h-4 w-4 text-amber-500" />
-                Loyalty Points Summary
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Current Points</span>
-                  <span className="font-semibold">{selectedCustomer.loyaltyPoints} pts</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Estimated Value</span>
-                  <span className="font-semibold text-emerald-600">
-                    {formatCurrency(selectedCustomer.loyaltyPoints * 0.5)}
-                  </span>
-                </div>
-                <Separator />
-                <p className="text-xs text-muted-foreground">
-                  1 point = ₹0.50. Redeem points on next purchase.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <CreditCard className="h-4 w-4 text-red-500" />
-                Credit Balance
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Outstanding Credit</span>
-                  <span className="font-semibold text-red-600">
-                    {formatCurrency(selectedCustomer.creditBalance)}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Credit Limit</span>
-                  <span className="font-semibold">{formatCurrency(10000)}</span>
-                </div>
-                <Separator />
-                <p className="text-xs text-muted-foreground">
-                  {selectedCustomer.creditBalance > 0
-                    ? 'Customer has outstanding credit balance.'
-                    : 'No outstanding credit.'}
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Purchase History */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <ShoppingBag className="h-4 w-4" />
-              Purchase History
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {loadingOrders ? (
-              <CustomerTableSkeleton />
-            ) : customerOrders.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <ShoppingBag className="h-12 w-12 mx-auto mb-2 opacity-30" />
-                <p className="text-sm">No purchase history yet</p>
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Order #</TableHead>
-                      <TableHead>Date</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Payment</TableHead>
-                      <TableHead className="text-right">Amount</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {customerOrders.map((order) => (
-                      <TableRow key={order.id}>
-                        <TableCell className="font-medium">#{order.orderNumber}</TableCell>
-                        <TableCell className="text-muted-foreground">
-                          {formatDate(order.createdAt)}
-                        </TableCell>
-                        <TableCell>
-                          <Badge
-                            variant="outline"
-                            className={
-                              order.status === 'completed'
-                                ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                                : order.status === 'cancelled'
-                                  ? 'bg-red-50 text-red-700 border-red-200'
-                                  : 'bg-amber-50 text-amber-700 border-amber-200'
-                            }
-                          >
-                            {order.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-muted-foreground capitalize">
-                          {order.paymentMethod}
-                        </TableCell>
-                        <TableCell className="text-right font-medium">
-                          {formatCurrency(order.totalAmount)}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-    );
+  function formatDateShort(dateStr: string) {
+    return new Date(dateStr).toLocaleDateString('en-IN', {
+      day: '2-digit',
+      month: 'short',
+    });
   }
 
-  // ─── Main Customer List View ───
+  function formatTime(dateStr: string) {
+    return new Date(dateStr).toLocaleTimeString('en-IN', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true,
+    });
+  }
+
+  // ─── Loyalty helpers ───
+
+  const LOYALTY_POINTS_VALUE = 0.5; // 1 point = ₹0.50
+  const NEXT_REWARD_THRESHOLD = 500; // Points needed for next reward
+  const loyaltyHistory = selectedCustomer ? generateMockLoyaltyHistory(selectedCustomer) : [];
+  const loyaltyProgress = selectedCustomer
+    ? Math.min((selectedCustomer.loyaltyPoints / NEXT_REWARD_THRESHOLD) * 100, 100)
+    : 0;
+
+  function handleLoyaltyAction() {
+    const points = parseInt(loyaltyAmount);
+    if (!points || points <= 0) {
+      toast.error('Enter a valid number of points');
+      return;
+    }
+    if (loyaltyModalType === 'redeem' && selectedCustomer && points > selectedCustomer.loyaltyPoints) {
+      toast.error('Cannot redeem more points than available');
+      return;
+    }
+    if (loyaltyModalType === 'add') {
+      setSelectedCustomer({
+        ...selectedCustomer!,
+        loyaltyPoints: selectedCustomer!.loyaltyPoints + points,
+      });
+      toast.success(`Added ${points} loyalty points`);
+    } else {
+      setSelectedCustomer({
+        ...selectedCustomer!,
+        loyaltyPoints: selectedCustomer!.loyaltyPoints - points,
+      });
+      toast.success(`Redeemed ${points} loyalty points`);
+    }
+    setLoyaltyModalOpen(false);
+    setLoyaltyAmount('');
+  }
+
+  // ─── Timeline helpers ───
+
+  const timelineData = useMemo(() => {
+    if (!selectedCustomer) return [];
+    return generateMockTimeline(selectedCustomer, customerOrders);
+  }, [selectedCustomer, customerOrders]);
+
+  function getTimelineDotColor(status: string) {
+    switch (status) {
+      case 'completed':
+        return 'bg-emerald-500';
+      case 'pending':
+        return 'bg-amber-500';
+      case 'cancelled':
+        return 'bg-red-500';
+      default:
+        return 'bg-gray-400';
+    }
+  }
+
+  function getTimelineBorderColor(status: string) {
+    switch (status) {
+      case 'completed':
+        return 'border-emerald-200 dark:border-emerald-800';
+      case 'pending':
+        return 'border-amber-200 dark:border-amber-800';
+      case 'cancelled':
+        return 'border-red-200 dark:border-red-800';
+      default:
+        return 'border-gray-200 dark:border-gray-700';
+    }
+  }
+
+  function getStatusIcon(status: string) {
+    switch (status) {
+      case 'completed':
+        return <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />;
+      case 'pending':
+        return <Clock className="h-3.5 w-3.5 text-amber-600" />;
+      case 'cancelled':
+        return <XCircle className="h-3.5 w-3.5 text-red-600" />;
+      default:
+        return null;
+    }
+  }
+
+  // ─── Render ───
 
   return (
     <div className="space-y-4 p-4 md:p-6">
@@ -694,13 +723,13 @@ export default function CustomersPanel() {
                   {paginatedCustomers.map((customer) => (
                     <TableRow
                       key={customer.id}
-                      className="cursor-pointer"
+                      className="cursor-pointer hover:scale-[1.005] transition-transform duration-150"
                       onClick={() => openCustomerDetail(customer)}
                     >
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <div className="h-8 w-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 text-xs font-bold flex-shrink-0">
-                            {customer.name.charAt(0).toUpperCase()}
+                          <div className={`h-8 w-8 rounded-full bg-gradient-to-br ${getAvatarGradient(customer.name)} flex items-center justify-center text-white text-xs font-bold flex-shrink-0`}>
+                            {getInitials(customer.name)}
                           </div>
                           <span className="font-medium">{customer.name}</span>
                         </div>
@@ -833,8 +862,8 @@ export default function CustomersPanel() {
               onClick={() => openCustomerDetail(customer)}
             >
               <div className="flex items-start gap-3">
-                <div className="h-10 w-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 text-sm font-bold flex-shrink-0">
-                  {customer.name.charAt(0).toUpperCase()}
+                <div className={`h-10 w-10 rounded-full bg-gradient-to-br ${getAvatarGradient(customer.name)} flex items-center justify-center text-white text-sm font-bold flex-shrink-0`}>
+                  {getInitials(customer.name)}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between">
@@ -927,6 +956,393 @@ export default function CustomersPanel() {
           </div>
         )}
       </div>
+
+      {/* ═══════════════════════════════════════════════════════════ */}
+      {/* ═══ CUSTOMER DETAIL DRAWER (Sheet from right) ════════════ */}
+      {/* ═══════════════════════════════════════════════════════════ */}
+
+      <Sheet open={detailOpen} onOpenChange={(open) => {
+        setDetailOpen(open);
+        if (!open) {
+          // Don't clear selectedCustomer immediately to allow animation
+          setTimeout(() => setSelectedCustomer(null), 300);
+        }
+      }}>
+        <SheetContent side="right" className="w-full sm:max-w-lg md:max-w-xl lg:max-w-2xl overflow-y-auto p-0">
+          {selectedCustomer && (
+            <div className="flex flex-col h-full">
+              {/* ─── Customer Header ─── */}
+              <div className="relative p-6 pb-4">
+                {/* Gradient background banner */}
+                <div className={`absolute inset-0 h-32 bg-gradient-to-br ${getAvatarGradient(selectedCustomer.name)} opacity-10`} />
+                <div className="relative flex flex-col items-center text-center pt-2">
+                  {/* Avatar with initials */}
+                  <div className={`h-20 w-20 rounded-full bg-gradient-to-br ${getAvatarGradient(selectedCustomer.name)} flex items-center justify-center text-white text-2xl font-bold shadow-lg ring-4 ring-white dark:ring-gray-900`}>
+                    {getInitials(selectedCustomer.name)}
+                  </div>
+                  <h2 className="text-xl font-bold mt-3">{selectedCustomer.name}</h2>
+                  <div className="flex flex-wrap items-center justify-center gap-3 mt-2 text-sm text-muted-foreground">
+                    {selectedCustomer.phone && (
+                      <span className="flex items-center gap-1">
+                        <Phone className="h-3.5 w-3.5" />
+                        {selectedCustomer.phone}
+                      </span>
+                    )}
+                    {selectedCustomer.email && (
+                      <span className="flex items-center gap-1">
+                        <Mail className="h-3.5 w-3.5" />
+                        {selectedCustomer.email}
+                      </span>
+                    )}
+                  </div>
+                  {selectedCustomer.address && (
+                    <p className="flex items-center gap-1 text-sm text-muted-foreground mt-1">
+                      <MapPin className="h-3.5 w-3.5" />
+                      {selectedCustomer.address}
+                    </p>
+                  )}
+                  <div className="flex items-center gap-3 mt-2">
+                    <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                      <Calendar className="h-3 w-3" />
+                      Customer since {formatDate(selectedCustomer.createdAt)}
+                    </span>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="mt-3"
+                    onClick={() => {
+                      setDetailOpen(false);
+                      setTimeout(() => {
+                        openEditCustomer(selectedCustomer);
+                      }, 300);
+                    }}
+                  >
+                    <Edit className="h-3.5 w-3.5 mr-1" />
+                    Edit Customer
+                  </Button>
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* ─── Quick Stats Row (4 mini cards) ─── */}
+              <div className="grid grid-cols-2 gap-3 p-4">
+                <Card className="shadow-sm">
+                  <CardContent className="p-3 flex items-center gap-2">
+                    <div className="h-9 w-9 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center flex-shrink-0">
+                      <TrendingUp className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                    </div>
+                    <div>
+                      <p className="text-lg font-bold leading-tight">{formatCurrency(selectedCustomer.totalSpent)}</p>
+                      <p className="text-[11px] text-muted-foreground">Total Spent</p>
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card className="shadow-sm">
+                  <CardContent className="p-3 flex items-center gap-2">
+                    <div className="h-9 w-9 rounded-lg bg-sky-100 dark:bg-sky-900/30 flex items-center justify-center flex-shrink-0">
+                      <ShoppingBag className="h-4 w-4 text-sky-600 dark:text-sky-400" />
+                    </div>
+                    <div>
+                      <p className="text-lg font-bold leading-tight">{selectedCustomer.totalOrders}</p>
+                      <p className="text-[11px] text-muted-foreground">Orders</p>
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card className="shadow-sm">
+                  <CardContent className="p-3 flex items-center gap-2">
+                    <div className="h-9 w-9 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center flex-shrink-0">
+                      <Star className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                    </div>
+                    <div>
+                      <p className="text-lg font-bold leading-tight">{selectedCustomer.loyaltyPoints}</p>
+                      <p className="text-[11px] text-muted-foreground">
+                        Loyalty Pts <span className="text-emerald-600">({formatCurrency(selectedCustomer.loyaltyPoints * LOYALTY_POINTS_VALUE)} value)</span>
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card className="shadow-sm">
+                  <CardContent className="p-3 flex items-center gap-2">
+                    <div className="h-9 w-9 rounded-lg bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center flex-shrink-0">
+                      <Receipt className="h-4 w-4 text-violet-600 dark:text-violet-400" />
+                    </div>
+                    <div>
+                      <p className="text-lg font-bold leading-tight">
+                        {selectedCustomer.totalOrders > 0
+                          ? formatCurrency(selectedCustomer.totalSpent / selectedCustomer.totalOrders)
+                          : formatCurrency(0)}
+                      </p>
+                      <p className="text-[11px] text-muted-foreground">Avg. Order</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              <Separator />
+
+              {/* ─── Purchase Timeline ─── */}
+              <div className="p-4">
+                <h3 className="flex items-center gap-2 text-sm font-semibold mb-3">
+                  <ShoppingBag className="h-4 w-4" />
+                  Purchase Timeline
+                </h3>
+                {loadingOrders ? (
+                  <div className="space-y-3">
+                    {Array.from({ length: 3 }).map((_, i) => (
+                      <div key={i} className="flex gap-3">
+                        <Skeleton className="h-8 w-8 rounded-full" />
+                        <Skeleton className="h-16 flex-1 rounded-lg" />
+                      </div>
+                    ))}
+                  </div>
+                ) : timelineData.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <ShoppingBag className="h-10 w-10 mx-auto mb-2 opacity-30" />
+                    <p className="text-sm">No purchase history yet</p>
+                  </div>
+                ) : (
+                  <div className="relative max-h-72 overflow-y-auto pr-1 custom-scrollbar">
+                    {timelineData.map((item, index) => (
+                      <div key={item.id} className="flex gap-3 pb-4 last:pb-0">
+                        {/* Timeline line + dot */}
+                        <div className="flex flex-col items-center flex-shrink-0">
+                          <div className={`h-3 w-3 rounded-full ${getTimelineDotColor(item.status)} ring-2 ring-white dark:ring-gray-900 z-10 mt-1`} />
+                          {index < timelineData.length - 1 && (
+                            <div className="w-0.5 flex-1 bg-gray-200 dark:bg-gray-700 mt-1" />
+                          )}
+                        </div>
+                        {/* Timeline content */}
+                        <div className={`flex-1 rounded-lg border ${getTimelineBorderColor(item.status)} p-3 -mt-0.5`}>
+                          <div className="flex items-center justify-between mb-1">
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium text-sm">{item.orderNumber}</span>
+                              {getStatusIcon(item.status)}
+                            </div>
+                            <span className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">
+                              {formatCurrency(item.amount)}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
+                            <span>{formatDateShort(item.date)}</span>
+                            <span>•</span>
+                            <span>{formatTime(item.date)}</span>
+                          </div>
+                          <div className="flex flex-wrap gap-1">
+                            {item.items.map((itemName, idx) => (
+                              <Badge key={idx} variant="outline" className="text-[10px] h-5">
+                                {itemName}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <Separator />
+
+              {/* ─── Loyalty Points Section ─── */}
+              <div className="p-4">
+                <h3 className="flex items-center gap-2 text-sm font-semibold mb-3">
+                  <Gift className="h-4 w-4 text-amber-500" />
+                  Loyalty Points
+                </h3>
+                <Card className="shadow-sm">
+                  <CardContent className="p-4 space-y-3">
+                    {/* Current points + progress */}
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-2xl font-bold">{selectedCustomer.loyaltyPoints} <span className="text-sm font-normal text-muted-foreground">pts</span></p>
+                        <p className="text-xs text-muted-foreground">
+                          Value: {formatCurrency(selectedCustomer.loyaltyPoints * LOYALTY_POINTS_VALUE)}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xs text-muted-foreground">Next reward at</p>
+                        <p className="text-sm font-semibold">{NEXT_REWARD_THRESHOLD} pts</p>
+                      </div>
+                    </div>
+                    <div>
+                      <Progress value={loyaltyProgress} className="h-2" />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {NEXT_REWARD_THRESHOLD - selectedCustomer.loyaltyPoints > 0
+                          ? `${NEXT_REWARD_THRESHOLD - selectedCustomer.loyaltyPoints} points to next reward`
+                          : 'Reward unlocked! 🎉'}
+                      </p>
+                    </div>
+                    {/* Action buttons */}
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="flex-1 text-emerald-700 border-emerald-300 hover:bg-emerald-50 dark:text-emerald-400 dark:border-emerald-700 dark:hover:bg-emerald-900/20"
+                        onClick={() => {
+                          setLoyaltyModalType('add');
+                          setLoyaltyAmount('');
+                          setLoyaltyModalOpen(true);
+                        }}
+                      >
+                        <PlusCircle className="h-3.5 w-3.5 mr-1" />
+                        Add Points
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="flex-1 text-amber-700 border-amber-300 hover:bg-amber-50 dark:text-amber-400 dark:border-amber-700 dark:hover:bg-amber-900/20"
+                        onClick={() => {
+                          setLoyaltyModalType('redeem');
+                          setLoyaltyAmount('');
+                          setLoyaltyModalOpen(true);
+                        }}
+                        disabled={selectedCustomer.loyaltyPoints <= 0}
+                      >
+                        <MinusCircle className="h-3.5 w-3.5 mr-1" />
+                        Redeem Points
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Points History */}
+                {loyaltyHistory.length > 0 && (
+                  <div className="mt-3 max-h-40 overflow-y-auto custom-scrollbar">
+                    <p className="text-xs font-medium text-muted-foreground mb-2">Recent Activity</p>
+                    {loyaltyHistory.map((entry) => (
+                      <div key={entry.id} className="flex items-center justify-between py-1.5 border-b border-gray-100 dark:border-gray-800 last:border-0">
+                        <div className="flex items-center gap-2">
+                          {entry.type === 'earned' ? (
+                            <ArrowUpRight className="h-3.5 w-3.5 text-emerald-500" />
+                          ) : (
+                            <ArrowUpRight className="h-3.5 w-3.5 text-red-500 rotate-90" />
+                          )}
+                          <div>
+                            <p className="text-xs font-medium">{entry.description}</p>
+                            <p className="text-[10px] text-muted-foreground">{formatDateShort(entry.date)}</p>
+                          </div>
+                        </div>
+                        <span className={`text-xs font-semibold ${entry.type === 'earned' ? 'text-emerald-600' : 'text-red-600'}`}>
+                          {entry.type === 'earned' ? '+' : '-'}{entry.points}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <Separator />
+
+              {/* ─── Quick Actions at Bottom ─── */}
+              <div className="p-4 mt-auto">
+                <h3 className="text-xs font-medium text-muted-foreground mb-2">Quick Actions</h3>
+                <div className="grid grid-cols-3 gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-col h-auto py-2.5 gap-1 text-xs"
+                    onClick={() => {
+                      setDetailOpen(false);
+                      toast.success('New bill started for ' + selectedCustomer.name);
+                    }}
+                  >
+                    <Receipt className="h-4 w-4 text-emerald-600" />
+                    New Bill
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-col h-auto py-2.5 gap-1 text-xs"
+                    onClick={() => {
+                      if (selectedCustomer.phone) {
+                        const phone = selectedCustomer.phone.replace(/\D/g, '');
+                        window.open(`https://wa.me/${phone}`, '_blank');
+                      } else {
+                        toast.error('No phone number available for WhatsApp');
+                      }
+                    }}
+                  >
+                    <MessageSquare className="h-4 w-4 text-green-600" />
+                    WhatsApp
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-col h-auto py-2.5 gap-1 text-xs"
+                    onClick={() => {
+                      toast.success('Note added for ' + selectedCustomer.name);
+                    }}
+                  >
+                    <StickyNote className="h-4 w-4 text-amber-600" />
+                    Add Note
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+        </SheetContent>
+      </Sheet>
+
+      {/* ─── Loyalty Add/Redeem Modal ─── */}
+      <Dialog open={loyaltyModalOpen} onOpenChange={setLoyaltyModalOpen}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>
+              {loyaltyModalType === 'add' ? 'Add Loyalty Points' : 'Redeem Loyalty Points'}
+            </DialogTitle>
+            <DialogDescription>
+              {loyaltyModalType === 'add'
+                ? `Add points to ${selectedCustomer?.name}'s loyalty balance`
+                : `Redeem points from ${selectedCustomer?.name}'s loyalty balance (Available: ${selectedCustomer?.loyaltyPoints} pts)`}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="loyalty-amount">Points</Label>
+              <Input
+                id="loyalty-amount"
+                type="number"
+                placeholder="Enter points"
+                value={loyaltyAmount}
+                onChange={(e) => setLoyaltyAmount(e.target.value)}
+                min={1}
+                max={loyaltyModalType === 'redeem' ? selectedCustomer?.loyaltyPoints : undefined}
+              />
+              {loyaltyAmount && (
+                <p className="text-xs text-muted-foreground">
+                  Value: {formatCurrency(parseInt(loyaltyAmount) * LOYALTY_POINTS_VALUE)}
+                </p>
+              )}
+            </div>
+            <div className="flex gap-2">
+              {[10, 25, 50, 100].map((v) => (
+                <Button
+                  key={v}
+                  variant="outline"
+                  size="sm"
+                  className="flex-1"
+                  onClick={() => setLoyaltyAmount(String(v))}
+                >
+                  +{v}
+                </Button>
+              ))}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setLoyaltyModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleLoyaltyAction}
+              className={loyaltyModalType === 'add' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-amber-600 hover:bg-amber-700'}
+            >
+              {loyaltyModalType === 'add' ? 'Add Points' : 'Redeem Points'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* ─── Add/Edit Customer Dialog ─── */}
       <Dialog open={customerDialogOpen} onOpenChange={setCustomerDialogOpen}>
