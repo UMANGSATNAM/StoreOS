@@ -25,6 +25,11 @@ export async function GET(request: NextRequest) {
       case 'month':
         startDate = new Date(now.getFullYear(), now.getMonth(), 1);
         break;
+      case 'quarter':
+        startDate = new Date(now);
+        startDate.setDate(now.getDate() - 90);
+        startDate.setHours(0, 0, 0, 0);
+        break;
       case 'today':
       default:
         startDate = new Date(now);
@@ -106,6 +111,9 @@ export async function GET(request: NextRequest) {
       .sort((a, b) => b.revenue - a.revenue)
       .slice(0, 5);
 
+    // Generate daily data for chart
+    const dailyData = generateDailyData(allPeriodOrders, period);
+
     return NextResponse.json({
       todaySales,
       weekSales,
@@ -113,6 +121,7 @@ export async function GET(request: NextRequest) {
       ordersCount,
       averageOrderValue,
       topProducts,
+      dailyData,
     });
   } catch (error) {
     console.error('Get reports error:', error);
@@ -121,4 +130,45 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+function generateDailyData(
+  orders: Array<{ totalAmount: number; createdAt: Date }>,
+  period: string
+): Array<{ date: string; sales: number; orders: number }> {
+  const now = new Date();
+  const days = period === 'week' ? 7 : period === 'month' ? 30 : period === 'quarter' ? 90 : 7;
+
+  // Group orders by date
+  const ordersByDate = new Map<string, { sales: number; orders: number }>();
+
+  for (const order of orders) {
+    const orderDate = new Date(order.createdAt);
+    const dateKey = orderDate.toISOString().split('T')[0]; // YYYY-MM-DD
+    const existing = ordersByDate.get(dateKey) || { sales: 0, orders: 0 };
+    existing.sales += order.totalAmount;
+    existing.orders += 1;
+    ordersByDate.set(dateKey, existing);
+  }
+
+  // Build daily data array
+  const result: Array<{ date: string; sales: number; orders: number }> = [];
+  for (let i = days - 1; i >= 0; i--) {
+    const date = new Date(now);
+    date.setDate(date.getDate() - i);
+    const dateKey = date.toISOString().split('T')[0];
+    const dayData = ordersByDate.get(dateKey) || { sales: 0, orders: 0 };
+
+    const dayName = days <= 7
+      ? date.toLocaleDateString('en-IN', { weekday: 'short' })
+      : date.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' });
+
+    result.push({
+      date: dayName,
+      sales: Math.round(dayData.sales),
+      orders: dayData.orders,
+    });
+  }
+
+  return result;
 }

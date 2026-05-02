@@ -566,11 +566,74 @@ export default function CustomersPanel() {
 
   return (
     <div className="space-y-4 p-4 md:p-6">
+      {/* Stat Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <Card className="shadow-sm hover:shadow-md transition-shadow">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
+                <Users className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+              </div>
+              <div>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Total</p>
+                <p className="text-xl font-bold">{customers.length}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="shadow-sm hover:shadow-md transition-shadow">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
+                <ShoppingBag className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+              </div>
+              <div>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Active</p>
+                <p className="text-xl font-bold text-emerald-600">{customers.filter(c => c.totalOrders > 0).length}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="shadow-sm hover:shadow-md transition-shadow">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-sky-100 dark:bg-sky-900/30 flex items-center justify-center">
+                <Users className="w-5 h-5 text-sky-600 dark:text-sky-400" />
+              </div>
+              <div>
+                <p className="text-xs text-gray-500 dark:text-gray-400">New This Month</p>
+                <p className="text-xl font-bold text-sky-600">{customers.filter(c => {
+                  const d = new Date(c.createdAt);
+                  const now = new Date();
+                  return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+                }).length}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="shadow-sm hover:shadow-md transition-shadow">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
+                <Star className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+              </div>
+              <div>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Loyalty Points</p>
+                <p className="text-xl font-bold">{customers.reduce((s, c) => s + c.loyaltyPoints, 0).toLocaleString()}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
       {/* Top Bar */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <Users className="h-6 w-6 text-emerald-600" />
-          <h2 className="text-xl font-bold">Customers</h2>
+          <div>
+            <h2 className="text-xl font-bold">Customers</h2>
+            <p className="text-sm text-muted-foreground">Manage your customer base</p>
+          </div>
           <Badge variant="secondary" className="ml-1">
             {filteredCustomers.length}
           </Badge>

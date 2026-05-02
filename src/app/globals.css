@@ -120,3 +120,63 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Print styles - hide everything except receipt */
+@media print {
+  body > *:not(#__next) {
+    display: none !important;
+  }
+  .print-receipt-only {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+  }
+  .no-print {
+    display: none !important;
+  }
+}
+
+/* Micro-interactions - Smooth transitions */
+@layer base {
+  /* Card hover effects */
+  .card-hover {
+    @apply transition-all duration-200 hover:scale-[1.02] hover:shadow-md active:scale-[0.98];
+  }
+
+  /* Button click feedback */
+  .btn-press {
+    @apply active:scale-95 transition-transform duration-100;
+  }
+
+  /* Table row hover */
+  .row-hover {
+    @apply transition-colors duration-150 hover:bg-muted/50;
+  }
+
+  /* Content fade-in */
+  .fade-in {
+    animation: fadeIn 0.3s ease-in-out;
+  }
+
+  /* Skeleton pulse override for smoother look */
+  .skeleton-shimmer {
+    @apply bg-gradient-to-r from-muted via-muted/80 to-muted bg-[length:200%_100%] animate-[shimmer_1.5s_infinite];
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}

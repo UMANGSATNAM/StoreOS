@@ -564,6 +564,62 @@ export default function ProductsPanel() {
 
   return (
     <div className="space-y-4 p-4 md:p-6">
+      {/* Stat Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <Card className="shadow-sm hover:shadow-md transition-shadow">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
+                <Package className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+              </div>
+              <div>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Total Products</p>
+                <p className="text-xl font-bold">{products.length}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="shadow-sm hover:shadow-md transition-shadow">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
+                <Package className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+              </div>
+              <div>
+                <p className="text-xs text-gray-500 dark:text-gray-400">In Stock</p>
+                <p className="text-xl font-bold text-emerald-600">{products.filter(p => p.stock > p.lowStockAlert).length}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="shadow-sm hover:shadow-md transition-shadow">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
+                <AlertTriangle className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+              </div>
+              <div>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Low Stock</p>
+                <p className="text-xl font-bold text-amber-600">{lowStockProducts.length}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="shadow-sm hover:shadow-md transition-shadow">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+                <X className="w-5 h-5 text-red-600 dark:text-red-400" />
+              </div>
+              <div>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Out of Stock</p>
+                <p className="text-xl font-bold text-red-600">{outOfStockProducts.length}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
       {/* Low Stock Alerts */}
       {(lowStockProducts.length > 0 || outOfStockProducts.length > 0) && (
         <Card className="border-amber-200 bg-amber-50/50">
@@ -613,7 +669,10 @@ export default function ProductsPanel() {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <Package className="h-6 w-6 text-emerald-600" />
-          <h2 className="text-xl font-bold">Products & Inventory</h2>
+          <div>
+            <h2 className="text-xl font-bold">Products & Inventory</h2>
+            <p className="text-sm text-muted-foreground">Manage your product catalog</p>
+          </div>
           <Badge variant="secondary" className="ml-1">
             {filteredProducts.length} items
           </Badge>

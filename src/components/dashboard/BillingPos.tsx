@@ -34,6 +34,9 @@ import {
   AlertTriangle,
   Package,
   IndianRupee,
+  Download,
+  Copy,
+  Share2,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -533,6 +536,71 @@ export default function BillingPos() {
   const handlePayAndWhatsApp = async () => {
     await handlePayment();
     toast.success('Receipt sent via WhatsApp (demo)');
+  };
+
+  // ─── Generate Receipt Text ──────────────────────────────────────
+  const generateReceiptText = () => {
+    if (!receiptData) return '';
+    const taxRate = store?.taxRate ?? 18;
+    const lines: string[] = [];
+    lines.push('═══════════════════════════════════');
+    lines.push(`  ${store?.name || 'StoreOS'}`);
+    lines.push(`  ${store?.address || '123 Business Street, City'}`);
+    if (store?.phone) lines.push(`  Phone: ${store.phone}`);
+    if (store?.gstNumber) lines.push(`  GSTIN: ${store.gstNumber}`);
+    lines.push('═══════════════════════════════════');
+    lines.push('');
+    lines.push(`Receipt: #${receiptData.orderNumber}`);
+    lines.push(`Date: ${receiptData.date}`);
+    lines.push(`Customer: ${receiptData.customerName}`);
+    lines.push(`Payment: ${receiptData.paymentMethod.toUpperCase()}`);
+    lines.push('───────────────────────────────────');
+    lines.push('Item                Qty  Rate  Amt');
+    lines.push('───────────────────────────────────');
+    receiptData.items.forEach(item => {
+      const name = item.name.length > 18 ? item.name.slice(0, 18) : item.name.padEnd(18);
+      const qty = String(item.quantity).padStart(3);
+      const rate = String(item.price).padStart(5);
+      const amt = String(item.total).padStart(6);
+      lines.push(`${name}${qty}${rate}${amt}`);
+    });
+    lines.push('───────────────────────────────────');
+    lines.push(`Subtotal:                      ₹${receiptData.subtotal}`);
+    if (receiptData.discountAmount > 0) {
+      lines.push(`Discount:                     -₹${receiptData.discountAmount}`);
+    }
+    lines.push(`CGST (${taxRate / 2}%):                     ₹${Math.round(receiptData.taxAmount / 2 * 100) / 100}`);
+    lines.push(`SGST (${taxRate / 2}%):                     ₹${Math.round(receiptData.taxAmount / 2 * 100) / 100}`);
+    lines.push('═══════════════════════════════════');
+    lines.push(`TOTAL:                        ₹${receiptData.totalAmount}`);
+    lines.push('═══════════════════════════════════');
+    lines.push('');
+    lines.push('  Thank you! Visit again! 🙏');
+    lines.push('  Powered by StoreOS • storeos.in');
+    lines.push('');
+    return lines.join('\n');
+  };
+
+  const handleCopyReceipt = () => {
+    const text = generateReceiptText();
+    if (!text) return;
+    navigator.clipboard.writeText(text).then(() => {
+      toast.success('Receipt copied to clipboard');
+    }).catch(() => {
+      toast.error('Failed to copy receipt');
+    });
+  };
+
+  const handleShareWhatsApp = () => {
+    const text = generateReceiptText();
+    if (!text) return;
+    const encodedText = encodeURIComponent(text);
+    window.open(`https://wa.me/?text=${encodedText}`, '_blank');
+    toast.success('Opening WhatsApp...');
+  };
+
+  const handleDownloadPdf = () => {
+    window.print();
   };
 
   // ─── Get order type options based on niche ──────────────────────
@@ -1270,15 +1338,43 @@ export default function BillingPos() {
               </div>
 
               {/* Action Buttons */}
-              <div className="flex gap-2 print:hidden pt-2">
-                <Button
-                  onClick={() => window.print()}
-                  className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white"
-                >
-                  <Printer className="w-4 h-4 mr-1.5" />
-                  Print Receipt
-                </Button>
-                <Button variant="outline" onClick={() => setShowReceipt(false)} className="flex-1">
+              <div className="flex flex-col gap-2 print:hidden pt-2">
+                <div className="flex gap-2">
+                  <Button
+                    onClick={handleDownloadPdf}
+                    className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white active:scale-95 transition-transform"
+                  >
+                    <Printer className="w-4 h-4 mr-1.5" />
+                    Print Receipt
+                  </Button>
+                  <Button
+                    onClick={handleShareWhatsApp}
+                    variant="outline"
+                    className="flex-1 border-green-400 text-green-700 hover:bg-green-50 dark:text-green-400 dark:border-green-700 dark:hover:bg-green-950/30 active:scale-95 transition-transform"
+                  >
+                    <Share2 className="w-4 h-4 mr-1.5" />
+                    WhatsApp
+                  </Button>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    onClick={handleCopyReceipt}
+                    variant="outline"
+                    className="flex-1 active:scale-95 transition-transform"
+                  >
+                    <Copy className="w-4 h-4 mr-1.5" />
+                    Copy Receipt
+                  </Button>
+                  <Button
+                    onClick={handleDownloadPdf}
+                    variant="outline"
+                    className="flex-1 active:scale-95 transition-transform"
+                  >
+                    <Download className="w-4 h-4 mr-1.5" />
+                    Download PDF
+                  </Button>
+                </div>
+                <Button variant="ghost" onClick={() => setShowReceipt(false)} className="w-full active:scale-95 transition-transform">
                   <X className="w-4 h-4 mr-1.5" />
                   Close
                 </Button>

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAppStore } from '@/lib/store';
 import { useTheme } from 'next-themes';
 import { NICHES, getNicheBySlug } from '@/lib/types';
@@ -69,6 +69,37 @@ import {
   Car,
   MoreHorizontal,
   Clock,
+  CloudSun,
+  CheckCircle2,
+  XCircle,
+  Hourglass,
+  Utensils,
+  Soup,
+  ChefHat,
+  Scissors,
+  CalendarCheck,
+  UserCheck,
+  CreditCard,
+  ShoppingCartIcon,
+  Scale,
+  AlertCircle,
+  Wifi,
+  Smartphone,
+  Wrench,
+  Truck,
+  FileText,
+  Cake,
+  Coffee,
+  Stamp,
+  Handshake,
+  Building2,
+  Gem,
+  DumbbellIcon,
+  Heart,
+  BookOpen,
+  Pencil,
+  Hotel,
+  Key,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import BillingPos from '@/components/dashboard/BillingPos';
@@ -210,6 +241,107 @@ interface ReportsData {
   topProducts: { name: string; quantity: number; revenue: number }[];
 }
 
+// ─── Niche Quick Actions Config ──────────────────────────────
+
+const NICHE_QUICK_ACTIONS: Record<string, Array<{ label: string; icon: React.ElementType; tab: string; color: string; bg: string }>> = {
+  restaurant: [
+    { label: 'New Table', icon: Utensils, tab: 'tables', color: 'text-orange-600 dark:text-orange-400', bg: 'bg-orange-50 dark:bg-orange-900/20' },
+    { label: 'Take Order', icon: Soup, tab: 'billing', color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-900/20' },
+    { label: 'Kitchen Display', icon: ChefHat, tab: 'orders', color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-50 dark:bg-amber-900/20' },
+    { label: 'Daily Special', icon: UtensilsCrossed, tab: 'products', color: 'text-rose-600 dark:text-rose-400', bg: 'bg-rose-50 dark:bg-rose-900/20' },
+    { label: 'Menu Card', icon: FileText, tab: 'products', color: 'text-sky-600 dark:text-sky-400', bg: 'bg-sky-50 dark:bg-sky-900/20' },
+    { label: 'Zomato Orders', icon: Wifi, tab: 'orders', color: 'text-red-600 dark:text-red-400', bg: 'bg-red-50 dark:bg-red-900/20' },
+  ],
+  salon: [
+    { label: 'New Appointment', icon: CalendarCheck, tab: 'appointments', color: 'text-violet-600 dark:text-violet-400', bg: 'bg-violet-50 dark:bg-violet-900/20' },
+    { label: 'Service Menu', icon: Scissors, tab: 'products', color: 'text-pink-600 dark:text-pink-400', bg: 'bg-pink-50 dark:bg-pink-900/20' },
+    { label: 'Stylist Schedule', icon: UserCheck, tab: 'staff', color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-900/20' },
+    { label: 'Membership', icon: CreditCard, tab: 'customers', color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-50 dark:bg-amber-900/20' },
+    { label: 'Walk-in', icon: ShoppingCartIcon, tab: 'billing', color: 'text-sky-600 dark:text-sky-400', bg: 'bg-sky-50 dark:bg-sky-900/20' },
+    { label: 'Tip Tracker', icon: IndianRupee, tab: 'reports', color: 'text-green-600 dark:text-green-400', bg: 'bg-green-50 dark:bg-green-900/20' },
+  ],
+  grocery: [
+    { label: 'Fast Bill', icon: ShoppingCartIcon, tab: 'billing', color: 'text-green-600 dark:text-green-400', bg: 'bg-green-50 dark:bg-green-900/20' },
+    { label: 'Khata Book', icon: FileText, tab: 'customers', color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-50 dark:bg-amber-900/20' },
+    { label: 'Stock Alert', icon: AlertCircle, tab: 'products', color: 'text-red-600 dark:text-red-400', bg: 'bg-red-50 dark:bg-red-900/20' },
+    { label: 'Daily Purchase', icon: Package, tab: 'products', color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-900/20' },
+    { label: 'Barcode Scan', icon: Smartphone, tab: 'billing', color: 'text-sky-600 dark:text-sky-400', bg: 'bg-sky-50 dark:bg-sky-900/20' },
+    { label: 'Expiry Check', icon: AlertTriangle, tab: 'products', color: 'text-orange-600 dark:text-orange-400', bg: 'bg-orange-50 dark:bg-orange-900/20' },
+  ],
+  pharmacy: [
+    { label: 'Quick Sale', icon: ShoppingCartIcon, tab: 'billing', color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-900/20' },
+    { label: 'Batch Track', icon: Package, tab: 'products', color: 'text-sky-600 dark:text-sky-400', bg: 'bg-sky-50 dark:bg-sky-900/20' },
+    { label: 'Expiry Alert', icon: AlertTriangle, tab: 'products', color: 'text-red-600 dark:text-red-400', bg: 'bg-red-50 dark:bg-red-900/20' },
+    { label: 'Prescription', icon: FileText, tab: 'orders', color: 'text-violet-600 dark:text-violet-400', bg: 'bg-violet-50 dark:bg-violet-900/20' },
+  ],
+  clothing: [
+    { label: 'New Sale', icon: ShoppingCartIcon, tab: 'billing', color: 'text-pink-600 dark:text-pink-400', bg: 'bg-pink-50 dark:bg-pink-900/20' },
+    { label: 'Barcode Scan', icon: Smartphone, tab: 'billing', color: 'text-sky-600 dark:text-sky-400', bg: 'bg-sky-50 dark:bg-sky-900/20' },
+    { label: 'Exchange', icon: ArrowRight, tab: 'orders', color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-50 dark:bg-amber-900/20' },
+    { label: 'Fashion Catalog', icon: FileText, tab: 'products', color: 'text-violet-600 dark:text-violet-400', bg: 'bg-violet-50 dark:bg-violet-900/20' },
+  ],
+  electronics: [
+    { label: 'New Sale', icon: ShoppingCartIcon, tab: 'billing', color: 'text-cyan-600 dark:text-cyan-400', bg: 'bg-cyan-50 dark:bg-cyan-900/20' },
+    { label: 'IMEI Track', icon: Smartphone, tab: 'products', color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-50 dark:bg-blue-900/20' },
+    { label: 'Repair Job', icon: Wrench, tab: 'orders', color: 'text-orange-600 dark:text-orange-400', bg: 'bg-orange-50 dark:bg-orange-900/20' },
+    { label: 'EMI Calc', icon: IndianRupee, tab: 'billing', color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-900/20' },
+  ],
+  coaching: [
+    { label: 'Enroll Student', icon: GraduationCap, tab: 'students', color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-50 dark:bg-blue-900/20' },
+    { label: 'Fee Collect', icon: IndianRupee, tab: 'billing', color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-900/20' },
+    { label: 'Attendance', icon: CheckCircle2, tab: 'students', color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-50 dark:bg-amber-900/20' },
+    { label: 'Exam Marks', icon: FileText, tab: 'reports', color: 'text-violet-600 dark:text-violet-400', bg: 'bg-violet-50 dark:bg-violet-900/20' },
+  ],
+  clinic: [
+    { label: 'New Patient', icon: Users, tab: 'customers', color: 'text-red-600 dark:text-red-400', bg: 'bg-red-50 dark:bg-red-900/20' },
+    { label: 'OPD Queue', icon: Hourglass, tab: 'orders', color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-50 dark:bg-amber-900/20' },
+    { label: 'Prescription', icon: FileText, tab: 'orders', color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-900/20' },
+    { label: 'Lab Tests', icon: BarChart3, tab: 'reports', color: 'text-sky-600 dark:text-sky-400', bg: 'bg-sky-50 dark:bg-sky-900/20' },
+  ],
+  garage: [
+    { label: 'New Job Card', icon: Wrench, tab: 'vehicles', color: 'text-slate-600 dark:text-slate-400', bg: 'bg-slate-50 dark:bg-slate-900/20' },
+    { label: 'Vehicle In', icon: Car, tab: 'vehicles', color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-900/20' },
+    { label: 'Parts Stock', icon: Package, tab: 'products', color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-50 dark:bg-amber-900/20' },
+    { label: 'Delivery', icon: Truck, tab: 'orders', color: 'text-sky-600 dark:text-sky-400', bg: 'bg-sky-50 dark:bg-sky-900/20' },
+  ],
+  bakery: [
+    { label: 'New Order', icon: Cake, tab: 'billing', color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-50 dark:bg-amber-900/20' },
+    { label: 'Today Menu', icon: Coffee, tab: 'products', color: 'text-orange-600 dark:text-orange-400', bg: 'bg-orange-50 dark:bg-orange-900/20' },
+    { label: 'Combo Builder', icon: ShoppingCartIcon, tab: 'billing', color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-900/20' },
+    { label: 'Loyalty Stamp', icon: Stamp, tab: 'customers', color: 'text-violet-600 dark:text-violet-400', bg: 'bg-violet-50 dark:bg-violet-900/20' },
+  ],
+  wholesale: [
+    { label: 'New Invoice', icon: FileText, tab: 'billing', color: 'text-zinc-600 dark:text-zinc-400', bg: 'bg-zinc-50 dark:bg-zinc-900/20' },
+    { label: 'Party Ledger', icon: Handshake, tab: 'customers', color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-900/20' },
+    { label: 'Bulk Order', icon: Package, tab: 'billing', color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-50 dark:bg-amber-900/20' },
+    { label: 'E-Way Bill', icon: Truck, tab: 'orders', color: 'text-sky-600 dark:text-sky-400', bg: 'bg-sky-50 dark:bg-sky-900/20' },
+  ],
+  jewellery: [
+    { label: 'New Sale', icon: ShoppingCartIcon, tab: 'billing', color: 'text-yellow-600 dark:text-yellow-400', bg: 'bg-yellow-50 dark:bg-yellow-900/20' },
+    { label: 'Gold Rate', icon: Gem, tab: 'products', color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-50 dark:bg-amber-900/20' },
+    { label: 'Exchange', icon: ArrowRight, tab: 'orders', color: 'text-violet-600 dark:text-violet-400', bg: 'bg-violet-50 dark:bg-violet-900/20' },
+    { label: 'Hallmark', icon: CheckCircle2, tab: 'products', color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-900/20' },
+  ],
+  gym: [
+    { label: 'New Member', icon: Dumbbell, tab: 'members', color: 'text-lime-600 dark:text-lime-400', bg: 'bg-lime-50 dark:bg-lime-900/20' },
+    { label: 'Attendance', icon: CheckCircle2, tab: 'members', color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-900/20' },
+    { label: 'Trainer', icon: UserCheck, tab: 'staff', color: 'text-sky-600 dark:text-sky-400', bg: 'bg-sky-50 dark:bg-sky-900/20' },
+    { label: 'Renewal', icon: IndianRupee, tab: 'billing', color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-50 dark:bg-amber-900/20' },
+  ],
+  stationery: [
+    { label: 'Quick Bill', icon: ShoppingCartIcon, tab: 'billing', color: 'text-teal-600 dark:text-teal-400', bg: 'bg-teal-50 dark:bg-teal-900/20' },
+    { label: 'ISBN Search', icon: BookOpen, tab: 'products', color: 'text-sky-600 dark:text-sky-400', bg: 'bg-sky-50 dark:bg-sky-900/20' },
+    { label: 'Kit Builder', icon: Pencil, tab: 'products', color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-50 dark:bg-amber-900/20' },
+    { label: 'School Order', icon: FileText, tab: 'orders', color: 'text-violet-600 dark:text-violet-400', bg: 'bg-violet-50 dark:bg-violet-900/20' },
+  ],
+  hotel: [
+    { label: 'Check-in', icon: Key, tab: 'rooms', color: 'text-indigo-600 dark:text-indigo-400', bg: 'bg-indigo-50 dark:bg-indigo-900/20' },
+    { label: 'Room Grid', icon: Building2, tab: 'rooms', color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-900/20' },
+    { label: 'Room Service', icon: Coffee, tab: 'billing', color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-50 dark:bg-amber-900/20' },
+    { label: 'Check-out', icon: LogOut, tab: 'rooms', color: 'text-red-600 dark:text-red-400', bg: 'bg-red-50 dark:bg-red-900/20' },
+  ],
+};
+
 // ─── Dashboard Overview Component ────────────────────────────
 
 function DashboardOverview({ storeId, niche }: { storeId: string; niche: string }) {
@@ -231,19 +363,122 @@ function DashboardOverview({ storeId, niche }: { storeId: string; niche: string 
     lowStockThreshold: number;
   }>>([]);
 
-  const salesData = [
-    { day: 'Mon', sales: 12400, orders: 18 },
-    { day: 'Tue', sales: 18200, orders: 24 },
-    { day: 'Wed', sales: 15800, orders: 21 },
-    { day: 'Thu', sales: 22100, orders: 32 },
-    { day: 'Fri', sales: 19500, orders: 28 },
-    { day: 'Sat', sales: 28400, orders: 42 },
-    { day: 'Sun', sales: 21300, orders: 31 },
-  ];
+  // Sales chart state
+  const [salesPeriod, setSalesPeriod] = useState<'7' | '30' | '90'>('7');
+  const [chartData, setChartData] = useState<Array<{ date: string; sales: number; orders: number }>>([]);
+  const [chartLoading, setChartLoading] = useState(false);
+
+  // Order status counts
+  const [orderStatusCounts, setOrderStatusCounts] = useState({ completed: 0, pending: 0, cancelled: 0 });
+
+  // Current date/time for welcome section
+  const [currentDateTime, setCurrentDateTime] = useState<Date>(new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentDateTime(new Date()), 60000); // Update every minute
+    return () => clearInterval(timer);
+  }, []);
 
   const accent = getNicheAccent(niche);
   const accentBg = getNicheAccentBg(niche);
 
+  // Fetch order status counts
+  useEffect(() => {
+    if (!storeId) return;
+    async function fetchOrderCounts() {
+      try {
+        const [completedRes, pendingRes, cancelledRes] = await Promise.all([
+          fetch(`/api/orders?storeId=${storeId}&status=completed`),
+          fetch(`/api/orders?storeId=${storeId}&status=pending`),
+          fetch(`/api/orders?storeId=${storeId}&status=cancelled`),
+        ]);
+        const counts = { completed: 0, pending: 0, cancelled: 0 };
+        if (completedRes.ok) {
+          const data = await completedRes.json();
+          counts.completed = data.orders?.length || 0;
+        }
+        if (pendingRes.ok) {
+          const data = await pendingRes.json();
+          counts.pending = data.orders?.length || 0;
+        }
+        if (cancelledRes.ok) {
+          const data = await cancelledRes.json();
+          counts.cancelled = data.orders?.length || 0;
+        }
+        setOrderStatusCounts(counts);
+      } catch {
+        // Use defaults
+      }
+    }
+    fetchOrderCounts();
+  }, [storeId]);
+
+  // Fetch chart data based on period
+  useEffect(() => {
+    if (!storeId) return;
+    setChartLoading(true);
+    async function fetchChartData() {
+      try {
+        const periodMap: Record<string, string> = { '7': 'week', '30': 'month', '90': 'quarter' };
+        const period = periodMap[salesPeriod] || 'week';
+        const res = await fetch(`/api/reports?storeId=${storeId}&period=${period}`);
+        if (res.ok) {
+          const data = await res.json();
+          // If API returns daily data, use it. Otherwise generate from summary.
+          if (data.dailyData && Array.isArray(data.dailyData)) {
+            setChartData(data.dailyData);
+          } else {
+            // Generate chart data from available reports
+            setChartData(generateFallbackChartData(salesPeriod, data));
+          }
+        } else {
+          setChartData(generateFallbackChartData(salesPeriod));
+        }
+      } catch {
+        setChartData(generateFallbackChartData(salesPeriod));
+      } finally {
+        setChartLoading(false);
+      }
+    }
+    fetchChartData();
+  }, [storeId, salesPeriod]);
+
+  // Helper to generate fallback chart data
+  const generateFallbackChartData = (period: string, reportsData?: ReportsData | null) => {
+    const days = period === '7' ? 7 : period === '30' ? 30 : 90;
+    const baseSales = reportsData?.todaySales || 15000;
+    const data = [];
+    const now = new Date();
+    for (let i = days - 1; i >= 0; i--) {
+      const date = new Date(now);
+      date.setDate(date.getDate() - i);
+      const dayName = days <= 7
+        ? date.toLocaleDateString('en-IN', { weekday: 'short' })
+        : date.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' });
+      // Vary sales with some randomness
+      const variance = 0.5 + Math.random() * 1.0;
+      const isWeekend = date.getDay() === 0 || date.getDay() === 6;
+      const weekendBoost = isWeekend ? 1.3 : 1.0;
+      const sales = Math.round(baseSales * variance * weekendBoost);
+      data.push({
+        date: dayName,
+        sales,
+        orders: Math.round(sales / (reportsData?.averageOrderValue || 500)),
+      });
+    }
+    return data;
+  };
+
+  // Chart summary stats
+  const chartSummary = useMemo(() => {
+    if (chartData.length === 0) return { total: 0, avg: 0, best: 0, bestDay: '' };
+    const total = chartData.reduce((sum, d) => sum + d.sales, 0);
+    const avg = Math.round(total / chartData.length);
+    const bestEntry = chartData.reduce((best, d) => d.sales > best.sales ? d : best, chartData[0]);
+    return { total, avg, best: bestEntry.sales, bestDay: bestEntry.date };
+  }, [chartData]);
+
+  // General data fetch
   useEffect(() => {
     async function fetchData() {
       try {
@@ -268,7 +503,6 @@ function DashboardOverview({ storeId, niche }: { storeId: string; niche: string 
           const data = await productsRes.json();
           const products = Array.isArray(data) ? data : data.products || [];
           setProductCount(products.length);
-          // Find low stock products
           const lowStock = products.filter(
             (p: { stock: number; lowStockThreshold?: number }) =>
               p.lowStockThreshold ? p.stock <= p.lowStockThreshold : p.stock <= 5
@@ -291,6 +525,7 @@ function DashboardOverview({ storeId, niche }: { storeId: string; niche: string 
   }, [storeId]);
 
   const store = useAppStore((s) => s.store);
+  const subscription = useAppStore((s) => s.subscription);
   const setDashboardTab = useAppStore((s) => s.setDashboardTab);
 
   const statCards = [
@@ -328,12 +563,8 @@ function DashboardOverview({ storeId, niche }: { storeId: string; niche: string 
     },
   ];
 
-  const quickActions = [
-    { label: 'New Bill', icon: Receipt, tab: 'billing', color: accent, bg: accentBg },
-    { label: 'Add Product', icon: Plus, tab: 'products', color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-50 dark:bg-amber-900/20' },
-    { label: 'Add Customer', icon: Users, tab: 'customers', color: 'text-purple-600 dark:text-purple-400', bg: 'bg-purple-50 dark:bg-purple-900/20' },
-    { label: 'View Reports', icon: BarChart3, tab: 'reports', color: 'text-sky-600 dark:text-sky-400', bg: 'bg-sky-50 dark:bg-sky-900/20' },
-  ];
+  // Niche-specific quick actions
+  const nicheQuickActions = NICHE_QUICK_ACTIONS[niche] || NICHE_QUICK_ACTIONS.restaurant;
 
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
@@ -349,16 +580,85 @@ function DashboardOverview({ storeId, niche }: { storeId: string; niche: string 
     }
   };
 
+  // Time-of-day greeting
+  const getGreeting = () => {
+    const hour = currentDateTime.getHours();
+    if (hour < 12) return 'Good Morning';
+    if (hour < 17) return 'Good Afternoon';
+    return 'Good Evening';
+  };
+
+  // Formatted date
+  const formattedDate = currentDateTime.toLocaleDateString('en-IN', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  });
+
+  // Subscription status display
+  const getSubscriptionDisplay = () => {
+    const status = subscription?.status || 'trial';
+    if (status === 'active') {
+      return (
+        <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-600 dark:text-emerald-400">
+          <span className="w-2 h-2 rounded-full bg-emerald-500" />
+          Active Plan
+        </span>
+      );
+    }
+    if (status === 'past_due') {
+      return (
+        <span className="inline-flex items-center gap-1 text-xs font-medium text-red-600 dark:text-red-400">
+          <span className="w-2 h-2 rounded-full bg-red-500" />
+          Past Due
+        </span>
+      );
+    }
+    // Trial
+    const trialEnd = subscription?.trialEndsAt;
+    if (trialEnd) {
+      const daysLeft = Math.max(0, Math.ceil((new Date(trialEnd).getTime() - Date.now()) / (1000 * 60 * 60 * 24)));
+      return (
+        <span className="inline-flex items-center gap-1 text-xs font-medium text-amber-600 dark:text-amber-400">
+          <span className="w-2 h-2 rounded-full bg-amber-500" />
+          Trial — {daysLeft} days left
+        </span>
+      );
+    }
+    return (
+      <span className="inline-flex items-center gap-1 text-xs font-medium text-amber-600 dark:text-amber-400">
+        <span className="w-2 h-2 rounded-full bg-amber-500" />
+        Trial
+      </span>
+    );
+  };
+
+  // Order status bar chart data
+  const totalStatusOrders = orderStatusCounts.completed + orderStatusCounts.pending + orderStatusCounts.cancelled;
+  const completedPct = totalStatusOrders > 0 ? (orderStatusCounts.completed / totalStatusOrders) * 100 : 0;
+  const pendingPct = totalStatusOrders > 0 ? (orderStatusCounts.pending / totalStatusOrders) * 100 : 0;
+  const cancelledPct = totalStatusOrders > 0 ? (orderStatusCounts.cancelled / totalStatusOrders) * 100 : 0;
+
   return (
     <div className="space-y-6">
-      {/* Welcome Message */}
-      <div>
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100">
-          Welcome back, {store?.name || 'Store'}
-        </h1>
-        <p className="text-gray-500 dark:text-gray-400 mt-1">
-          Here&apos;s what&apos;s happening with your store today.
-        </p>
+      {/* ─── Enhanced Welcome Section ─── */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100">
+              {getGreeting()}, {store?.name || 'Store'}
+            </h1>
+            <CloudSun className="w-6 h-6 text-amber-400 hidden sm:block" />
+          </div>
+          <div className="flex items-center gap-3">
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              {formattedDate}
+            </p>
+            <span className="text-gray-300 dark:text-gray-600">·</span>
+            {getSubscriptionDisplay()}
+          </div>
+        </div>
       </div>
 
       {/* Stat Cards */}
@@ -389,9 +689,190 @@ function DashboardOverview({ storeId, niche }: { storeId: string; niche: string 
         })}
       </div>
 
-      {/* Two Column Layout */}
+      {/* Sales Chart + Order Status Row */}
       <div className="grid lg:grid-cols-3 gap-6">
-        {/* Recent Orders - takes 2 columns */}
+        {/* Sales Overview Card */}
+        <Card className="lg:col-span-2 shadow-sm">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-lg font-semibold">Sales Overview</CardTitle>
+                <CardDescription>Revenue trend for the selected period</CardDescription>
+              </div>
+              {/* Period Toggle */}
+              <div className="flex items-center bg-gray-100 dark:bg-gray-800 rounded-lg p-0.5">
+                {(['7', '30', '90'] as const).map((p) => (
+                  <button
+                    key={p}
+                    onClick={() => setSalesPeriod(p)}
+                    className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
+                      salesPeriod === p
+                        ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm'
+                        : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
+                    }`}
+                  >
+                    {p === '7' ? '7 Days' : p === '30' ? '30 Days' : '90 Days'}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="h-64">
+              {chartLoading ? (
+                <div className="h-full flex items-center justify-center">
+                  <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={chartData} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="salesGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" className="dark:opacity-20" />
+                    <XAxis
+                      dataKey="date"
+                      tick={{ fontSize: 11, fill: '#9ca3af' }}
+                      axisLine={{ stroke: '#e5e7eb' }}
+                      tickLine={false}
+                      interval={salesPeriod === '7' ? 0 : salesPeriod === '30' ? 4 : 14}
+                    />
+                    <YAxis
+                      tick={{ fontSize: 11, fill: '#9ca3af' }}
+                      axisLine={false}
+                      tickLine={false}
+                      tickFormatter={(value: number) => `₹${(value / 1000).toFixed(0)}k`}
+                    />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '8px',
+                        boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)',
+                        fontSize: '12px',
+                      }}
+                      formatter={(value: number, name: string) => [
+                        name === 'sales' ? `₹${value.toLocaleString('en-IN')}` : value,
+                        name === 'sales' ? 'Sales' : 'Orders',
+                      ]}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="sales"
+                      stroke="#10b981"
+                      strokeWidth={2.5}
+                      fill="url(#salesGradient)"
+                      dot={salesPeriod === '7' ? { r: 4, fill: '#10b981', strokeWidth: 2, stroke: '#fff' } : false}
+                      activeDot={{ r: 6, fill: '#10b981', strokeWidth: 2, stroke: '#fff' }}
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              )}
+            </div>
+            {/* Chart Summary */}
+            <div className="mt-4 pt-3 border-t dark:border-gray-700 flex flex-wrap items-center gap-x-6 gap-y-1 text-sm">
+              <span className="text-gray-500 dark:text-gray-400">
+                Total: <span className="font-bold text-gray-900 dark:text-gray-100">₹{chartSummary.total.toLocaleString('en-IN')}</span>
+              </span>
+              <span className="text-gray-500 dark:text-gray-400">
+                Avg: <span className="font-bold text-gray-900 dark:text-gray-100">₹{chartSummary.avg.toLocaleString('en-IN')}/day</span>
+              </span>
+              <span className="text-gray-500 dark:text-gray-400">
+                Best: <span className="font-bold text-emerald-600 dark:text-emerald-400">₹{chartSummary.best.toLocaleString('en-IN')}</span>
+                <span className="text-gray-400 text-xs ml-1">({chartSummary.bestDay})</span>
+              </span>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Order Status Card */}
+        <Card className="shadow-sm">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg font-semibold">Order Status</CardTitle>
+            <CardDescription>Today&apos;s order breakdown</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {/* Status Items */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                    <span className="text-sm font-medium">Completed</span>
+                  </div>
+                  <span className="text-sm font-bold">{orderStatusCounts.completed}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Hourglass className="w-4 h-4 text-amber-500" />
+                    <span className="text-sm font-medium">Pending</span>
+                  </div>
+                  <span className="text-sm font-bold">{orderStatusCounts.pending}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <XCircle className="w-4 h-4 text-red-500" />
+                    <span className="text-sm font-medium">Cancelled</span>
+                  </div>
+                  <span className="text-sm font-bold">{orderStatusCounts.cancelled}</span>
+                </div>
+              </div>
+
+              {/* Horizontal Bar Chart */}
+              <div className="mt-4">
+                <div className="flex h-3 rounded-full overflow-hidden bg-gray-100 dark:bg-gray-800">
+                  {completedPct > 0 && (
+                    <div
+                      className="bg-emerald-500 transition-all duration-500"
+                      style={{ width: `${completedPct}%` }}
+                    />
+                  )}
+                  {pendingPct > 0 && (
+                    <div
+                      className="bg-amber-400 transition-all duration-500"
+                      style={{ width: `${pendingPct}%` }}
+                    />
+                  )}
+                  {cancelledPct > 0 && (
+                    <div
+                      className="bg-red-400 transition-all duration-500"
+                      style={{ width: `${cancelledPct}%` }}
+                    />
+                  )}
+                </div>
+                <div className="flex items-center justify-between mt-2 text-[10px] text-gray-400">
+                  <span>{totalStatusOrders} total orders</span>
+                  <div className="flex items-center gap-3">
+                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500" />Completed</span>
+                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-400" />Pending</span>
+                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-400" />Cancelled</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Quick Links */}
+              <div className="pt-3 border-t dark:border-gray-700">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setDashboardTab('orders')}
+                  className={`w-full justify-between ${accent}`}
+                >
+                  View All Orders
+                  <ArrowRight className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Two Column Layout: Recent Orders + Niche Quick Actions */}
+      <div className="grid lg:grid-cols-3 gap-6">
+        {/* Recent Orders */}
         <Card className="lg:col-span-2 shadow-sm">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
@@ -447,25 +928,29 @@ function DashboardOverview({ storeId, niche }: { storeId: string; niche: string 
           </CardContent>
         </Card>
 
-        {/* Quick Actions */}
+        {/* Niche Quick Actions */}
         <Card className="shadow-sm">
           <CardHeader className="pb-3">
-            <CardTitle className="text-lg font-semibold">Quick Actions</CardTitle>
+            <div className="flex items-center gap-2">
+              <span className="text-lg">{getNicheBySlug(niche as NicheSlug)?.icon}</span>
+              <CardTitle className="text-lg font-semibold">Quick Actions</CardTitle>
+            </div>
+            <CardDescription>{getNicheBySlug(niche as NicheSlug)?.name} shortcuts</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 gap-3">
-              {quickActions.map((action) => {
+            <div className="grid grid-cols-2 gap-2">
+              {nicheQuickActions.map((action) => {
                 const Icon = action.icon;
                 return (
                   <button
                     key={action.label}
                     onClick={() => setDashboardTab(action.tab)}
-                    className="flex flex-col items-center gap-2 p-4 rounded-xl border border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-sm transition-all group"
+                    className="flex flex-col items-center gap-1.5 p-3 rounded-xl border border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-sm transition-all group"
                   >
-                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${action.bg} group-hover:scale-110 transition-transform`}>
-                      <Icon className={`w-5 h-5 ${action.color}`} />
+                    <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${action.bg} group-hover:scale-110 transition-transform`}>
+                      <Icon className={`w-4 h-4 ${action.color}`} />
                     </div>
-                    <span className="text-xs font-medium text-center">{action.label}</span>
+                    <span className="text-[11px] font-medium text-center leading-tight">{action.label}</span>
                   </button>
                 );
               })}
@@ -474,113 +959,53 @@ function DashboardOverview({ storeId, niche }: { storeId: string; niche: string 
         </Card>
       </div>
 
-      {/* Bottom Row */}
-      <div className="grid lg:grid-cols-2 gap-6">
-        {/* Low Stock Alerts */}
-        <Card className="shadow-sm">
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <AlertTriangle className="w-5 h-5 text-amber-500" />
-                <CardTitle className="text-lg font-semibold">Low Stock Alerts</CardTitle>
-              </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setDashboardTab('products')}
-                className={accent}
-              >
-                Manage
-                <ArrowRight className="w-4 h-4 ml-1" />
-              </Button>
+      {/* Bottom Row: Low Stock Alerts */}
+      <Card className="shadow-sm">
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-amber-500" />
+              <CardTitle className="text-lg font-semibold">Low Stock Alerts</CardTitle>
             </div>
-          </CardHeader>
-          <CardContent>
-            {lowStockProducts.length === 0 ? (
-              <div className="text-center py-6 text-gray-500 dark:text-gray-400">
-                <PackageX className="w-10 h-10 mx-auto mb-2 opacity-30" />
-                <p className="text-sm">All products are well stocked!</p>
-              </div>
-            ) : (
-              <div className="space-y-2 max-h-64 overflow-y-auto">
-                {lowStockProducts.map((product) => (
-                  <div
-                    key={product.id}
-                    className="flex items-center justify-between p-3 rounded-lg bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800/50"
-                  >
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium truncate">{product.name}</p>
-                      <p className="text-xs text-amber-600 dark:text-amber-400">
-                        Below threshold
-                      </p>
-                    </div>
-                    <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border-0">
-                      {product.stock} left
-                    </Badge>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setDashboardTab('products')}
+              className={accent}
+            >
+              Manage
+              <ArrowRight className="w-4 h-4 ml-1" />
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {lowStockProducts.length === 0 ? (
+            <div className="text-center py-6 text-gray-500 dark:text-gray-400">
+              <PackageX className="w-10 h-10 mx-auto mb-2 opacity-30" />
+              <p className="text-sm">All products are well stocked!</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+              {lowStockProducts.map((product) => (
+                <div
+                  key={product.id}
+                  className="flex items-center justify-between p-3 rounded-lg bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800/50"
+                >
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium truncate">{product.name}</p>
+                    <p className="text-xs text-amber-600 dark:text-amber-400">
+                      Below threshold
+                    </p>
                   </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Sales Chart */}
-        <Card className="shadow-sm">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg font-semibold">Sales Overview</CardTitle>
-            <CardDescription>Revenue trend for the past 7 days</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={salesData} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="salesGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" className="dark:opacity-20" />
-                  <XAxis
-                    dataKey="day"
-                    tick={{ fontSize: 12, fill: '#9ca3af' }}
-                    axisLine={{ stroke: '#e5e7eb' }}
-                    tickLine={false}
-                  />
-                  <YAxis
-                    tick={{ fontSize: 12, fill: '#9ca3af' }}
-                    axisLine={false}
-                    tickLine={false}
-                    tickFormatter={(value: number) => `₹${(value / 1000).toFixed(0)}k`}
-                  />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                      border: '1px solid #e5e7eb',
-                      borderRadius: '8px',
-                      boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)',
-                      fontSize: '12px',
-                    }}
-                    formatter={(value: number, name: string) => [
-                      name === 'sales' ? `₹${value.toLocaleString('en-IN')}` : value,
-                      name === 'sales' ? 'Sales' : 'Orders',
-                    ]}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="sales"
-                    stroke="#10b981"
-                    strokeWidth={2.5}
-                    fill="url(#salesGradient)"
-                    dot={{ r: 4, fill: '#10b981', strokeWidth: 2, stroke: '#fff' }}
-                    activeDot={{ r: 6, fill: '#10b981', strokeWidth: 2, stroke: '#fff' }}
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
+                  <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border-0">
+                    {product.stock} left
+                  </Badge>
+                </div>
+              ))}
             </div>
-          </CardContent>
-        </Card>
-      </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
@@ -815,7 +1240,7 @@ export default function PosDashboard() {
                         }`}
                       >
                         <Icon className="w-4 h-4" />
-                        <span>{item.label}</span>
+                        <span>{item.label}</span                      >
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                   );

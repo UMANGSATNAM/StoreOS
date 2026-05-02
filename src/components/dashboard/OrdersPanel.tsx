@@ -20,6 +20,16 @@ import {
   CreditCard,
   Clock,
   ShoppingBag,
+  CheckCircle,
+  XCircle,
+  Pause,
+  Banknote,
+  Smartphone,
+  SplitSquareHorizontal,
+  UtensilsCrossed,
+  Package as PackageIcon,
+  Truck,
+  Store,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -109,33 +119,43 @@ function OrdersTableSkeleton() {
   );
 }
 
-// ─── Status Badge ───
+// ─── Status Badge with Icons ───
 
 function OrderStatusBadge({ status }: { status: string }) {
   switch (status.toLowerCase()) {
     case 'completed':
     case 'paid':
       return (
-        <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 border-emerald-200 border">
+        <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 border-emerald-200 border flex items-center gap-1">
+          <CheckCircle className="w-3 h-3" />
           Completed
         </Badge>
       );
     case 'held':
+      return (
+        <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100 border-blue-200 border flex items-center gap-1">
+          <Pause className="w-3 h-3" />
+          Held
+        </Badge>
+      );
     case 'pending':
       return (
-        <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100 border-amber-200 border">
-          Held
+        <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100 border-amber-200 border flex items-center gap-1">
+          <Clock className="w-3 h-3" />
+          Pending
         </Badge>
       );
     case 'cancelled':
       return (
-        <Badge className="bg-red-100 text-red-700 hover:bg-red-100 border-red-200 border">
+        <Badge className="bg-red-100 text-red-700 hover:bg-red-100 border-red-200 border flex items-center gap-1">
+          <XCircle className="w-3 h-3" />
           Cancelled
         </Badge>
       );
     case 'refunded':
       return (
-        <Badge className="bg-purple-100 text-purple-700 hover:bg-purple-100 border-purple-200 border">
+        <Badge className="bg-purple-100 text-purple-700 hover:bg-purple-100 border-purple-200 border flex items-center gap-1">
+          <RotateCcw className="w-3 h-3" />
           Refunded
         </Badge>
       );
@@ -143,6 +163,88 @@ function OrderStatusBadge({ status }: { status: string }) {
       return (
         <Badge variant="outline" className="capitalize">
           {status}
+        </Badge>
+      );
+  }
+}
+
+// ─── Payment Method Badge ───
+
+function PaymentMethodBadge({ method }: { method: string }) {
+  switch (method) {
+    case 'cash':
+      return (
+        <Badge className="bg-gray-100 text-gray-700 border-gray-200 border flex items-center gap-1 text-xs">
+          <Banknote className="w-3 h-3" />
+          Cash
+        </Badge>
+      );
+    case 'upi':
+      return (
+        <Badge className="bg-purple-100 text-purple-700 border-purple-200 border flex items-center gap-1 text-xs">
+          <Smartphone className="w-3 h-3" />
+          UPI
+        </Badge>
+      );
+    case 'card':
+      return (
+        <Badge className="bg-sky-100 text-sky-700 border-sky-200 border flex items-center gap-1 text-xs">
+          <CreditCard className="w-3 h-3" />
+          Card
+        </Badge>
+      );
+    case 'split':
+      return (
+        <Badge className="bg-orange-100 text-orange-700 border-orange-200 border flex items-center gap-1 text-xs">
+          <SplitSquareHorizontal className="w-3 h-3" />
+          Split
+        </Badge>
+      );
+    default:
+      return (
+        <Badge variant="outline" className="capitalize text-xs">
+          {method}
+        </Badge>
+      );
+  }
+}
+
+// ─── Order Type Badge ───
+
+function OrderTypeBadge({ type }: { type: string }) {
+  switch (type) {
+    case 'dine_in':
+      return (
+        <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 border flex items-center gap-1 text-xs">
+          <UtensilsCrossed className="w-3 h-3" />
+          Dine-in
+        </Badge>
+      );
+    case 'takeaway':
+      return (
+        <Badge className="bg-orange-100 text-orange-700 border-orange-200 border flex items-center gap-1 text-xs">
+          <PackageIcon className="w-3 h-3" />
+          Takeaway
+        </Badge>
+      );
+    case 'delivery':
+      return (
+        <Badge className="bg-sky-100 text-sky-700 border-sky-200 border flex items-center gap-1 text-xs">
+          <Truck className="w-3 h-3" />
+          Delivery
+        </Badge>
+      );
+    case 'in_store':
+      return (
+        <Badge className="bg-gray-100 text-gray-700 border-gray-200 border flex items-center gap-1 text-xs">
+          <Store className="w-3 h-3" />
+          In-Store
+        </Badge>
+      );
+    default:
+      return (
+        <Badge variant="outline" className="capitalize text-xs">
+          {type.replace('_', ' ')}
         </Badge>
       );
   }
@@ -291,6 +393,25 @@ export default function OrdersPanel() {
     }
   }
 
+  // Stats for the orders panel
+  const orderStats = useMemo(() => {
+    const today = new Date().toDateString();
+    const todayOrders = orders.filter(o => new Date(o.createdAt).toDateString() === today);
+    const weekAgo = new Date();
+    weekAgo.setDate(weekAgo.getDate() - 7);
+    const weekOrders = orders.filter(o => new Date(o.createdAt) >= weekAgo);
+    const pendingOrders = orders.filter(o => o.status === 'pending' || o.status === 'held');
+    const avgValue = orders.length > 0
+      ? orders.reduce((sum, o) => sum + o.totalAmount, 0) / orders.length
+      : 0;
+    return {
+      today: todayOrders.length,
+      thisWeek: weekOrders.length,
+      pending: pendingOrders.length,
+      avgValue: Math.round(avgValue),
+    };
+  }, [orders]);
+
   // ─── Render ───
 
   return (
@@ -299,10 +420,10 @@ export default function OrdersPanel() {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <ClipboardList className="h-6 w-6 text-emerald-600" />
-          <h2 className="text-xl font-bold">Orders</h2>
-          <Badge variant="secondary" className="ml-1">
-            {filteredOrders.length}
-          </Badge>
+          <div>
+            <h2 className="text-xl font-bold">Orders</h2>
+            <p className="text-sm text-muted-foreground">Manage and track all orders</p>
+          </div>
         </div>
         <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
           <div className="relative flex-1 sm:flex-initial">
@@ -315,6 +436,62 @@ export default function OrdersPanel() {
             />
           </div>
         </div>
+      </div>
+
+      {/* Stat Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <Card className="shadow-sm hover:shadow-md transition-shadow">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
+                <ShoppingBag className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+              </div>
+              <div>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Today</p>
+                <p className="text-xl font-bold">{orderStats.today}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="shadow-sm hover:shadow-md transition-shadow">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-sky-100 dark:bg-sky-900/30 flex items-center justify-center">
+                <Calendar className="w-5 h-5 text-sky-600 dark:text-sky-400" />
+              </div>
+              <div>
+                <p className="text-xs text-gray-500 dark:text-gray-400">This Week</p>
+                <p className="text-xl font-bold text-sky-600">{orderStats.thisWeek}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="shadow-sm hover:shadow-md transition-shadow">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
+                <Clock className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+              </div>
+              <div>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Pending</p>
+                <p className="text-xl font-bold text-amber-600">{orderStats.pending}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="shadow-sm hover:shadow-md transition-shadow">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center">
+                <IndianRupee className="w-5 h-5 text-violet-600 dark:text-violet-400" />
+              </div>
+              <div>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Avg. Value</p>
+                <p className="text-xl font-bold">₹{orderStats.avgValue.toLocaleString('en-IN')}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Filters Row */}
@@ -401,9 +578,7 @@ export default function OrdersPanel() {
                         {formatCurrency(order.totalAmount)}
                       </TableCell>
                       <TableCell>
-                        <Badge variant="outline" className="text-xs capitalize">
-                          {getPaymentMethodLabel(order.paymentMethod)}
-                        </Badge>
+                        <PaymentMethodBadge method={order.paymentMethod} />
                       </TableCell>
                       <TableCell>
                         <OrderStatusBadge status={order.status} />
@@ -530,10 +705,7 @@ export default function OrdersPanel() {
                       <Clock className="h-3 w-3" />
                       {formatDate(order.createdAt)} {formatTime(order.createdAt)}
                     </span>
-                    <span className="flex items-center gap-1">
-                      <CreditCard className="h-3 w-3" />
-                      {getPaymentMethodLabel(order.paymentMethod)}
-                    </span>
+                    <PaymentMethodBadge method={order.paymentMethod} />
                   </div>
                 </div>
                 <div className="text-right shrink-0">
@@ -626,15 +798,11 @@ export default function OrdersPanel() {
 
           {selectedOrder && (
             <div className="space-y-4">
-              {/* Status + Payment */}
+              {/* Status + Payment + Type */}
               <div className="flex items-center gap-2 flex-wrap">
                 <OrderStatusBadge status={selectedOrder.status} />
-                <Badge variant="outline" className="capitalize">
-                  {getPaymentMethodLabel(selectedOrder.paymentMethod)}
-                </Badge>
-                <Badge variant="outline" className="capitalize">
-                  {selectedOrder.type.replace('_', ' ')}
-                </Badge>
+                <PaymentMethodBadge method={selectedOrder.paymentMethod} />
+                <OrderTypeBadge type={selectedOrder.type} />
               </div>
 
               {/* Customer Info */}
