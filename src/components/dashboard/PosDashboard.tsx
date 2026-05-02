@@ -130,6 +130,7 @@ import MembersPanel from '@/components/dashboard/MembersPanel';
 import StudentsPanel from '@/components/dashboard/StudentsPanel';
 import VehiclesPanel from '@/components/dashboard/VehiclesPanel';
 import SuppliersPanel from '@/components/dashboard/SuppliersPanel';
+import ExpensesPanel from '@/components/dashboard/ExpensesPanel';
 import NotificationsPanel from '@/components/dashboard/NotificationsPanel';
 import KeyboardShortcutsModal from '@/components/dashboard/KeyboardShortcutsModal';
 
@@ -151,6 +152,7 @@ const MAIN_NAV_ITEMS = [
   { label: 'Billing / POS', icon: Receipt, tab: 'billing' },
   { label: 'Products', icon: Package, tab: 'products' },
   { label: 'Suppliers', icon: Truck, tab: 'suppliers' },
+  { label: 'Expenses', icon: IndianRupee, tab: 'expenses' },
   { label: 'Customers', icon: Users, tab: 'customers' },
   { label: 'Orders', icon: ClipboardList, tab: 'orders' },
   { label: 'Staff', icon: UserCog, tab: 'staff' },
@@ -1876,6 +1878,10 @@ export default function PosDashboard() {
 
     if (dashboardTab === 'suppliers') {
       return <SuppliersPanel />;
+    }
+
+    if (dashboardTab === 'expenses') {
+      return <ExpensesPanel />;
     }
 
     if (dashboardTab === 'customers') {

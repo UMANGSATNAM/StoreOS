@@ -1046,3 +1046,209 @@ Priority Recommendations for Next Phase:
 6. Add data export (Excel/PDF) for all panels
 7. Add customer-facing online ordering page per store
 8. Add expense tracker with day/shift opening-closing balance
+
+---
+Task ID: 4-a
+Agent: Landing & Settings Styling Enhancer
+Task: Enhance Landing Page hero mockup animation and Settings panel styling
+
+Work Log:
+
+- **Landing Page - Hero POS Mockup Enhancements:**
+  - Replaced setInterval-based count-up animation with framer-motion `useSpring` for the 3 stat values (₹24,580, 142, 384). Uses spring physics with `stiffness: 50, damping: 20` for natural-feeling animation.
+  - Changed mock orders from 5 to 4 items as specified, and updated cycling to show one order at a time (instead of 3 simultaneously) with a smooth fade + slide transition every 3 seconds.
+  - Verified existing features: pulsing green "LIVE" dot, live-updating clock in mockup top bar, typing animation in search bar — all already present and working.
+
+- **Landing Page - Testimonial Carousel:**
+  - Replaced static desktop testimonial grid with a unified carousel system.
+  - Desktop now shows all 3 cards with auto-rotate slide animation (`AnimatePresence` with `x: carouselDirection * 60` slide), plus the active testimonial gets a highlighted state with `ring-2 ring-emerald-500/30 scale-[1.02]`.
+  - Mobile continues to show 1 card at a time with full slide animation.
+  - Shared navigation arrows and dot indicators visible on both desktop and mobile, with proper `aria-label` attributes.
+  - Auto-rotate every 5 seconds maintained.
+
+- **Landing Page - Footer Enhancements:**
+  - Top border gradient (emerald → transparent) already present: `bg-gradient-to-r from-transparent via-emerald-500 to-transparent`.
+  - Updated "Made with ❤️ in India" badge text to read "Made with ❤️ in India 🇮🇳" (was "Made in 🇮🇳 India" with Heart icon).
+  - Dynamic copyright year with `new Date().getFullYear()` already present.
+
+- **Settings Panel - Tab Icons:**
+  - Changed Tax tab icon from `FileText` to `Percent` as specified.
+  - All other tab icons already correct: Store (Store Profile), FileText (Receipt), CreditCard (Payment), Palette (Branding), Crown (Subscription), MessageSquare (WhatsApp), Database (Data), Globe (Language).
+  - Cleaned up duplicate imports (`Palette`, `CreditCard` appeared twice).
+
+- **Settings Panel - Tab Content Animation:**
+  - Wrapped content of every `TabsContent` in a `motion.div` with `initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease: 'easeOut' }}`.
+  - All 9 tabs (profile, tax, receipt, payment, branding, subscription, whatsapp, language, data) now have the fade + slide-up transition when switching.
+
+- **Settings Panel - Subscription Tab Enhancement:**
+  - Added visual "Current Plan" card with emerald glow border (`border-2 border-emerald-500/40 shadow-lg shadow-emerald-500/10`) and subtle gradient overlay.
+  - Added next billing date display with `CalendarDays` icon showing the 1st of next month.
+  - Changed "Upgrade to Pro" button to "Upgrade Plan" that shows a `toast.info('Coming Soon! 🚀')` when clicked.
+  - Added plan features checklist in an emerald-styled box showing Starter (4 features) or Pro (6 features) based on current plan.
+  - Separated billing history into its own Card section with proper header.
+
+- **Settings Panel - Save Feedback & Unsaved Changes:**
+  - Added `hasUnsavedChanges` state that tracks whether any form field differs from the initial snapshot.
+  - Added animated "You have unsaved changes" indicator bar at the top of settings (amber-colored with pulsing dot).
+  - Save button gets `ring-2 ring-amber-400/50 ring-offset-2` visual indicator when unsaved changes exist.
+  - Enhanced save success toast with `description: 'All changes have been applied to your store.'` and `duration: 3000`.
+  - Initial snapshot is captured after data fetch and updated after successful save, properly resetting the unsaved changes state.
+
+- Lint passes with zero errors.
+- Dev server compiles and runs successfully.
+
+Stage Summary:
+- Landing page hero mockup now uses framer-motion spring animation for stat count-up and shows 4 cycling orders individually
+- Testimonial section unified into a carousel with auto-rotate, navigation arrows, and dot indicators on both desktop and mobile
+- Settings panel all 9 tabs have fade+slide-up animation on switch
+- Subscription tab enhanced with emerald glow border card, next billing date, features checklist, and "Coming Soon" upgrade toast
+- Unsaved changes indicator added with amber warning bar and save button ring highlight
+- Footer badge text updated to "Made with ❤️ in India"
+
+Files Modified:
+- src/components/landing/LandingPage.tsx — framer-motion spring count-up, 4-order cycling, unified carousel, footer badge text
+- src/components/dashboard/SettingsPanel.tsx — Tab icons, tab content animation, subscription tab redesign, unsaved changes indicator, enhanced save feedback
+
+---
+Task ID: 5-a
+Agent: Feature Developer — Expense Tracker & Day Management
+Task: Add Expense Tracker and Day Open/Close management to the StoreOS POS dashboard
+
+Work Log:
+- **Created ExpensesPanel.tsx** — Full expense management module with all requested features:
+  - **Stat Cards**: Today's Expenses, This Week, This Month, Avg. Daily — with gradient backgrounds, left colored border accents, rose/amber/violet/teal theme for expenses
+  - **Expense Entry Form (Dialog)**: Amount (₹), Category dropdown (9 categories: Rent, Utilities, Salaries, Supplies, Marketing, Maintenance, Transport, Food, Miscellaneous), Description, Payment Method (Cash, Bank Transfer, UPI, Cheque), Date (defaults today), Receipt Number
+  - **Expense Table (desktop) / Card List (mobile)**: Responsive layout with columns Date, Category (color badge), Description, Amount, Payment Method (with icon), Actions (Edit/Delete)
+  - **Filters**: Search by description, Category dropdown, Payment method dropdown, Date range (Today/This Week/This Month/Custom with date pickers)
+  - **Pagination**: Page navigation with page number buttons, prev/next arrows
+  - **Category-wise Breakdown Chart**: Recharts PieChart (donut) with interactive custom tooltip showing amount and percentage, legend with category names and colors
+  - **Monthly Trend Chart**: Recharts BarChart showing daily expenses for current month in rose/red theme, custom tooltip with ₹ formatted values
+  - **Mock Data**: 30 realistic expense entries across all categories — Rent ₹25,000, Electricity ₹8,500, Staff Salary ₹15,000/₹10,000/₹12,000, Vegetable supplies ₹3,200/₹4,100, Marketing ₹2,000/₹1,500/₹3,000, Gas cylinder ₹1,800, Cleaning supplies ₹650, Transport ₹450/₹2,800, Misc ₹300/₹500/₹250, plus many more realistic Indian business expenses
+  - **Color scheme**: Rose/red for expenses (differentiated from emerald/teal for income), no indigo/blue
+
+- **Day Open/Close Management**:
+  - **Open Day**: Prominent emerald "Open Day" button in header, dialog with Opening Cash Balance (₹) and Notes fields, records date/opening balance/opened by/timestamp, only available if day not already opened
+  - **Close Day**: Amber "Close Day" button (visible only if day opened), comprehensive summary dialog showing Opening Balance, Total Sales, Total Expenses, Cash Received, UPI Received, Cash Expenses, Expected Cash Balance (formula: Opening + Cash Sales - Cash Expenses), Actual Cash Count input, auto-calculated Difference with color coding (green=balanced, amber=minor, red=mismatch), Notes field, "Confirm Close Day" button
+  - **Day Status Widget**: Shows current day status with icon and badge (🟢 Open / 🔴 Not Opened), opening balance if opened, time since opening (e.g., "3h 24m"), quick link to close the day
+  - **Day History (last 7 days)**: Table (desktop) / Card list (mobile) showing Date, Opening Balance, Sales, Expenses, Closing Balance, Difference with color coding (green=balanced, amber=minor difference, red=large difference), status badges (Balanced/Minor Diff/Mismatch)
+  - Auto-archiving of previous day records when day changes
+
+- **localStorage Persistence**: All expense and day data persisted per store using localStorage with store-specific keys, initialized with mock data on first load
+
+- **Integration with PosDashboard**:
+  - Added "Expenses" nav item to MAIN_NAV_ITEMS after "Suppliers" with IndianRupee icon
+  - Imported ExpensesPanel component
+  - Added `dashboardTab === 'expenses'` rendering in renderTabContent()
+  - Uses existing Zustand `dashboardTab` and `setDashboardTab` from store
+
+Stage Summary:
+- Full expense tracker with 30+ mock entries, CRUD operations, filters, search, pagination
+- Category breakdown PieChart and monthly trend BarChart with rose/red theme
+- Day Open/Close management with balance reconciliation and difference tracking
+- Day status widget and 7-day history table with color-coded balance status
+- All data persisted in localStorage per store
+- Responsive design (mobile cards, desktop table)
+- Framer-motion animations throughout
+- Lint passes with zero errors
+- Dev server compiles successfully
+
+Files Created:
+- `src/components/dashboard/ExpensesPanel.tsx` — Complete expense tracker + day management (700+ lines)
+
+Files Modified:
+- `src/components/dashboard/PosDashboard.tsx` — Added Expenses nav item, import, and tab rendering
+
+---
+Task ID: cron-review-4
+Agent: QA Review Agent (Cycle 4)
+Task: Periodic review, QA testing, styling improvements, and feature enhancements
+
+Work Log:
+- Performed comprehensive QA testing via agent-browser across all major flows
+- **VERIFIED WORKING**: Landing page, Try Demo, Dashboard, Billing/POS, Products, Customers, Orders, Tables, Reports, Settings, Notifications, Suppliers, Expenses (NEW), Dark Mode toggle, Keyboard Shortcuts
+- **No bugs found** — All pages compile and render correctly with zero console errors
+- **LINT PASSES** — Zero ESLint errors
+
+- **STYLING ENHANCEMENT: Landing Page Hero Polish**
+  - Animated Hero POS Mockup: Pulsing LIVE dot, live-updating clock (HH:MM:SS), framer-motion useSpring count-up animation on stat values (₹24,580 / 142 / 384), auto-cycling recent orders every 3 seconds with fade+slide transitions (4 mock orders)
+  - Testimonial Carousel: Auto-rotating every 5 seconds with slide animation, left/right navigation arrows, dot indicators, desktop shows all 3 with active highlight, mobile shows 1 at a time
+  - Footer Enhancement: Top border gradient (emerald → transparent), "Made with ❤️ in India" badge, dynamic copyright year
+
+- **STYLING ENHANCEMENT: Settings Panel Polish**
+  - Tab Icons: Added icons to all 9 tabs (Store, Percent, FileText, CreditCard, Palette, Crown, MessageSquare, Database)
+  - Tab Content Animation: framer-motion fade + slide-up transition when switching tabs (opacity 0→1, y 12→0)
+  - Subscription Tab: Current Plan card with emerald glow border, next billing date with CalendarDays icon, "Upgrade Plan" button with "Coming Soon" toast, plan features checklist with check icons
+  - Save Feedback: Animated "unsaved changes" indicator (amber bar with pulsing dot), save button ring highlight when unsaved, enhanced success toast with description
+
+- **FEATURE: Expense Tracker Panel** — New full expense management module
+  - Created `/home/z/my-project/src/components/dashboard/ExpensesPanel.tsx` (700+ lines)
+  - 4 Stat Cards: Today's Expenses, This Week, This Month, Avg. Daily (rose/amber/violet/teal color scheme with gradient backgrounds)
+  - Expense Entry Dialog: Amount (₹), Category (9 options: Rent, Utilities, Salaries, Supplies, Marketing, Maintenance, Transport, Food, Miscellaneous), Description, Payment Method (Cash/Bank Transfer/UPI/Cheque), Date, Receipt Number
+  - Responsive Table (desktop) / Card List (mobile) with color-coded category badges, payment method icons, edit/delete actions
+  - Filters: Search, Category, Payment Method, Date Range (Today/Week/Month/Custom) with date pickers
+  - Pagination: Full page navigation
+  - Category Breakdown PieChart: Donut chart with interactive tooltips
+  - Monthly Trend BarChart: Daily expenses in rose/red theme
+  - 30+ Mock Entries: Realistic Indian business expenses (Rent ₹25K, Electricity ₹8.5K, Salaries, Supplies, etc.)
+  - All data persisted in localStorage per store
+
+- **FEATURE: Day Open/Close Management** — Within Expenses panel
+  - Open Day: Emerald button → dialog with opening balance & notes, only available if day not already opened
+  - Close Day: Amber button → summary with Opening Balance, Total Sales, Total Expenses, Expected vs Actual Cash Balance, auto-calculated difference with color coding (green=balanced, amber=minor, red=mismatch)
+  - Day Status Widget: 🟢 Open / 🔴 Not Opened status with opening balance & time since opening
+  - Day History: Last 7 days table with color-coded balance status
+
+- **INTEGRATION**: Added "Expenses" nav item after "Suppliers" in PosDashboard sidebar with IndianRupee icon, imported and rendered ExpensesPanel when dashboardTab === 'expenses'
+
+Stage Summary:
+- QA testing shows zero bugs across all flows — application is stable
+- Landing page hero enhanced with animated mockup (live clock, count-up stats, cycling orders) and testimonial carousel
+- Settings panel enhanced with tab icons, content transitions, subscription tab upgrade, and save feedback
+- NEW Expense Tracker panel with full CRUD, charts, filters, pagination, and mock data
+- NEW Day Open/Close management with balance tracking, difference calculation, and history
+- Lint passes with zero errors
+- Dev server compiles and runs successfully
+
+Current Project Status:
+✅ COMPLETE — StoreOS POS SaaS Platform (Cycle 4 Enhanced)
+- ✅ Landing page with ANIMATED hero mockup, testimonial carousel, 15 niche cards, pricing
+- ✅ Auth (login/signup) with PREMIUM visual design, typing animation, parallax, glassmorphism
+- ✅ 3-step onboarding with RICH niche previews, visual template mockups, comparison mode
+- ✅ POS Dashboard with niche-aware sidebar, REAL sales chart, DONUT chart, HEATMAP, INVENTORY alerts
+- ✅ Billing/POS with cart, payments, professional receipts + Print/WhatsApp/Copy/PDF
+- ✅ Products & Inventory with stat cards, GRID/LIST view toggle, CRUD operations
+- ✅ Customer management with stat cards, loyalty points/tiers, SPENDING CHART
+- ✅ Orders with visual badges (status/payment/type), stat cards, filters
+- ✅ Staff management with roles, shifts, commission, stat cards
+- ✅ EXPENSE TRACKER with stat cards, CRUD, category breakdown chart, monthly trend, day open/close
+- ✅ DAY OPEN/CLOSE management with balance tracking, difference calculation, 7-day history
+- ✅ Reports & Analytics with real charts, period toggle, CSV/PDF export
+- ✅ Notifications panel with CATEGORIES, read/unread, bulk actions
+- ✅ Keyboard Shortcuts with SEARCH, 23 shortcuts, 3 categories
+- ✅ Settings with TAB ICONS, content animations, subscription upgrade, save feedback
+- ✅ 6 niche-specific panels (Tables, Appointments, Rooms, Members, Students, Vehicles)
+- ✅ Admin Super Panel with platform analytics, store management
+- ✅ Dark mode via next-themes
+- ✅ Seed API with 3 niche configurations
+- ✅ "Try Demo" quick-login
+- ✅ 17+ API routes, Prisma database, Zustand state management
+- ✅ Responsive design, keyboard shortcuts, toast notifications, micro-interactions
+
+Unresolved Issues / Risks:
+- Agent-browser click doesn't trigger React onClick reliably (workaround: use JS eval click)
+- Some niche-specific features are placeholder-level (e.g., Zomato integration, WhatsApp API)
+- PWA/offline mode not yet implemented
+- No actual Razorpay/Stripe integration (mock only)
+- Seed data limited to 3 niches (restaurant, grocery, salon)
+- 12 remaining niche seed data not yet added
+- Expense data uses localStorage (not persisted to DB)
+
+Priority Recommendations for Next Phase:
+1. Add seed data for remaining 12 niches
+2. Persist expenses/day management to Prisma DB
+3. Implement PWA with service worker for offline billing
+4. Add real Razorpay payment integration
+5. Add multi-language support (English + Hindi toggle)
+6. Add customer-facing online ordering page per store
+7. Add shift management with opening/closing balance per shift
+8. Add Zomato/Swiggy order integration for restaurants

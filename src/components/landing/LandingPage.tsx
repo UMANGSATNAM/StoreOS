@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
-import { motion, useInView, useMotionValue, useSpring, useTransform } from 'framer-motion';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { motion, useInView, useMotionValue, useSpring, useTransform, AnimatePresence } from 'framer-motion';
 import { useAppStore } from '@/lib/store';
 import { useTheme } from 'next-themes';
 import { NICHES } from '@/lib/types';
@@ -48,6 +48,10 @@ import {
   BadgeCheck,
   TrendingUp,
   Activity,
+  ChevronLeft,
+  ChevronDown,
+  Heart,
+  Search,
 } from 'lucide-react';
 
 // ─── Animation Helpers ────────────────────────────────────────
@@ -443,6 +447,107 @@ export default function LandingPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [demoLoading, setDemoLoading] = useState(false);
+
+  // Animated mockup state
+  const [mockClock, setMockClock] = useState('');
+  const [typingText, setTypingText] = useState('');
+  const [orderIndex, setOrderIndex] = useState(0);
+  const [mockStats, setMockStats] = useState({ today: 0, orders: 0, items: 0 });
+
+  // Testimonial carousel state
+  const [testimonialIndex, setTestimonialIndex] = useState(0);
+  const [carouselDirection, setCarouselDirection] = useState(1);
+
+  // Newsletter state
+  const [newsletterEmail, setNewsletterEmail] = useState('');
+  const [newsletterSuccess, setNewsletterSuccess] = useState(false);
+
+  // Mock orders for auto-cycling (4 orders as specified)
+  const mockOrders = [
+    { name: 'Butter Chicken × 2', amount: '₹580', status: 'Paid' },
+    { name: 'Paneer Tikka × 1', amount: '₹280', status: 'Pending' },
+    { name: 'Dal Makhani × 3', amount: '₹450', status: 'Paid' },
+    { name: 'Biryani × 2', amount: '₹620', status: 'Paid' },
+  ];
+
+  const typingPhrases = ['Search products...', 'Butter Chicken', 'Scan barcode...', 'Paneer Tikka', 'Quick bill...'];
+
+  // Live clock in mockup
+  useEffect(() => {
+    const updateClock = () => {
+      const now = new Date();
+      setMockClock(now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+    };
+    updateClock();
+    const timer = setInterval(updateClock, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // Typing animation in mockup search
+  useEffect(() => {
+    let phraseIdx = 0;
+    let charIdx = 0;
+    let deleting = false;
+    const timer = setInterval(() => {
+      const phrase = typingPhrases[phraseIdx];
+      if (!deleting) {
+        charIdx++;
+        setTypingText(phrase.slice(0, charIdx));
+        if (charIdx >= phrase.length) {
+          deleting = true;
+          setTimeout(() => {}, 1500);
+        }
+      } else {
+        charIdx--;
+        setTypingText(phrase.slice(0, charIdx));
+        if (charIdx <= 0) {
+          deleting = false;
+          phraseIdx = (phraseIdx + 1) % typingPhrases.length;
+        }
+      }
+    }, 80);
+    return () => clearInterval(timer);
+  }, []);
+
+  // Auto-scroll orders
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setOrderIndex((prev) => (prev + 1) % mockOrders.length);
+    }, 3000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // Count-up animation for mock stats using framer-motion spring
+  const mockSpringToday = useSpring(0, { stiffness: 50, damping: 20 });
+  const mockSpringOrders = useSpring(0, { stiffness: 50, damping: 20 });
+  const mockSpringItems = useSpring(0, { stiffness: 50, damping: 20 });
+
+  useEffect(() => {
+    // Delay to let the component render first, then trigger spring animation
+    const timer = setTimeout(() => {
+      mockSpringToday.set(24580);
+      mockSpringOrders.set(142);
+      mockSpringItems.set(384);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [mockSpringToday, mockSpringOrders, mockSpringItems]);
+
+  // Track spring values for display
+  useEffect(() => {
+    const unsubscribeToday = mockSpringToday.on('change', (v: number) => setMockStats(prev => ({ ...prev, today: Math.round(v) })));
+    const unsubscribeOrders = mockSpringOrders.on('change', (v: number) => setMockStats(prev => ({ ...prev, orders: Math.round(v) })));
+    const unsubscribeItems = mockSpringItems.on('change', (v: number) => setMockStats(prev => ({ ...prev, items: Math.round(v) })));
+    return () => { unsubscribeToday(); unsubscribeOrders(); unsubscribeItems(); };
+  }, [mockSpringToday, mockSpringOrders, mockSpringItems]);
+
+  // Testimonial auto-rotate
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCarouselDirection(1);
+      setTestimonialIndex((prev) => (prev + 1) % TESTIMONIALS.length);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, []);
 
   const handleTryDemo = async () => {
     setDemoLoading(true);
@@ -943,22 +1048,37 @@ export default function LandingPage() {
             <FadeIn direction="left" delay={0.3}>
               <div className="relative float-animation">
                 <div className="absolute -inset-4 bg-gradient-to-r from-emerald-500/20 to-teal-500/20 rounded-3xl blur-2xl" />
+                <TiltCard>
                 <div className="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 overflow-hidden">
                   {/* Mockup Title Bar */}
                   <div className="flex items-center gap-2 px-4 py-3 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
                     <div className="w-3 h-3 rounded-full bg-red-400" />
                     <div className="w-3 h-3 rounded-full bg-amber-400" />
                     <div className="w-3 h-3 rounded-full bg-emerald-400" />
-                    <span className="ml-2 text-xs text-gray-500 dark:text-gray-400 font-medium">StoreOS — Dashboard</span>
+                    <span className="ml-2 text-xs text-gray-500 dark:text-gray-400 font-medium flex items-center gap-1.5">
+                      StoreOS — Dashboard
+                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 live-dot" />
+                        LIVE
+                      </span>
+                    </span>
+                    <span className="ml-auto text-[10px] text-gray-400 dark:text-gray-500 font-mono tabular-nums">{mockClock}</span>
                   </div>
                   {/* Mockup Content */}
                   <div className="p-5 space-y-4">
-                    {/* Top Stats Row */}
+                    {/* Search bar with typing animation */}
+                    <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700">
+                      <Search className="w-3.5 h-3.5 text-gray-400" />
+                      <span className="text-xs text-gray-400 dark:text-gray-500 truncate">
+                        {typingText}<span className="animate-pulse">|</span>
+                      </span>
+                    </div>
+                    {/* Top Stats Row with count-up */}
                     <div className="grid grid-cols-3 gap-3">
                       {[
-                        { label: 'Today', value: '₹24,580', color: 'emerald' },
-                        { label: 'Orders', value: '142', color: 'sky' },
-                        { label: 'Items', value: '384', color: 'amber' },
+                        { label: 'Today', value: `₹${mockStats.today.toLocaleString('en-IN')}`, color: 'emerald' },
+                        { label: 'Orders', value: mockStats.orders.toString(), color: 'sky' },
+                        { label: 'Items', value: mockStats.items.toString(), color: 'amber' },
                       ].map((s) => (
                         <div key={s.label} className={`rounded-xl p-3 ${
                           s.color === 'emerald' ? 'bg-emerald-50 dark:bg-emerald-900/20' :
@@ -966,7 +1086,7 @@ export default function LandingPage() {
                           'bg-amber-50 dark:bg-amber-900/20'
                         }`}>
                           <p className="text-xs text-gray-500 dark:text-gray-400">{s.label}</p>
-                          <p className={`text-lg font-bold ${
+                          <p className={`text-lg font-bold tabular-nums ${
                             s.color === 'emerald' ? 'text-emerald-600 dark:text-emerald-400' :
                             s.color === 'sky' ? 'text-sky-600 dark:text-sky-400' :
                             'text-amber-600 dark:text-amber-400'
@@ -986,29 +1106,41 @@ export default function LandingPage() {
                         ))}
                       </div>
                     </div>
-                    {/* Recent Orders */}
+                    {/* Recent Orders - auto-cycling 4 orders every 3s */}
                     <div className="space-y-2">
                       <p className="text-xs font-medium text-gray-500 dark:text-gray-400">Recent Orders</p>
-                      {[
-                        { name: 'Butter Chicken × 2', amount: '₹580', status: 'Paid' },
-                        { name: 'Paneer Tikka × 1', amount: '₹280', status: 'Paid' },
-                        { name: 'Dal Makhani × 3', amount: '₹450', status: 'Pending' },
-                      ].map((order, i) => (
-                        <div key={i} className="flex items-center justify-between py-2 px-3 rounded-lg bg-gray-50 dark:bg-gray-800/30 text-sm">
-                          <span className="text-gray-700 dark:text-gray-300">{order.name}</span>
-                          <div className="flex items-center gap-2">
-                            <span className="font-medium">{order.amount}</span>
-                            <Badge variant={order.status === 'Paid' ? 'default' : 'secondary'} className={`text-[10px] px-1.5 py-0 ${
-                              order.status === 'Paid' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : ''
-                            }`}>
-                              {order.status}
-                            </Badge>
-                          </div>
-                        </div>
-                      ))}
+                      <div className="h-[44px] overflow-hidden relative">
+                        <AnimatePresence mode="wait">
+                          <motion.div
+                            key={orderIndex}
+                            initial={{ opacity: 0, y: 16 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -16 }}
+                            transition={{ duration: 0.35, ease: 'easeInOut' }}
+                          >
+                            {(() => {
+                              const order = mockOrders[orderIndex];
+                              return (
+                                <div className="flex items-center justify-between py-2 px-3 rounded-lg bg-gray-50 dark:bg-gray-800/30 text-sm">
+                                  <span className="text-gray-700 dark:text-gray-300">{order.name}</span>
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-medium">{order.amount}</span>
+                                    <Badge variant={order.status === 'Paid' ? 'default' : 'secondary'} className={`text-[10px] px-1.5 py-0 ${
+                                      order.status === 'Paid' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' : ''
+                                    }`}>
+                                      {order.status}
+                                    </Badge>
+                                  </div>
+                                </div>
+                              );
+                            })()}
+                          </motion.div>
+                        </AnimatePresence>
+                      </div>
                     </div>
                   </div>
                 </div>
+                </TiltCard>
 
                 {/* Floating Live Badges around mockup */}
                 <div className="absolute -top-4 -left-4 float-badge-1 z-20">
@@ -1403,51 +1535,148 @@ export default function LandingPage() {
             </div>
           </FadeIn>
 
-          <div className="mt-14 grid md:grid-cols-3 gap-6">
-            {TESTIMONIALS.map((t, i) => {
-              const BusinessIcon = t.businessIcon;
-              return (
-                <FadeIn key={t.name} delay={i * 0.1}>
-                  <TiltCard className="h-full">
-                    <Card className="h-full border-gray-200 dark:border-gray-800 hover:shadow-xl transition-shadow duration-300 overflow-hidden relative glass-card">
-                      {/* Decorative quote mark */}
-                      <div className="absolute top-3 right-4 text-6xl font-serif text-emerald-500/10 dark:text-emerald-400/10 leading-none select-none pointer-events-none">
-                        &ldquo;
-                      </div>
-                      {/* Subtle gradient top border */}
-                      <div className={`h-1.5 bg-gradient-to-r ${t.color}`} />
-                      <CardContent className="p-6">
-                        {/* Star Ratings */}
-                        <div className="flex gap-0.5 mb-3">
-                          {Array.from({ length: t.rating }).map((_, i) => (
-                            <Star key={i} className="w-4 h-4 fill-amber-400 text-amber-400" />
-                          ))}
-                          {Array.from({ length: 5 - t.rating }).map((_, i) => (
-                            <Star key={`e-${i}`} className="w-4 h-4 text-gray-300 dark:text-gray-600" />
-                          ))}
-                        </div>
-                        <p className="text-gray-700 dark:text-gray-300 leading-relaxed text-sm mb-6">
-                          &ldquo;{t.quote}&rdquo;
-                        </p>
-                        <div className="flex items-center gap-3">
-                          {/* Avatar with initials */}
-                          <div className={`w-11 h-11 rounded-full bg-gradient-to-br ${t.color} flex items-center justify-center text-white font-bold text-sm shadow-md`}>
-                            {t.initials}
+          {/* Unified Carousel - Desktop shows 3, Mobile shows 1 */}
+          <div className="mt-14 relative">
+            {/* Desktop: 3-card carousel with auto-rotate slide effect */}
+            <div className="hidden md:block">
+              <AnimatePresence mode="wait" custom={carouselDirection}>
+                <motion.div
+                  key={testimonialIndex}
+                  custom={carouselDirection}
+                  initial={{ opacity: 0, x: carouselDirection * 60 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: carouselDirection * -60 }}
+                  transition={{ duration: 0.5, ease: 'easeInOut' }}
+                  className="grid md:grid-cols-3 gap-6"
+                >
+                  {TESTIMONIALS.map((t, i) => {
+                    const BusinessIcon = t.businessIcon;
+                    const isHighlighted = i === testimonialIndex;
+                    return (
+                      <TiltCard key={t.name} className="h-full">
+                        <Card className={`h-full border-gray-200 dark:border-gray-800 hover:shadow-xl transition-all duration-500 overflow-hidden relative glass-card ${
+                          isHighlighted ? 'shadow-xl ring-2 ring-emerald-500/30 scale-[1.02]' : ''
+                        }`}>
+                          <div className="absolute top-3 right-4 text-6xl font-serif text-emerald-500/10 dark:text-emerald-400/10 leading-none select-none pointer-events-none">
+                            &ldquo;
                           </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="font-semibold text-sm">{t.name}</p>
-                            <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
-                              <BusinessIcon className="w-3 h-3 shrink-0" />
-                              <span className="truncate">{t.business} · {t.city}</span>
+                          <div className={`h-1.5 bg-gradient-to-r ${t.color} transition-all duration-500 ${isHighlighted ? 'h-2' : ''}`} />
+                          <CardContent className="p-6">
+                            <div className="flex gap-0.5 mb-3">
+                              {Array.from({ length: t.rating }).map((_, si) => (
+                                <Star key={si} className="w-4 h-4 fill-amber-400 text-amber-400" />
+                              ))}
+                              {Array.from({ length: 5 - t.rating }).map((_, si) => (
+                                <Star key={`e-${si}`} className="w-4 h-4 text-gray-300 dark:text-gray-600" />
+                              ))}
                             </div>
+                            <p className="text-gray-700 dark:text-gray-300 leading-relaxed text-sm mb-6">
+                              &ldquo;{t.quote}&rdquo;
+                            </p>
+                            <div className="flex items-center gap-3">
+                              <div className={`w-11 h-11 rounded-full bg-gradient-to-br ${t.color} flex items-center justify-center text-white font-bold text-sm shadow-md`}>
+                                {t.initials}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="font-semibold text-sm">{t.name}</p>
+                                <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
+                                  <BusinessIcon className="w-3 h-3 shrink-0" />
+                                  <span className="truncate">{t.business} · {t.city}</span>
+                                </div>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </TiltCard>
+                    );
+                  })}
+                </motion.div>
+              </AnimatePresence>
+            </div>
+
+            {/* Mobile: single-card carousel */}
+            <div className="md:hidden">
+              <div className="overflow-hidden">
+                <AnimatePresence mode="wait" custom={carouselDirection}>
+                  {(() => {
+                    const t = TESTIMONIALS[testimonialIndex];
+                    const BusinessIcon = t.businessIcon;
+                    return (
+                      <motion.div
+                        key={testimonialIndex}
+                        custom={carouselDirection}
+                        initial={{ opacity: 0, x: carouselDirection * 100 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: carouselDirection * -100 }}
+                        transition={{ duration: 0.4, ease: 'easeInOut' }}
+                      >
+                        <Card className="border-gray-200 dark:border-gray-800 overflow-hidden relative glass-card">
+                          <div className="absolute top-3 right-4 text-6xl font-serif text-emerald-500/10 dark:text-emerald-400/10 leading-none select-none pointer-events-none">
+                            &ldquo;
                           </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </TiltCard>
-                </FadeIn>
-              );
-            })}
+                          <div className={`h-1.5 bg-gradient-to-r ${t.color}`} />
+                          <CardContent className="p-6">
+                            <div className="flex gap-0.5 mb-3">
+                              {Array.from({ length: t.rating }).map((_, si) => (
+                                <Star key={si} className="w-4 h-4 fill-amber-400 text-amber-400" />
+                              ))}
+                              {Array.from({ length: 5 - t.rating }).map((_, si) => (
+                                <Star key={`e-${si}`} className="w-4 h-4 text-gray-300 dark:text-gray-600" />
+                              ))}
+                            </div>
+                            <p className="text-gray-700 dark:text-gray-300 leading-relaxed text-sm mb-6">
+                              &ldquo;{t.quote}&rdquo;
+                            </p>
+                            <div className="flex items-center gap-3">
+                              <div className={`w-11 h-11 rounded-full bg-gradient-to-br ${t.color} flex items-center justify-center text-white font-bold text-sm shadow-md`}>
+                                {t.initials}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="font-semibold text-sm">{t.name}</p>
+                                <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
+                                  <BusinessIcon className="w-3 h-3 shrink-0" />
+                                  <span className="truncate">{t.business} · {t.city}</span>
+                                </div>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </motion.div>
+                    );
+                  })()}
+                </AnimatePresence>
+              </div>
+            </div>
+
+            {/* Shared Navigation arrows & dots */}
+            <div className="flex items-center justify-center gap-4 mt-6">
+              <button
+                onClick={() => { setCarouselDirection(-1); setTestimonialIndex((prev) => (prev - 1 + TESTIMONIALS.length) % TESTIMONIALS.length); }}
+                className="w-10 h-10 rounded-full border border-gray-300 dark:border-gray-600 flex items-center justify-center hover:bg-emerald-50 dark:hover:bg-emerald-900/20 hover:border-emerald-400 transition-colors"
+                aria-label="Previous testimonial"
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+              <div className="flex gap-2">
+                {TESTIMONIALS.map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => { setCarouselDirection(i > testimonialIndex ? 1 : -1); setTestimonialIndex(i); }}
+                    className={`h-2.5 rounded-full transition-all duration-300 ${
+                      i === testimonialIndex ? 'bg-emerald-500 w-6' : 'bg-gray-300 dark:bg-gray-600 w-2.5'
+                    }`}
+                    aria-label={`Go to testimonial ${i + 1}`}
+                  />
+                ))}
+              </div>
+              <button
+                onClick={() => { setCarouselDirection(1); setTestimonialIndex((prev) => (prev + 1) % TESTIMONIALS.length); }}
+                className="w-10 h-10 rounded-full border border-gray-300 dark:border-gray-600 flex items-center justify-center hover:bg-emerald-50 dark:hover:bg-emerald-900/20 hover:border-emerald-400 transition-colors"
+                aria-label="Next testimonial"
+              >
+                <ChevronRight className="w-5 h-5" />
+              </button>
+            </div>
           </div>
         </div>
       </section>
@@ -1500,7 +1729,9 @@ export default function LandingPage() {
       </section>
 
       {/* ═══════════════════ FOOTER ═══════════════════ */}
-      <footer id="contact" className="bg-gray-900 dark:bg-gray-950 text-gray-400 pt-16 pb-8">
+      <footer id="contact" className="bg-gray-900 dark:bg-gray-950 text-gray-400 pt-16 pb-8 relative">
+        {/* Top border gradient emerald → transparent */}
+        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-emerald-500 to-transparent" />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Trust Badge Banner */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pb-10 border-b border-gray-800 mb-10">
@@ -1557,19 +1788,36 @@ export default function LandingPage() {
               {/* Newsletter Signup */}
               <div className="mt-6">
                 <p className="text-sm font-medium text-white mb-2">Stay updated</p>
-                <div className="flex gap-2">
-                  <div className="relative flex-1">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
-                    <input
-                      type="email"
-                      placeholder="Enter your email"
-                      className="w-full pl-10 pr-3 py-2.5 rounded-lg bg-gray-800 border border-gray-700 text-sm text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all"
-                    />
-                  </div>
-                  <Button className="rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white shrink-0 px-4">
-                    Subscribe
-                  </Button>
-                </div>
+                <p className="text-xs text-gray-500 mb-3">Get product updates & tips</p>
+                {newsletterSuccess ? (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="flex items-center gap-2 text-emerald-400 text-sm"
+                  >
+                    <Check className="w-4 h-4" />
+                    <span>You&apos;re subscribed!</span>
+                  </motion.div>
+                ) : (
+                  <form
+                    onSubmit={(e) => { e.preventDefault(); if (newsletterEmail) { setNewsletterSuccess(true); setNewsletterEmail(''); setTimeout(() => setNewsletterSuccess(false), 3000); } }}
+                    className="flex gap-2"
+                  >
+                    <div className="relative flex-1">
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                      <input
+                        type="email"
+                        value={newsletterEmail}
+                        onChange={(e) => setNewsletterEmail(e.target.value)}
+                        placeholder="Enter your email"
+                        className="w-full pl-10 pr-3 py-2.5 rounded-lg bg-gray-800 border border-gray-700 text-sm text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 transition-all"
+                      />
+                    </div>
+                    <Button type="submit" className="rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white shrink-0 px-4">
+                      Subscribe
+                    </Button>
+                  </form>
+                )}
                 <p className="text-[11px] text-gray-600 mt-1.5">No spam. Unsubscribe anytime.</p>
               </div>
             </div>
@@ -1623,17 +1871,33 @@ export default function LandingPage() {
           </div>
 
           <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <p className="text-sm">&copy; {new Date().getFullYear()} StoreOS. Made in India 🇮🇳</p>
+            <p className="text-sm">&copy; {new Date().getFullYear()} StoreOS. All rights reserved.</p>
             <div className="flex items-center gap-4">
-              <div className="flex items-center gap-1.5 text-sm">
-                <span>Built with</span>
-                <span className="text-red-500">&hearts;</span>
-                <span>for Indian businesses</span>
+              {/* Made with love in India badge */}
+              <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-gray-800/60 border border-gray-700/50 text-sm">
+                <span className="text-gray-300">Made with</span>
+                <Heart className="w-3.5 h-3.5 text-red-500 fill-red-500" />
+                <span className="text-gray-300">in India</span>
+                <span>🇮🇳</span>
               </div>
               <div className="h-4 w-px bg-gray-700" />
-              <div className="flex items-center gap-1.5 text-xs text-gray-500">
-                <Shield className="w-3.5 h-3.5" />
-                <span>SOC 2 Compliant</span>
+              {/* Social icons row */}
+              <div className="flex items-center gap-3">
+                {[
+                  { Icon: Twitter, href: '#', label: 'Twitter' },
+                  { Icon: Linkedin, href: '#', label: 'LinkedIn' },
+                  { Icon: Instagram, href: '#', label: 'Instagram' },
+                  { Icon: Youtube, href: '#', label: 'YouTube' },
+                ].map(({ Icon, href, label }) => (
+                  <a
+                    key={label}
+                    href={href}
+                    aria-label={label}
+                    className="text-gray-500 hover:text-emerald-400 transition-all duration-200 hover:scale-110"
+                  >
+                    <Icon className="w-4 h-4" />
+                  </a>
+                ))}
               </div>
             </div>
           </div>

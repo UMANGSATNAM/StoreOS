@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAppStore } from '@/lib/store';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -50,6 +51,11 @@ import {
   Code,
   Archive,
   CalendarDays,
+  User,
+  Bell,
+  X,
+  Percent,
+  Sparkles,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslation } from '@/lib/i18n';
@@ -201,6 +207,8 @@ export default function SettingsPanel() {
   const [activeTab, setActiveTab] = useState('profile');
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [initialSnapshot, setInitialSnapshot] = useState<Record<string, string | number | boolean> | null>(null);
 
   // Store profile
   const [storeName, setStoreName] = useState('');
@@ -269,6 +277,26 @@ export default function SettingsPanel() {
     }
   }, [store]);
 
+  // Track unsaved changes
+  useEffect(() => {
+    if (!initialSnapshot) return;
+    const current = {
+      storeName, ownerName, address, city, state, gstNumber, storePhone, storeEmail, logo,
+      taxRate, gstEnabled, cgstRate, sgstRate, receiptHeader, receiptFooter,
+      showLogoOnReceipt, printerSize, cashEnabled, upiEnabled, cardEnabled, upiId,
+      primaryColor, accentColor, selectedFont,
+    };
+    const changed = Object.keys(current).some(key => {
+      const cv = current[key as keyof typeof current];
+      const iv = initialSnapshot[key];
+      return cv !== iv;
+    });
+    setHasUnsavedChanges(changed);
+  }, [storeName, ownerName, address, city, state, gstNumber, storePhone, storeEmail, logo,
+    taxRate, gstEnabled, cgstRate, sgstRate, receiptHeader, receiptFooter,
+    showLogoOnReceipt, printerSize, cashEnabled, upiEnabled, cardEnabled, upiId,
+    primaryColor, accentColor, selectedFont, initialSnapshot]);
+
   // Fetch full store details
   const fetchStoreDetails = useCallback(async () => {
     if (!user?.id) return;
@@ -293,6 +321,18 @@ export default function SettingsPanel() {
         setGstin(s.gstNumber || '');
         setCgstRate(Math.floor((s.taxRate || 18) / 2));
         setSgstRate(Math.ceil((s.taxRate || 18) / 2));
+        // Store initial snapshot for unsaved changes detection
+        setInitialSnapshot({
+          storeName: s.name || '', ownerName: s.ownerName || '', address: s.address || '',
+          city: s.city || '', state: s.state || '', gstNumber: s.gstNumber || '',
+          storePhone: s.phone || '', storeEmail: s.email || '', logo: s.logo || '',
+          taxRate: s.taxRate || 18, gstEnabled: true, cgstRate: Math.floor((s.taxRate || 18) / 2),
+          sgstRate: Math.ceil((s.taxRate || 18) / 2), receiptHeader: s.receiptHeader || '',
+          receiptFooter: s.receiptFooter || '', showLogoOnReceipt: true, printerSize: '80mm',
+          cashEnabled: true, upiEnabled: true, cardEnabled: true, upiId: '',
+          primaryColor: '#10b981', accentColor: '#059669', selectedFont: 'modern',
+        });
+        setHasUnsavedChanges(false);
       }
     } catch {
       // silent
@@ -336,7 +376,18 @@ export default function SettingsPanel() {
           template: data.store.template,
           onboardingComplete: data.store.onboardingComplete,
         });
-        toast.success('Settings saved successfully');
+        // Update initial snapshot to reflect saved state
+        setInitialSnapshot({
+          storeName, ownerName, address, city, state, gstNumber, storePhone, storeEmail, logo,
+          taxRate, gstEnabled, cgstRate, sgstRate, receiptHeader, receiptFooter,
+          showLogoOnReceipt, printerSize, cashEnabled, upiEnabled, cardEnabled, upiId,
+          primaryColor, accentColor, selectedFont,
+        });
+        setHasUnsavedChanges(false);
+        toast.success('Settings saved successfully', {
+          description: 'All changes have been applied to your store.',
+          duration: 3000,
+        });
       } else {
         toast.error('Failed to save settings');
       }
@@ -409,6 +460,19 @@ export default function SettingsPanel() {
 
   return (
     <div className="space-y-6">
+      {/* Unsaved changes indicator */}
+      {hasUnsavedChanges && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -10 }}
+          className="flex items-center gap-2 px-4 py-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg"
+        >
+          <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+          <span className="text-sm text-amber-700 dark:text-amber-400">You have unsaved changes</span>
+        </motion.div>
+      )}
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -419,65 +483,75 @@ export default function SettingsPanel() {
             Manage your store configuration and preferences
           </p>
         </div>
-        <Button
-          onClick={handleSave}
-          disabled={saving}
-          className="bg-emerald-600 hover:bg-emerald-700 text-white shrink-0"
-        >
-          {saving ? (
-            <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-          ) : (
-            <Save className="w-4 h-4 mr-2" />
-          )}
-          Save Changes
-        </Button>
+        <div className="flex items-center gap-2 shrink-0">
+          <Button
+            variant="outline"
+            onClick={() => { fetchStoreDetails(); toast.info('Changes discarded'); }}
+            className="text-gray-600 dark:text-gray-400"
+          >
+            <X className="w-4 h-4 mr-2" />
+            Discard
+          </Button>
+          <Button
+            onClick={handleSave}
+            disabled={saving}
+            className={`bg-emerald-600 hover:bg-emerald-700 text-white ${hasUnsavedChanges ? 'ring-2 ring-amber-400/50 ring-offset-2' : ''}`}
+          >
+            {saving ? (
+              <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+            ) : (
+              <Save className="w-4 h-4 mr-2" />
+            )}
+            {saving ? 'Saving...' : 'Save Changes'}
+          </Button>
+        </div>
       </div>
 
       {/* Settings Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <div className="overflow-x-auto">
-          <TabsList className="w-full flex h-auto p-1 bg-gray-100 dark:bg-gray-800 rounded-lg mb-6">
-            <TabsTrigger value="profile" className="flex-1 min-w-fit text-xs sm:text-sm">
-              <Store className="w-3.5 h-3.5 mr-1.5" />
-              Store Profile
-            </TabsTrigger>
-            <TabsTrigger value="tax" className="flex-1 min-w-fit text-xs sm:text-sm">
-              <FileText className="w-3.5 h-3.5 mr-1.5" />
-              Tax
-            </TabsTrigger>
-            <TabsTrigger value="receipt" className="flex-1 min-w-fit text-xs sm:text-sm">
-              <Receipt className="w-3.5 h-3.5 mr-1.5" />
-              Receipt
-            </TabsTrigger>
-            <TabsTrigger value="payment" className="flex-1 min-w-fit text-xs sm:text-sm">
-              <CreditCard className="w-3.5 h-3.5 mr-1.5" />
-              Payment
-            </TabsTrigger>
-            <TabsTrigger value="branding" className="flex-1 min-w-fit text-xs sm:text-sm">
-              <Palette className="w-3.5 h-3.5 mr-1.5" />
-              Branding
-            </TabsTrigger>
-            <TabsTrigger value="subscription" className="flex-1 min-w-fit text-xs sm:text-sm">
-              <Crown className="w-3.5 h-3.5 mr-1.5" />
-              Plan
-            </TabsTrigger>
-            <TabsTrigger value="whatsapp" className="flex-1 min-w-fit text-xs sm:text-sm">
-              <MessageSquare className="w-3.5 h-3.5 mr-1.5" />
-              WhatsApp
-            </TabsTrigger>
-            <TabsTrigger value="data" className="flex-1 min-w-fit text-xs sm:text-sm">
-              <Database className="w-3.5 h-3.5 mr-1.5" />
-              Data
-            </TabsTrigger>
-            <TabsTrigger value="language" className="flex-1 min-w-fit text-xs sm:text-sm">
-              <Globe className="w-3.5 h-3.5 mr-1.5" />
-              Language
-            </TabsTrigger>
+          <TabsList className="w-full flex h-auto p-1 bg-gray-100 dark:bg-gray-800 rounded-lg mb-6 relative">
+            {/* Active tab indicator */}
+            <motion.div
+              className="absolute h-[calc(100%-8px)] top-1 rounded-md bg-white dark:bg-gray-900 shadow-sm"
+              layoutId="activeTab"
+              transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+              style={{
+                left: 'var(--tab-left, 0px)',
+                width: 'var(--tab-width, 0px)',
+              }}
+            />
+            {[
+              { value: 'profile', Icon: Store, label: 'Store Profile' },
+              { value: 'tax', Icon: Percent, label: 'Tax' },
+              { value: 'receipt', Icon: FileText, label: 'Receipt' },
+              { value: 'payment', Icon: CreditCard, label: 'Payment' },
+              { value: 'branding', Icon: Palette, label: 'Branding' },
+              { value: 'subscription', Icon: Crown, label: 'Plan' },
+              { value: 'whatsapp', Icon: MessageSquare, label: 'WhatsApp' },
+              { value: 'data', Icon: Database, label: 'Data' },
+              { value: 'language', Icon: Globe, label: 'Language' },
+            ].map((tab) => (
+              <TabsTrigger
+                key={tab.value}
+                value={tab.value}
+                className="flex-1 min-w-fit text-xs sm:text-sm relative z-10 data-[state=active]:text-emerald-700 dark:data-[state=active]:text-emerald-400 transition-colors"
+              >
+                <tab.Icon className="w-3.5 h-3.5 mr-1.5" />
+                {tab.label}
+              </TabsTrigger>
+            ))}
           </TabsList>
         </div>
 
         {/* Store Profile */}
         <TabsContent value="profile">
+          <motion.div
+            key="profile-content"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, ease: 'easeOut' }}
+          >
           <div className="space-y-6">
             <Card>
               <CardHeader>
@@ -704,10 +778,12 @@ export default function SettingsPanel() {
               </CardContent>
             </Card>
           </div>
+          </motion.div>
         </TabsContent>
 
         {/* Tax Configuration */}
         <TabsContent value="tax">
+          <motion.div key="tax-content" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease: 'easeOut' }}>
           <Card>
             <CardHeader>
               <CardTitle>Tax Configuration</CardTitle>
@@ -785,10 +861,12 @@ export default function SettingsPanel() {
               )}
             </CardContent>
           </Card>
+          </motion.div>
         </TabsContent>
 
         {/* Receipt Setup */}
         <TabsContent value="receipt">
+          <motion.div key="receipt-content" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease: 'easeOut' }}>
           <Card>
             <CardHeader>
               <CardTitle>Receipt Setup</CardTitle>
@@ -864,10 +942,12 @@ export default function SettingsPanel() {
               </div>
             </CardContent>
           </Card>
+          </motion.div>
         </TabsContent>
 
         {/* Payment Methods */}
         <TabsContent value="payment">
+          <motion.div key="payment-content" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease: 'easeOut' }}>
           <Card>
             <CardHeader>
               <CardTitle>Payment Methods</CardTitle>
@@ -925,10 +1005,12 @@ export default function SettingsPanel() {
               </div>
             </CardContent>
           </Card>
+          </motion.div>
         </TabsContent>
 
         {/* Branding */}
         <TabsContent value="branding">
+          <motion.div key="branding-content" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease: 'easeOut' }}>
           <div className="space-y-6">
             <Card>
               <CardHeader>
@@ -1159,54 +1241,105 @@ export default function SettingsPanel() {
               </CardContent>
             </Card>
           </div>
+          </motion.div>
         </TabsContent>
 
         {/* Subscription */}
         <TabsContent value="subscription">
-          <Card>
-            <CardHeader>
-              <CardTitle>Subscription & Billing</CardTitle>
-              <CardDescription>Manage your plan and billing details</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="flex items-center gap-4 p-6 bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 rounded-xl border border-emerald-200 dark:border-emerald-800">
-                <div className="w-14 h-14 bg-emerald-600 rounded-xl flex items-center justify-center shrink-0">
-                  <Crown className="w-7 h-7 text-white" />
+          <motion.div key="subscription-content" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease: 'easeOut' }}>
+          <div className="space-y-6">
+            {/* Current Plan Card with emerald glow border */}
+            <Card className="relative overflow-hidden border-2 border-emerald-500/40 shadow-lg shadow-emerald-500/10">
+              <div className="absolute inset-0 bg-gradient-to-r from-emerald-50/50 to-teal-50/50 dark:from-emerald-900/10 dark:to-teal-900/10 pointer-events-none" />
+              <CardHeader className="relative z-10">
+                <CardTitle className="flex items-center gap-2">
+                  <Crown className="w-5 h-5 text-emerald-600" />
+                  Current Plan
+                </CardTitle>
+                <CardDescription>Your active subscription details</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4 relative z-10">
+                <div className="flex items-center gap-4 p-4 bg-white/80 dark:bg-gray-800/80 rounded-xl border border-emerald-200 dark:border-emerald-800">
+                  <div className="w-14 h-14 bg-emerald-600 rounded-xl flex items-center justify-center shrink-0">
+                    <Crown className="w-7 h-7 text-white" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-bold text-lg">{subscription?.plan === 'pro' ? 'Pro Plan' : 'Starter Plan'}</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                      {subscription?.status === 'trial'
+                        ? `Trial expires ${subscription.trialEndsAt ? new Date(subscription.trialEndsAt).toLocaleDateString('en-IN') : 'soon'}`
+                        : subscription?.status === 'active'
+                          ? 'Your subscription is active'
+                          : 'Subscription inactive'}
+                    </p>
+                  </div>
+                  <Badge className={
+                    subscription?.status === 'active'
+                      ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border-0'
+                      : subscription?.status === 'trial'
+                        ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border-0'
+                        : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 border-0'
+                  }>
+                    {subscription?.status || 'trial'}
+                  </Badge>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-bold text-lg">{subscription?.plan === 'pro' ? 'Pro Plan' : 'Starter Plan'}</p>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    {subscription?.status === 'trial'
-                      ? `Trial expires ${subscription.trialEndsAt ? new Date(subscription.trialEndsAt).toLocaleDateString('en-IN') : 'soon'}`
-                      : subscription?.status === 'active'
-                        ? 'Your subscription is active'
-                        : 'Subscription inactive'}
+
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <div className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Current Plan</p>
+                    <p className="text-2xl font-bold mt-1">{subscription?.plan === 'pro' ? '₹499/mo' : '₹99/mo'}</p>
+                  </div>
+                  <div className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <CalendarDays className="w-4 h-4 text-gray-500" />
+                      <p className="text-sm text-gray-500 dark:text-gray-400">Next Billing Date</p>
+                    </div>
+                    <p className="text-2xl font-bold mt-1">
+                      {new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Plan Features Checklist */}
+                <div className="p-4 bg-emerald-50/50 dark:bg-emerald-900/10 rounded-lg border border-emerald-200 dark:border-emerald-800">
+                  <p className="font-medium text-sm mb-3 flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-emerald-600" />
+                    Your Plan Includes
                   </p>
+                  <div className="grid sm:grid-cols-2 gap-2">
+                    {(subscription?.plan === 'pro' ? [
+                      'Unlimited products',
+                      'Full POS billing system',
+                      'Unlimited staff accounts',
+                      'Customer CRM & loyalty',
+                      'GST-ready invoices & reports',
+                      'WhatsApp bill sharing',
+                    ] : [
+                      'Up to 50 products',
+                      'Basic POS billing',
+                      '5 staff accounts',
+                      'Dashboard analytics',
+                    ]).map((feature) => (
+                      <div key={feature} className="flex items-center gap-2 text-sm">
+                        <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+                        <span className="text-gray-700 dark:text-gray-300">{feature}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                <Badge className={
-                  subscription?.status === 'active'
-                    ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border-0'
-                    : subscription?.status === 'trial'
-                      ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border-0'
-                      : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 border-0'
-                }>
-                  {subscription?.status || 'trial'}
-                </Badge>
-              </div>
+              </CardContent>
+            </Card>
 
-              <div className="grid sm:grid-cols-2 gap-4">
-                <div className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Current Plan</p>
-                  <p className="text-2xl font-bold mt-1">{subscription?.plan === 'pro' ? '₹499/mo' : '₹99/mo'}</p>
-                </div>
-                <div className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Billing Cycle</p>
-                  <p className="text-2xl font-bold mt-1">Monthly</p>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <p className="font-medium">Billing History</p>
+            {/* Billing History */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Receipt className="w-5 h-5 text-emerald-600" />
+                  Billing History
+                </CardTitle>
+                <CardDescription>Your recent payment history</CardDescription>
+              </CardHeader>
+              <CardContent>
                 <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
                   <div className="p-4 flex items-center justify-between bg-gray-50 dark:bg-gray-800">
                     <div>
@@ -1223,23 +1356,29 @@ export default function SettingsPanel() {
                     <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border-0">Paid</Badge>
                   </div>
                 </div>
-              </div>
+              </CardContent>
+            </Card>
 
-              <div className="flex flex-col sm:flex-row gap-3">
-                <Button className="bg-emerald-600 hover:bg-emerald-700 text-white flex-1">
-                  <Crown className="w-4 h-4 mr-2" />
-                  Upgrade to Pro
-                </Button>
-                <Button variant="outline" className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20">
-                  Cancel Subscription
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+            {/* Action Buttons */}
+            <div className="flex flex-col sm:flex-row gap-3">
+              <Button
+                onClick={() => toast.info('Coming Soon! 🚀', { description: 'Plan upgrades will be available soon. Stay tuned!' })}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white flex-1"
+              >
+                <Crown className="w-4 h-4 mr-2" />
+                Upgrade Plan
+              </Button>
+              <Button variant="outline" className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20">
+                Cancel Subscription
+              </Button>
+            </div>
+          </div>
+          </motion.div>
         </TabsContent>
 
         {/* WhatsApp Integration */}
         <TabsContent value="whatsapp">
+          <motion.div key="whatsapp-content" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease: 'easeOut' }}>
           <Card>
             <CardHeader>
               <CardTitle>WhatsApp Integration</CardTitle>
@@ -1295,15 +1434,19 @@ export default function SettingsPanel() {
               </Button>
             </CardContent>
           </Card>
+          </motion.div>
         </TabsContent>
 
         {/* Language */}
         <TabsContent value="language">
+          <motion.div key="language-content" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease: 'easeOut' }}>
           <LanguageTab />
+          </motion.div>
         </TabsContent>
 
         {/* Data Management */}
         <TabsContent value="data">
+          <motion.div key="data-content" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, ease: 'easeOut' }}>
           <div className="space-y-6">
             <Card>
               <CardHeader>
@@ -1435,6 +1578,7 @@ export default function SettingsPanel() {
               </CardContent>
             </Card>
           </div>
+          </motion.div>
         </TabsContent>
       </Tabs>
 
