@@ -18,6 +18,7 @@ import {
   Clock,
   ArrowUpRight,
   ArrowDownRight,
+  Printer,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -29,6 +30,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import {
   Table,
   TableBody,
@@ -213,6 +220,81 @@ function StatCard({
   );
 }
 
+// ─── CSV Export Helper ───
+
+function exportCSV(
+  period: Period,
+  revenueChartData: { name: string; revenue: number; orders: number }[],
+  topProducts: { name: string; quantity: number; revenue: number }[],
+  totalRevenue: number,
+  totalGST: number,
+  cgst: number,
+  sgst: number,
+  totalOrders: number,
+  avgOrderValue: number,
+  storeName: string,
+) {
+  const now = new Date();
+  const dateStr = now.toISOString().split('T')[0];
+  const periodLabel = period === 'today' ? 'Today' : period === 'week' ? 'This Week' : 'This Month';
+
+  const rows: string[] = [];
+
+  // Header
+  rows.push(`StoreOS Report - ${storeName}`);
+  rows.push(`Period,${periodLabel}`);
+  rows.push(`Generated,${now.toLocaleString('en-IN')}`);
+  rows.push('');
+
+  // Summary
+  rows.push('--- Summary ---');
+  rows.push(`Total Revenue,${totalRevenue}`);
+  rows.push(`Total Orders,${totalOrders}`);
+  rows.push(`Average Order Value,${avgOrderValue}`);
+  rows.push('');
+
+  // Sales Data
+  rows.push('--- Sales Data ---');
+  rows.push('Date/Time,Sales Amount,Order Count');
+  revenueChartData.forEach((row) => {
+    rows.push(`${row.name},${row.revenue},${row.orders}`);
+  });
+  rows.push('');
+
+  // Top Products
+  rows.push('--- Top Products ---');
+  rows.push('Product Name,Quantity,Revenue');
+  topProducts.forEach((p) => {
+    rows.push(`"${p.name}",${p.quantity},${p.revenue}`);
+  });
+  rows.push('');
+
+  // Tax Summary
+  rows.push('--- Tax Summary ---');
+  rows.push(`Total GST,${totalGST}`);
+  rows.push(`CGST (9%),${cgst}`);
+  rows.push(`SGST (9%),${sgst}`);
+
+  const csvContent = rows.join('\n');
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `storeos-report-${dateStr}.csv`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+  toast.success('CSV report downloaded');
+}
+
+// ─── PDF Export Helper ───
+
+function exportPDF() {
+  window.print();
+  toast.success('Print dialog opened for PDF export');
+}
+
 // ─── Main Component ───
 
 export default function ReportsPanel() {
@@ -326,7 +408,7 @@ export default function ReportsPanel() {
           <BarChart3 className="h-6 w-6 text-emerald-600" />
           <h2 className="text-xl font-bold">Reports & Analytics</h2>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 no-print">
           <Select value={period} onValueChange={(v) => setPeriod(v as Period)}>
             <SelectTrigger className="w-40">
               <Calendar className="h-4 w-4 mr-1 text-muted-foreground" />
@@ -338,22 +420,39 @@ export default function ReportsPanel() {
               <SelectItem value="month">This Month</SelectItem>
             </SelectContent>
           </Select>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => toast.success('Excel export initiated (mock)')}
-          >
-            <FileSpreadsheet className="h-4 w-4 mr-1" />
-            Export Excel
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => toast.success('PDF export initiated (mock)')}
-          >
-            <FileText className="h-4 w-4 mr-1" />
-            Export PDF
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm">
+                <Download className="h-4 w-4 mr-1.5" />
+                Export
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem
+                onClick={() =>
+                  exportCSV(
+                    period,
+                    revenueChartData,
+                    topProducts,
+                    totalRevenue,
+                    totalGST,
+                    cgst,
+                    sgst,
+                    totalOrders,
+                    avgOrderValue,
+                    store?.name || 'My Store',
+                  )
+                }
+              >
+                <FileSpreadsheet className="h-4 w-4 mr-2 text-emerald-600" />
+                Export CSV
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={exportPDF}>
+                <Printer className="h-4 w-4 mr-2 text-purple-600" />
+                Export PDF
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 

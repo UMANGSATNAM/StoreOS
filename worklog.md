@@ -568,4 +568,215 @@ Files Modified:
 - `src/components/dashboard/CustomersPanel.tsx` — Stat cards, description text
 - `src/components/dashboard/StaffPanel.tsx` — Stat cards, description text
 - `src/components/dashboard/PosDashboard.tsx` — Enhanced order status colors, hover effects
+
+---
+Task ID: 2-a
+Agent: Dashboard Styling Enhancer
+Task: Fix visual bugs and enhance PosDashboard component styling
+
+Work Log:
+
+- **BUG FIX: Notification Bell** — Replaced the `onClick={() => setNotifications(0)}` counter reset with a proper notification dropdown panel. Now uses `useState` with an array of 5 mock notifications (New Order Received, Low Stock Alert, Subscription Reminder, Stock Restocked, Refund Processed), each with icon, title, description, time ago, and unread indicator. Added "Mark all read" button and "View All Notifications" link. Unread count badge shows dynamically based on `unread` property.
+
+- **BUG FIX: Stat Cards Border Inconsistency** — Changed all stat cards from colored borders (`border-emerald-200`, `border-sky-200`, etc.) to consistent thin gray borders (`border border-gray-200 dark:border-gray-700`) with a 4px left colored border accent (`border-l-4 border-l-emerald-500`, etc.) using each card's theme color.
+
+- **BUG FIX: Search Placeholder** — Shortened from "Search products, customers, orders... (Enter to search)" to just "Search..." since the icon already implies search functionality.
+
+- **BUG FIX: Empty Cart State** — Replaced the simple disconnected icon in BillingPos with an engaging illustration-like design: circular container with shopping bag icon, a green plus badge overlay, "Your cart is empty" heading, "Tap products to add them here" subtitle, and a pulsing "Ready to bill" indicator.
+
+- **ENHANCEMENT: Notification Dropdown Panel** — Full dropdown with:
+  - Header with "Notifications" title and "Mark all read" button
+  - Scrollable list (max-h-72) of 5 notification items
+  - Each item has: colored icon in rounded container, title with blue dot for unread, description, time ago
+  - Unread items have subtle sky-50 background
+  - "View All Notifications" footer button
+  - Uses existing DropdownMenu components
+
+- **ENHANCEMENT: Stat Cards with Gradients and Trends** — Added:
+  - Subtle gradient backgrounds (`bg-gradient-to-br from-emerald-50/80 to-white`) that vary per card
+  - Hover effects: `hover:shadow-md hover:scale-[1.02] transition-all duration-200`
+  - Trend indicators: up/down arrow + percentage (e.g., "+12.5% ↑", "-2.1% ↓")
+  - Green for positive trends, red for negative
+
+- **ENHANCEMENT: Sidebar Footer Polish** — Replaced `SidebarSeparator` with a custom thin divider (`h-px bg-gray-200/70 dark:bg-gray-700/50`) between subscription badge and user profile. Added more consistent padding (`px-3 py-2` for subscription, `px-2` for user info). Divider is hidden when sidebar is collapsed.
+
+- **ENHANCEMENT: Recent Orders with Payment Icons** — Added payment method icons (Banknote for Cash, Smartphone for UPI, CreditCard for Card) next to each order's time. Added `hover:scale-[1.01] active:scale-[0.99]` animation for scale-up effect on hover. Added `paymentMethod` field to `recentOrders` state type.
+
+- **ENHANCEMENT: Sales Chart Dual-Axis** — Changed from `AreaChart` to `ComposedChart` with:
+  - Left Y-axis: Sales in ₹ (emerald area chart with gradient fill)
+  - Right Y-axis: Orders count (sky blue dashed line)
+  - Custom tooltip showing both values formatted
+  - Legend item in chart summary: "Orders (right axis)" with dashed line indicator
+  - Dots on both lines for 7-day view
+
+- Added imports: `Banknote`, `TrendingDown`, `PackageCheck`, `RefreshCcw` from lucide-react
+- Added imports: `ComposedChart`, `Line`, `Bar` from recharts
+
+Stage Summary:
+- All 4 bug fixes completed: notification bell, stat card borders, search placeholder, empty cart
+- All 5 styling enhancements completed: notification dropdown, stat card gradients/trends, sidebar footer, recent orders payment icons, dual-axis chart
+- Lint passes with zero errors on modified files (PosDashboard.tsx, BillingPos.tsx)
+- Dev server compiles and runs successfully
+
+Files Modified:
+- `src/components/dashboard/PosDashboard.tsx` — Notification dropdown, stat cards redesign, search placeholder, sidebar footer, recent orders payment icons, dual-axis chart
+- `src/components/dashboard/BillingPos.tsx` — Enhanced empty cart state
+
+---
+Task ID: 2-c
+Agent: Feature & Panel Enhancer
+Task: Add data export to Reports panel and enhance Tables panel with visual grid; enhance Products panel with view toggle
+
+Work Log:
+- **FEATURE 1: Data Export in Reports Panel**
+  - Replaced two separate mock export buttons (Export Excel, Export PDF) with a single "Export" dropdown button using shadcn/ui DropdownMenu
+  - Dropdown has two options: "Export CSV" (with FileSpreadsheet icon) and "Export PDF" (with Printer icon)
+  - **CSV Export**: Implemented `exportCSV()` function that generates a CSV file in-browser using Blob
+    - Includes store name, period, generation timestamp in header
+    - Sales data section: Date/Time, Sales Amount, Order Count from revenueChartData
+    - Top Products section: Product Name, Quantity, Revenue
+    - Tax Summary section: Total GST, CGST (9%), SGST (9%)
+    - Filename format: `storeos-report-YYYY-MM-DD.csv`
+    - Triggers download via programmatic link click and URL.createObjectURL
+    - Toast notification on successful download
+  - **PDF Export**: Uses `window.print()` with toast notification; added print CSS improvements in globals.css
+    - Enhanced print CSS: hides sidebar, nav, .no-print elements during print
+    - Report content fills page with margin/padding reset on main element
+  - Added Download icon to the export button, Printer icon for PDF option
+  - Export dropdown marked with `no-print` class to hide during print
+
+- **FEATURE 2: Enhanced Tables Panel with Visual Grid**
+  - **Visual Table Grid**: Replaced simple button cards with styled visual table elements
+    - Round tables for ≤4 seats, square tables for >4 seats
+    - Color-coded by status: Available=emerald, Occupied=orange, Reserved=amber, Inactive=gray
+    - Table number shown prominently in center of shape element
+    - Seats count below with Users icon
+    - Section label displayed below seats
+    - Order amount shown for occupied tables (₹XXX) using mockTableOrders data
+    - Status dot indicator at bottom of each card
+  - **Section Tabs**: Replaced plain filter buttons with tab-style buttons including counts
+    - "All Tables" | "Indoor" | "Outdoor" | "VIP" with count badges
+    - Active tab uses emerald-600 color scheme
+  - **Table Legend**: Added color legend card below the grid
+    - 🟢 Available | 🟠 Occupied | 🟡 Reserved | ⬛ Inactive
+  - **Stats Enhancement**: Added progress bars to stat cards showing proportion
+    - Each stat card has a thin progress bar below the value
+    - Occupancy summary card with Progress component showing X/Y tables occupied = Z%
+  - **Table Actions Dialog**: Clicking a table opens a detail dialog with:
+    - Table number and shape indicator (round/square) with colored styling
+    - Section name and seat count
+    - Current status badge with color coding
+    - Order details panel (if occupied): Bill Amount, Items count, Seated At time
+    - Quick Actions grid: Mark Available, Mark Occupied, Transfer Order, Print Bill
+    - Mark Available/Occupied are disabled when already in that status
+    - Transfer Order and Print Bill show "coming soon" toast
+  - Added Progress component import from shadcn/ui
+  - Added ArrowRightLeft and Printer icons from lucide-react
+
+- **FEATURE 3: Products Panel View Mode Toggle**
+  - Added `ViewMode` type: 'grid' | 'list'
+  - Added `viewMode` state (default: 'grid')
+  - Added LayoutGrid and List icons from lucide-react
+  - **View Mode Toggle**: Border-separated button pair in filter row
+    - Grid button with LayoutGrid icon, List button with List icon
+    - Active mode uses emerald-600 background
+  - **Grid View**: Card-based product catalog layout
+    - Responsive grid: 2 cols mobile, 3 cols tablet, 4 cols desktop, 5 cols large
+    - Each card: aspect-square image area with product image or placeholder icon
+    - Hover overlay with Edit/Delete action buttons (pointer-events-auto on buttons)
+    - Stock status badge positioned at top-right of image
+    - Product info: name (truncated), price (emerald), stock + unit, category badge
+    - Pagination controls below grid
+    - Skeleton loading state with 10 placeholder cards
+    - Empty state with Add Product CTA
+  - **List View**: Existing table layout (preserved from original, shown only when list mode active)
+    - Mobile card view also only shown in list mode
+  - Filter row reorganized with justify-between layout (filters left, toggle right)
+
+Stage Summary:
+- Reports panel has functional CSV export with real data and PDF export via print dialog
+- Tables panel transformed into visual floor plan with shape indicators, color coding, section tabs, legend, occupancy bar, and detailed table action dialog
+- Products panel has Grid/List view toggle with card-based grid view and preserved table list view
+- All print CSS enhanced for report-only printing
+- Lint passes with zero errors
+- Dev server compiles and runs successfully
+
+Files Modified:
+- `src/components/dashboard/ReportsPanel.tsx` — Export dropdown, CSV generation, PDF print
+- `src/components/dashboard/TablesPanel.tsx` — Visual grid, section tabs, legend, occupancy bar, detail dialog
+- `src/components/dashboard/ProductsPanel.tsx` — Grid/List view toggle, card-based grid view
+- `src/app/globals.css` — Enhanced print CSS styles
 - `src/app/globals.css` — Print CSS, micro-interaction utilities, animations
+
+---
+Task ID: 2-b
+Agent: Feature Enhancer
+Task: Add Keyboard Shortcut Overlay and enhance Landing Page with better styling
+
+Work Log:
+- **FEATURE 1: Keyboard Shortcut Overlay in PosDashboard**
+  - Added `useRef` import and `searchInputRef` ref for search input focus
+  - Added `showShortcuts` state for toggling the overlay
+  - Added `Keyboard` icon import from lucide-react
+  - Created comprehensive keyboard event listener in useEffect:
+    - `?` key toggles shortcuts overlay (only when not in input field)
+    - `Esc` key closes the overlay
+    - `/` or `Ctrl+K` focuses the search input
+    - `1-9` number keys switch tabs (1=Dashboard, 2=Billing, 3=Products, etc.)
+    - `N` navigates to billing tab (New Bill)
+    - `D` toggles dark mode
+    - All shortcuts disabled when typing in INPUT, TEXTAREA, or contentEditable elements
+  - Created KeyboardShortcutOverlay UI:
+    - Semi-transparent backdrop with fade-in animation
+    - Centered modal with scale-up animation
+    - Header with Keyboard icon and "Keyboard Shortcuts" title
+    - Grid layout with 14 shortcuts: key on right, description on left
+    - Keys styled with kbd-like appearance (bg-gray-100, border, rounded, monospace font)
+    - Footer hint about shortcuts being disabled in input fields
+    - Click backdrop or ✕ button to close
+  - Attached searchInputRef to the search Input component
+
+- **FEATURE 2: Landing Page Enhancements**
+  - **Hero Section Enhancement**: Added 4 floating emerald circles/blobs behind hero text with CSS @keyframes animations:
+    - `float-shape-1`: 12s cycle, w-20 h-20, top-left area
+    - `float-shape-2`: 15s cycle, w-32 h-32, top-right area
+    - `float-shape-3`: 18s cycle, w-16 h-16, bottom-left area
+    - `float-shape-4`: 14s cycle, w-24 h-24, bottom-right area
+    - All at low opacity (10-15%) with emerald/teal colors, different sizes and speeds
+  - **Niche Cards Enhancement**: Added `.niche-shimmer` CSS class with diagonal light sweep animation:
+    - Pseudo-element `::after` creates a gradient overlay
+    - On hover, `shimmerSweep` animation slides a diagonal light across the card (0.6s)
+    - Applied to all niche cards
+  - **Testimonials Enhancement**: Replaced Lucide Star icons with text-based gold star characters:
+    - 5 gold `★` characters above each testimonial quote
+    - `text-amber-400 text-sm` for slightly smaller, consistent styling
+  - **Pricing Section Enhancement**: Made the "Most Popular" card more prominent:
+    - Added `pricing-glow` class with `pulseGlow` animation (3s cycle, emerald box-shadow pulse)
+    - Added `pricing-btn-pulse` class with `pulseRing` animation on "Start Free Trial" button (2s cycle, expanding ring)
+  - **Footer Enhancement**: Enhanced social media icons row:
+    - Added YouTube icon (Lucide `Youtube`) alongside Twitter, LinkedIn, Instagram
+    - Each icon now has `aria-label` for accessibility
+    - Added hover effects: `hover:scale-110 hover:shadow-lg hover:shadow-emerald-500/20`
+    - Used object destructuring for cleaner icon mapping
+
+- **Global CSS Additions** (`globals.css`):
+  - `@keyframes scaleIn` — For modal scale-up animation
+  - `@keyframes floatShape1-4` — Four different floating animations for hero shapes
+  - `@keyframes shimmerSweep` — Diagonal light sweep for niche cards
+  - `@keyframes pulseGlow` — Pulsing emerald glow for pricing card
+  - `@keyframes pulseRing` — Expanding ring animation for CTA button
+
+Stage Summary:
+- Keyboard shortcut overlay with 14 shortcuts, kbd-styled keys, animated modal
+- Hero section enhanced with 4 floating animated shapes
+- Niche cards with diagonal shimmer effect on hover
+- Testimonials now use gold text stars (★)
+- Pricing card with pulsing emerald glow and ring animation on CTA button
+- Footer now includes YouTube social icon with hover effects
+- All new animations defined as CSS @keyframes for performance
+- Lint passes with zero errors
+
+Files Modified:
+- `src/components/dashboard/PosDashboard.tsx` — Keyboard shortcut overlay, event listener, searchInputRef
+- `src/components/landing/LandingPage.tsx` — Floating shapes, shimmer cards, text stars, pricing glow, YouTube icon
+- `src/app/globals.css` — New @keyframes (scaleIn, floatShape1-4, shimmerSweep, pulseGlow, pulseRing)

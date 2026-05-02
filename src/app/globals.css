@@ -121,8 +121,16 @@
   }
 }
 
-/* Print styles - hide everything except receipt */
+/* Print styles - hide everything except receipt or report */
 @media print {
+  /* Hide sidebar, nav, and non-essential UI */
+  .no-print,
+  aside,
+  nav:not(.print-include),
+  [data-sidebar],
+  button.no-print {
+    display: none !important;
+  }
   body > *:not(#__next) {
     display: none !important;
   }
@@ -132,8 +140,11 @@
     top: 0;
     width: 100%;
   }
-  .no-print {
-    display: none !important;
+  /* Ensure report content fills the page */
+  main {
+    margin: 0 !important;
+    padding: 16px !important;
+    max-width: 100% !important;
   }
 }
 
@@ -179,4 +190,57 @@
 @keyframes shimmer {
   0% { background-position: 200% 0; }
   100% { background-position: -200% 0; }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes floatShape1 {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  25% { transform: translate(30px, -20px) rotate(5deg); }
+  50% { transform: translate(-10px, -40px) rotate(-3deg); }
+  75% { transform: translate(-30px, -10px) rotate(2deg); }
+}
+
+@keyframes floatShape2 {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  25% { transform: translate(-25px, 15px) rotate(-4deg); }
+  50% { transform: translate(20px, 30px) rotate(3deg); }
+  75% { transform: translate(15px, -20px) rotate(-2deg); }
+}
+
+@keyframes floatShape3 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(20px, -30px) scale(1.05); }
+  66% { transform: translate(-15px, 15px) scale(0.95); }
+}
+
+@keyframes floatShape4 {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  33% { transform: translate(-20px, -25px) rotate(-5deg); }
+  66% { transform: translate(25px, 10px) rotate(4deg); }
+}
+
+@keyframes shimmerSweep {
+  0% { transform: translateX(-100%) skewX(-15deg); }
+  100% { transform: translateX(200%) skewX(-15deg); }
+}
+
+@keyframes pulseGlow {
+  0%, 100% { box-shadow: 0 0 8px rgba(16, 185, 129, 0.4); }
+  50% { box-shadow: 0 0 20px rgba(16, 185, 129, 0.6), 0 0 40px rgba(16, 185, 129, 0.2); }
+}
+
+@keyframes pulseRing {
+  0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.5); }
+  70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
 }

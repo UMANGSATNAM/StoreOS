@@ -35,6 +35,7 @@ import {
   Twitter,
   Linkedin,
   Instagram,
+  Youtube,
   Loader2,
 } from 'lucide-react';
 
@@ -337,6 +338,49 @@ export default function LandingPage() {
         .float-animation {
           animation: float 4s ease-in-out infinite;
         }
+        .float-shape-1 {
+          animation: floatShape1 12s ease-in-out infinite;
+        }
+        .float-shape-2 {
+          animation: floatShape2 15s ease-in-out infinite;
+        }
+        .float-shape-3 {
+          animation: floatShape3 18s ease-in-out infinite;
+        }
+        .float-shape-4 {
+          animation: floatShape4 14s ease-in-out infinite;
+        }
+        .niche-shimmer {
+          position: relative;
+          overflow: hidden;
+        }
+        .niche-shimmer::after {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 50%;
+          height: 100%;
+          background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+          transform: translateX(-100%) skewX(-15deg);
+          pointer-events: none;
+        }
+        .niche-shimmer:hover::after {
+          animation: shimmerSweep 0.6s ease-out;
+        }
+        .pricing-glow {
+          animation: pulseGlow 3s ease-in-out infinite;
+        }
+        .pricing-btn-pulse {
+          position: relative;
+        }
+        .pricing-btn-pulse::before {
+          content: '';
+          position: absolute;
+          inset: -3px;
+          border-radius: 9999px;
+          animation: pulseRing 2s ease-out infinite;
+        }
       `}</style>
       {/* ═══════════════════ NAVBAR ═══════════════════ */}
       <nav
@@ -453,6 +497,11 @@ export default function LandingPage() {
         <div className="absolute inset-0 bg-gradient-to-br from-emerald-50 via-white to-teal-50 dark:from-gray-950 dark:via-gray-950 dark:to-emerald-950/30 hero-gradient-animated" />
         <div className="absolute top-20 left-1/4 w-96 h-96 bg-emerald-200/30 dark:bg-emerald-800/10 rounded-full blur-3xl" />
         <div className="absolute bottom-10 right-1/4 w-80 h-80 bg-teal-200/30 dark:bg-teal-800/10 rounded-full blur-3xl" />
+        {/* Floating shapes */}
+        <div className="absolute top-32 left-[10%] w-20 h-20 bg-emerald-400/10 dark:bg-emerald-500/10 rounded-full float-shape-1" />
+        <div className="absolute top-48 right-[15%] w-32 h-32 bg-emerald-300/10 dark:bg-emerald-400/10 rounded-full float-shape-2" />
+        <div className="absolute bottom-32 left-[20%] w-16 h-16 bg-teal-400/10 dark:bg-teal-500/10 rounded-full float-shape-3" />
+        <div className="absolute bottom-48 right-[25%] w-24 h-24 bg-emerald-200/15 dark:bg-emerald-300/10 rounded-full float-shape-4" />
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
@@ -622,7 +671,7 @@ export default function LandingPage() {
           <StaggerContainer className="mt-14 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
             {NICHES.map((niche) => (
               <StaggerItem key={niche.slug}>
-                <Card className={`group hover:shadow-lg hover:-translate-y-1 transition-all duration-300 cursor-pointer border-gray-200 dark:border-gray-800 h-full border-t-4 ${getNicheBorderTop(niche.color)}`}>
+                <Card className={`group hover:shadow-lg hover:-translate-y-1 transition-all duration-300 cursor-pointer border-gray-200 dark:border-gray-800 h-full border-t-4 ${getNicheBorderTop(niche.color)} niche-shimmer`}>
                   <CardContent className="p-4 text-center flex flex-col items-center gap-2">
                     <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-2xl transition-transform duration-300 group-hover:scale-110 ${getNicheColorClass(niche.color)}`}>
                       {niche.icon}
@@ -760,7 +809,7 @@ export default function LandingPage() {
 
           <FadeIn delay={0.2}>
             <div className="mt-14 flex justify-center">
-              <Card className="relative max-w-md w-full border-2 border-emerald-500 dark:border-emerald-600 shadow-xl shadow-emerald-500/10">
+              <Card className="relative max-w-md w-full border-2 border-emerald-500 dark:border-emerald-600 shadow-xl shadow-emerald-500/10 pricing-glow">
                 <div className="absolute -top-4 left-1/2 -translate-x-1/2 flex gap-2">
                   <Badge className="bg-emerald-600 text-white border-0 rounded-full px-4 py-1 text-sm shadow-lg shadow-emerald-600/25">
                     <Sparkles className="w-3 h-3 mr-1" />
@@ -799,7 +848,7 @@ export default function LandingPage() {
                 <CardFooter className="flex flex-col gap-3 pt-4">
                   <Button
                     size="lg"
-                    className="w-full rounded-full bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-600/25 h-12 text-base"
+                    className="w-full rounded-full bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-600/25 h-12 text-base pricing-btn-pulse"
                     onClick={() => setCurrentView({ page: 'signup' })}
                   >
                     Start Free Trial
@@ -836,9 +885,9 @@ export default function LandingPage() {
                 <Card className="h-full border-gray-200 dark:border-gray-800 hover:shadow-lg transition-shadow duration-300">
                   <CardContent className="p-6">
                     {/* Stars */}
-                    <div className="flex gap-0.5 mb-4">
-                      {Array.from({ length: t.rating }).map((_, i) => (
-                        <Star key={i} className="w-4 h-4 fill-amber-400 text-amber-400" />
+                    <div className="flex gap-0.5 mb-3">
+                      {Array.from({ length: 5 }).map((_, i) => (
+                        <span key={i} className="text-amber-400 text-sm">★</span>
                       ))}
                     </div>
                     <p className="text-gray-700 dark:text-gray-300 leading-relaxed text-sm mb-6">
@@ -908,8 +957,13 @@ export default function LandingPage() {
                 India&apos;s first multi-niche POS platform. Run your store on autopilot for just ₹99/month.
               </p>
               <div className="flex gap-3 mt-5">
-                {[Twitter, Linkedin, Instagram].map((Icon, i) => (
-                  <button key={i} className="w-9 h-9 rounded-full bg-gray-800 hover:bg-emerald-600 flex items-center justify-center transition-colors">
+                {[
+                  { Icon: Twitter, label: 'Twitter' },
+                  { Icon: Linkedin, label: 'LinkedIn' },
+                  { Icon: Instagram, label: 'Instagram' },
+                  { Icon: Youtube, label: 'YouTube' },
+                ].map(({ Icon, label }) => (
+                  <button key={label} aria-label={label} className="w-9 h-9 rounded-full bg-gray-800 hover:bg-emerald-600 flex items-center justify-center transition-colors hover:scale-110 hover:shadow-lg hover:shadow-emerald-500/20">
                     <Icon className="w-4 h-4" />
                   </button>
                 ))}

@@ -896,10 +896,22 @@ export default function BillingPos() {
           <ScrollArea className="flex-1">
             <div className="p-3 space-y-2">
               {cart.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-12 text-gray-400">
-                  <ShoppingBag className="w-12 h-12 mb-2 opacity-40" />
-                  <p className="text-sm font-medium">No items in cart</p>
-                  <p className="text-xs">Click products to add</p>
+                <div className="flex flex-col items-center justify-center py-10 text-gray-400 dark:text-gray-500">
+                  {/* Illustration-like empty cart design */}
+                  <div className="relative mb-4">
+                    <div className="w-20 h-20 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+                      <ShoppingBag className="w-10 h-10 opacity-30" />
+                    </div>
+                    <div className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center border-2 border-white dark:border-gray-900">
+                      <Plus className="w-4 h-4 text-emerald-500" />
+                    </div>
+                  </div>
+                  <p className="text-sm font-semibold text-gray-500 dark:text-gray-400">Your cart is empty</p>
+                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Tap products to add them here</p>
+                  <div className="flex items-center gap-1.5 mt-3">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    <span className="text-[10px] text-emerald-500 font-medium">Ready to bill</span>
+                  </div>
                 </div>
               ) : (
                 cart.map(item => (

@@ -19,6 +19,8 @@ import {
   Image as ImageIcon,
   Tag,
   MoreHorizontal,
+  LayoutGrid,
+  List,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -98,6 +100,7 @@ interface Category {
 type StockFilter = 'all' | 'in_stock' | 'low_stock' | 'out_of_stock';
 type SortField = 'name' | 'sku' | 'price' | 'stock' | 'createdAt';
 type SortDir = 'asc' | 'desc';
+type ViewMode = 'grid' | 'list';
 
 const UNITS = ['piece', 'kg', 'g', 'liter', 'ml', 'meter', 'box', 'pack'] as const;
 const PAGE_SIZE = 10;
@@ -199,6 +202,9 @@ export default function ProductsPanel() {
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [productForm, setProductForm] = useState<ProductFormData>(emptyProductForm);
   const [saving, setSaving] = useState(false);
+
+  // View mode
+  const [viewMode, setViewMode] = useState<ViewMode>('grid');
 
   // Category form
   const [categoryName, setCategoryName] = useState('');
@@ -702,37 +708,201 @@ export default function ProductsPanel() {
         </div>
       </div>
 
-      {/* Filter Row */}
-      <div className="flex flex-wrap items-center gap-3">
-        <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-          <SelectTrigger className="w-44">
-            <Tag className="h-4 w-4 mr-1 text-muted-foreground" />
-            <SelectValue placeholder="All Categories" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Categories</SelectItem>
-            {categories.map((cat) => (
-              <SelectItem key={cat.id} value={cat.id}>
-                {cat.icon && <span className="mr-1">{cat.icon}</span>}
-                {cat.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select value={stockFilter} onValueChange={(v) => setStockFilter(v as StockFilter)}>
-          <SelectTrigger className="w-36">
-            <SelectValue placeholder="All Stock" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All</SelectItem>
-            <SelectItem value="in_stock">In Stock</SelectItem>
-            <SelectItem value="low_stock">Low Stock</SelectItem>
-            <SelectItem value="out_of_stock">Out of Stock</SelectItem>
-          </SelectContent>
-        </Select>
+      {/* Filter Row + View Toggle */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-3">
+          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+            <SelectTrigger className="w-44">
+              <Tag className="h-4 w-4 mr-1 text-muted-foreground" />
+              <SelectValue placeholder="All Categories" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Categories</SelectItem>
+              {categories.map((cat) => (
+                <SelectItem key={cat.id} value={cat.id}>
+                  {cat.icon && <span className="mr-1">{cat.icon}</span>}
+                  {cat.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={stockFilter} onValueChange={(v) => setStockFilter(v as StockFilter)}>
+            <SelectTrigger className="w-36">
+              <SelectValue placeholder="All Stock" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All</SelectItem>
+              <SelectItem value="in_stock">In Stock</SelectItem>
+              <SelectItem value="low_stock">Low Stock</SelectItem>
+              <SelectItem value="out_of_stock">Out of Stock</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        {/* View Mode Toggle */}
+        <div className="flex items-center border rounded-lg overflow-hidden">
+          <Button
+            variant={viewMode === 'grid' ? 'default' : 'ghost'}
+            size="sm"
+            className={`rounded-none h-8 px-3 ${viewMode === 'grid' ? 'bg-emerald-600 hover:bg-emerald-700' : ''}`}
+            onClick={() => setViewMode('grid')}
+          >
+            <LayoutGrid className="h-4 w-4 mr-1" />
+            Grid
+          </Button>
+          <Button
+            variant={viewMode === 'list' ? 'default' : 'ghost'}
+            size="sm"
+            className={`rounded-none h-8 px-3 ${viewMode === 'list' ? 'bg-emerald-600 hover:bg-emerald-700' : ''}`}
+            onClick={() => setViewMode('list')}
+          >
+            <List className="h-4 w-4 mr-1" />
+            List
+          </Button>
+        </div>
       </div>
 
-      {/* Desktop Table */}
+      {/* ─── Grid View ─── */}
+      {viewMode === 'grid' && (
+        <div>
+          {loading ? (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+              {Array.from({ length: 10 }).map((_, i) => (
+                <div key={i} className="h-48 rounded-lg bg-muted animate-pulse" />
+              ))}
+            </div>
+          ) : filteredProducts.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+              <Package className="h-16 w-16 mb-4 opacity-30" />
+              <p className="text-lg font-medium">No products found</p>
+              <p className="text-sm">Add your first product to get started</p>
+              <Button
+                onClick={openAddProduct}
+                size="sm"
+                className="mt-4 bg-emerald-600 hover:bg-emerald-700"
+              >
+                <Plus className="h-4 w-4 mr-1" />
+                Add Product
+              </Button>
+            </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                {paginatedProducts.map((product) => (
+                  <Card
+                    key={product.id}
+                    className="group relative overflow-hidden hover:shadow-md transition-shadow cursor-pointer"
+                    onClick={() => openEditProduct(product)}
+                  >
+                    {/* Product Image */}
+                    <div className="aspect-square bg-muted flex items-center justify-center relative">
+                      {product.image ? (
+                        <img
+                          src={product.image}
+                          alt={product.name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <ImageIcon className="h-8 w-8 text-muted-foreground/40" />
+                      )}
+                      {/* Hover overlay with actions */}
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 pointer-events-none">
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          className="h-8 w-8 p-0 pointer-events-auto"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openEditProduct(product);
+                          }}
+                        >
+                          <Edit className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          className="h-8 w-8 p-0 pointer-events-auto text-destructive hover:text-destructive"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setProductToDelete(product);
+                            setDeleteDialogOpen(true);
+                          }}
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </div>
+                      {/* Status badge */}
+                      <div className="absolute top-2 right-2">
+                        <StockBadge stock={product.stock} lowStockAlert={product.lowStockAlert} />
+                      </div>
+                    </div>
+                    {/* Product Info */}
+                    <CardContent className="p-3">
+                      <p className="text-sm font-medium truncate">{product.name}</p>
+                      <div className="flex items-center justify-between mt-1">
+                        <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400">
+                          {formatCurrency(product.price)}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          {product.stock} {product.unit}
+                        </span>
+                      </div>
+                      {product.category && (
+                        <Badge variant="outline" className="mt-1.5 text-[10px] h-5">
+                          {product.category.icon && <span className="mr-0.5">{product.category.icon}</span>}
+                          {product.category.name}
+                        </Badge>
+                      )}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+
+              {/* Pagination for Grid View */}
+              <div className="flex items-center justify-between mt-4">
+                <p className="text-sm text-muted-foreground">
+                  Showing {(currentPage - 1) * PAGE_SIZE + 1}–
+                  {Math.min(currentPage * PAGE_SIZE, filteredProducts.length)} of{' '}
+                  {filteredProducts.length}
+                </p>
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8"
+                    disabled={currentPage <= 1}
+                    onClick={() => setCurrentPage((p) => p - 1)}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                    <Button
+                      key={page}
+                      variant={page === currentPage ? 'default' : 'outline'}
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => setCurrentPage(page)}
+                    >
+                      {page}
+                    </Button>
+                  ))}
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8"
+                    disabled={currentPage >= totalPages}
+                    onClick={() => setCurrentPage((p) => p + 1)}
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* ─── List View (Desktop Table) ─── */}
+      {viewMode === 'list' && (
       <Card className="hidden md:block">
         <CardContent className="p-0">
           {loading ? (
@@ -906,8 +1076,10 @@ export default function ProductsPanel() {
           )}
         </CardContent>
       </Card>
+      )}
 
-      {/* Mobile Card View */}
+      {/* Mobile Card View (List mode only) */}
+      {viewMode === 'list' && (
       <div className="md:hidden space-y-3">
         {loading ? (
           <ProductTableSkeleton />
@@ -1015,6 +1187,7 @@ export default function ProductsPanel() {
           </div>
         )}
       </div>
+      )}
 
       {/* ─── Add/Edit Product Dialog ─── */}
       <Dialog open={productDialogOpen} onOpenChange={setProductDialogOpen}>
