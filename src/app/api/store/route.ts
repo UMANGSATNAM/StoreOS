@@ -1,30 +1,81 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createHash } from 'crypto';
 import { db } from '@/lib/db';
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { userId, name, ownerName, niche, template, city, state, gstNumber, phone } = body;
+    const { userId, name, ownerName, niche, template, city, state, gstNumber, phone, address, taxRate, email } = body;
 
-    if (!userId || !name || !ownerName || !niche) {
+    if (!name || !ownerName || !niche) {
       return NextResponse.json(
-        { error: 'userId, name, ownerName, and niche are required' },
+        { error: 'Store name, owner name, and niche are required' },
         { status: 400 }
       );
     }
 
-    // Check if user already has a store
-    const existingStore = await db.store.findUnique({ where: { userId } });
-    if (existingStore) {
-      return NextResponse.json(
-        { error: 'User already has a store' },
-        { status: 409 }
-      );
+    // If userId is provided, check if user already has a store
+    if (userId) {
+      const existingStore = await db.store.findUnique({ where: { userId } });
+      if (existingStore) {
+        // Instead of error, return the existing store (idempotent)
+        return NextResponse.json({ store: existingStore }, { status: 200 });
+      }
+    }
+
+    // Verify user exists or auto-create one if needed
+    let resolvedUserId = userId;
+
+    if (userId) {
+      const userExists = await db.user.findUnique({ where: { id: userId } });
+      if (!userExists) {
+        // User ID from session is stale (DB was reset). Auto-create a new user.
+        const newUser = await db.user.create({
+          data: {
+            id: userId, // Try to reuse the same ID
+            email: email || `user-${Date.now()}@storeos.in`,
+            password: createHash('sha256').update(`auto-${Date.now()}`).digest('hex'),
+            name: ownerName,
+            phone: phone || null,
+            role: 'user',
+            subscription: {
+              create: {
+                plan: 'basic',
+                status: 'trial',
+                trialEndsAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
+              },
+            },
+          },
+          include: { subscription: true },
+        });
+        resolvedUserId = newUser.id;
+      }
+    } else {
+      // No userId provided — create a new user account automatically
+      const autoEmail = email || `user-${Date.now()}@storeos.in`;
+      const newUser = await db.user.create({
+        data: {
+          email: autoEmail,
+          password: createHash('sha256').update(`auto-${Date.now()}`).digest('hex'),
+          name: ownerName,
+          phone: phone || null,
+          role: 'user',
+          subscription: {
+            create: {
+              plan: 'basic',
+              status: 'trial',
+              trialEndsAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
+            },
+          },
+        },
+        include: { subscription: true },
+      });
+      resolvedUserId = newUser.id;
     }
 
     const store = await db.store.create({
       data: {
-        userId,
+        userId: resolvedUserId,
         name,
         ownerName,
         niche,
@@ -33,15 +84,19 @@ export async function POST(request: NextRequest) {
         state: state || null,
         gstNumber: gstNumber || null,
         phone: phone || null,
+        address: address || null,
+        email: email || null,
+        taxRate: taxRate ?? 18.0,
         onboardingComplete: true,
       },
     });
 
-    return NextResponse.json({ store }, { status: 201 });
-  } catch (error) {
+    return NextResponse.json({ store, userId: resolvedUserId }, { status: 201 });
+  } catch (error: unknown) {
     console.error('Create store error:', error);
+    const message = error instanceof Error ? error.message : 'Failed to create store';
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: message },
       { status: 500 }
     );
   }

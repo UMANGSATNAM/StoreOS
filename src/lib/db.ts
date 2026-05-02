@@ -7,7 +7,15 @@ const globalForPrisma = globalThis as unknown as {
 export const db =
   globalForPrisma.prisma ??
   new PrismaClient({
-    log: ['query'],
+    log: process.env.NODE_ENV === 'development' ? ['warn', 'error'] : ['error'],
   })
 
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = db
+
+// Enable WAL mode for better concurrent access (SQLite)
+// Use $queryRaw since PRAGMA journal_mode returns a result row
+if (typeof window === 'undefined') {
+  db.$queryRaw<Array<{journal_mode: string}>>`PRAGMA journal_mode=WAL`.catch(() => {
+    // WAL mode setup is best-effort; ignore errors
+  })
+}

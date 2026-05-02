@@ -54,6 +54,7 @@ export default function StoreSetup() {
     onboardingNiche,
     onboardingTemplate,
     user,
+    setUser,
     setCurrentView,
     setStore,
   } = useAppStore();
@@ -129,10 +130,17 @@ export default function StoreSetup() {
   const handleSubmit = async () => {
     if (!validate()) return;
 
+    // Ensure user is logged in before creating store
+    if (!user?.id) {
+      toast.error('Session expired. Please sign up again.');
+      setCurrentView({ page: 'signup' });
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       const payload = {
-        userId: user?.id || 'demo-user',
+        userId: user.id,
         name: formData.storeName,
         ownerName: formData.ownerName,
         niche: onboardingNiche || 'restaurant',
@@ -154,7 +162,15 @@ export default function StoreSetup() {
         throw new Error(data.error || 'Failed to create store');
       }
 
-      const { store: createdStore } = await res.json();
+      const { store: createdStore, userId: returnedUserId } = await res.json();
+
+      // If the API auto-created a new user (e.g. DB was reset), update the user ID
+      if (returnedUserId && returnedUserId !== user?.id) {
+        setUser({
+          ...user!,
+          id: returnedUserId,
+        });
+      }
 
       setStore({
         id: createdStore.id,

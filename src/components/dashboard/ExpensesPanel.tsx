@@ -26,7 +26,8 @@ import {
   IndianRupee, Plus, Search, Filter, Trash2, Edit3, CalendarDays,
   TrendingDown, TrendingUp, Wallet, CreditCard, Banknote, Smartphone,
   ChevronLeft, ChevronRight, Clock, CircleDot, CheckCircle2, XCircle,
-  AlertTriangle, ArrowRight, FileText, Eye,
+  AlertTriangle, ArrowRight, FileText, Eye, Home, Package, DollarSign,
+  Wrench, Megaphone, Truck, UtensilsCrossed, Phone, Sparkles, ClipboardList,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Separator } from '@/components/ui/separator';
@@ -42,6 +43,7 @@ interface Expense {
   paymentMethod: PaymentMethod;
   date: string;
   receiptNumber: string;
+  receiptNote: string;
   createdAt: string;
 }
 
@@ -64,14 +66,15 @@ interface DayRecord {
 }
 
 type ExpenseCategory =
-  | 'Rent'
-  | 'Utilities'
-  | 'Salaries'
-  | 'Supplies'
-  | 'Marketing'
-  | 'Maintenance'
-  | 'Transport'
-  | 'Food'
+  | 'Rent & Utilities'
+  | 'Inventory Purchase'
+  | 'Salaries & Wages'
+  | 'Maintenance & Repair'
+  | 'Marketing & Ads'
+  | 'Transport & Delivery'
+  | 'Food & Refreshments'
+  | 'Phone & Internet'
+  | 'Cleaning & Housekeeping'
   | 'Miscellaneous';
 
 type PaymentMethod = 'Cash' | 'Bank Transfer' | 'UPI' | 'Cheque';
@@ -81,35 +84,40 @@ type DateFilter = 'today' | 'week' | 'month' | 'custom';
 // ─── Constants ────────────────────────────────────────────────
 
 const EXPENSE_CATEGORIES: ExpenseCategory[] = [
-  'Rent', 'Utilities', 'Salaries', 'Supplies', 'Marketing',
-  'Maintenance', 'Transport', 'Food', 'Miscellaneous',
+  'Rent & Utilities',
+  'Inventory Purchase',
+  'Salaries & Wages',
+  'Maintenance & Repair',
+  'Marketing & Ads',
+  'Transport & Delivery',
+  'Food & Refreshments',
+  'Phone & Internet',
+  'Cleaning & Housekeeping',
+  'Miscellaneous',
 ];
 
+const CATEGORY_CONFIG: Record<ExpenseCategory, { icon: React.ElementType; emoji: string; color: string; bgClass: string; hexColor: string }> = {
+  'Rent & Utilities': { icon: Home, emoji: '🏠', color: 'text-amber-700 dark:text-amber-400', bgClass: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400', hexColor: '#f59e0b' },
+  'Inventory Purchase': { icon: Package, emoji: '📦', color: 'text-emerald-700 dark:text-emerald-400', bgClass: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400', hexColor: '#10b981' },
+  'Salaries & Wages': { icon: DollarSign, emoji: '💰', color: 'text-blue-700 dark:text-blue-400', bgClass: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400', hexColor: '#3b82f6' },
+  'Maintenance & Repair': { icon: Wrench, emoji: '🔧', color: 'text-orange-700 dark:text-orange-400', bgClass: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400', hexColor: '#f97316' },
+  'Marketing & Ads': { icon: Megaphone, emoji: '📢', color: 'text-purple-700 dark:text-purple-400', bgClass: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400', hexColor: '#8b5cf6' },
+  'Transport & Delivery': { icon: Truck, emoji: '🚚', color: 'text-cyan-700 dark:text-cyan-400', bgClass: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400', hexColor: '#06b6d4' },
+  'Food & Refreshments': { icon: UtensilsCrossed, emoji: '🍽️', color: 'text-rose-700 dark:text-rose-400', bgClass: 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400', hexColor: '#e11d48' },
+  'Phone & Internet': { icon: Phone, emoji: '📱', color: 'text-teal-700 dark:text-teal-400', bgClass: 'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400', hexColor: '#14b8a6' },
+  'Cleaning & Housekeeping': { icon: Sparkles, emoji: '🧹', color: 'text-lime-700 dark:text-lime-400', bgClass: 'bg-lime-100 text-lime-700 dark:bg-lime-900/30 dark:text-lime-400', hexColor: '#84cc16' },
+  'Miscellaneous': { icon: ClipboardList, emoji: '📋', color: 'text-gray-700 dark:text-gray-400', bgClass: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400', hexColor: '#6b7280' },
+};
+
+const CATEGORY_COLORS: Record<ExpenseCategory, string> = Object.fromEntries(
+  Object.entries(CATEGORY_CONFIG).map(([k, v]) => [k, v.hexColor])
+) as Record<ExpenseCategory, string>;
+
+const CATEGORY_BG: Record<ExpenseCategory, string> = Object.fromEntries(
+  Object.entries(CATEGORY_CONFIG).map(([k, v]) => [k, v.bgClass])
+) as Record<ExpenseCategory, string>;
+
 const PAYMENT_METHODS: PaymentMethod[] = ['Cash', 'Bank Transfer', 'UPI', 'Cheque'];
-
-const CATEGORY_COLORS: Record<ExpenseCategory, string> = {
-  Rent: '#e11d48',
-  Utilities: '#f59e0b',
-  Salaries: '#8b5cf6',
-  Supplies: '#10b981',
-  Marketing: '#3b82f6',
-  Maintenance: '#f97316',
-  Transport: '#06b6d4',
-  Food: '#ec4899',
-  Miscellaneous: '#6b7280',
-};
-
-const CATEGORY_BG: Record<ExpenseCategory, string> = {
-  Rent: 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400',
-  Utilities: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
-  Salaries: 'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400',
-  Supplies: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
-  Marketing: 'bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-400',
-  Maintenance: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
-  Transport: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400',
-  Food: 'bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-400',
-  Miscellaneous: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-400',
-};
 
 const ITEMS_PER_PAGE = 8;
 
@@ -144,6 +152,16 @@ function getMonthStart(): string {
   return new Date(d.getFullYear(), d.getMonth(), 1).toISOString().split('T')[0];
 }
 
+function getLastMonthStart(): string {
+  const d = new Date();
+  return new Date(d.getFullYear(), d.getMonth() - 1, 1).toISOString().split('T')[0];
+}
+
+function getLastMonthEnd(): string {
+  const d = new Date();
+  return new Date(d.getFullYear(), d.getMonth(), 0).toISOString().split('T')[0];
+}
+
 // ─── Mock Data Generator ──────────────────────────────────────
 
 function generateMockExpenses(): Expense[] {
@@ -152,38 +170,43 @@ function generateMockExpenses(): Expense[] {
 
   const mockEntries: Array<{
     daysAgo: number; category: ExpenseCategory; description: string;
-    amount: number; paymentMethod: PaymentMethod; receiptNumber: string;
+    amount: number; paymentMethod: PaymentMethod; receiptNumber: string; receiptNote: string;
   }> = [
-    { daysAgo: 0, category: 'Supplies', description: 'Vegetable supplies - morning', amount: 3200, paymentMethod: 'Cash', receiptNumber: 'REC-001' },
-    { daysAgo: 0, category: 'Transport', description: 'Delivery auto charges', amount: 450, paymentMethod: 'Cash', receiptNumber: '' },
-    { daysAgo: 0, category: 'Food', description: 'Staff lunch', amount: 500, paymentMethod: 'UPI', receiptNumber: '' },
-    { daysAgo: 1, category: 'Supplies', description: 'Grocery & vegetables', amount: 4100, paymentMethod: 'UPI', receiptNumber: 'REC-002' },
-    { daysAgo: 1, category: 'Maintenance', description: 'Gas cylinder refill', amount: 1800, paymentMethod: 'Cash', receiptNumber: 'REC-003' },
-    { daysAgo: 1, category: 'Miscellaneous', description: 'Stationery & printing', amount: 300, paymentMethod: 'UPI', receiptNumber: '' },
-    { daysAgo: 2, category: 'Utilities', description: 'Electricity bill - March', amount: 8500, paymentMethod: 'Bank Transfer', receiptNumber: 'ELEC-2024-03' },
-    { daysAgo: 2, category: 'Supplies', description: 'Cleaning supplies & chemicals', amount: 650, paymentMethod: 'Cash', receiptNumber: '' },
-    { daysAgo: 3, category: 'Marketing', description: 'Social media ads - Instagram', amount: 2000, paymentMethod: 'UPI', receiptNumber: '' },
-    { daysAgo: 3, category: 'Miscellaneous', description: 'Miscellaneous expenses', amount: 500, paymentMethod: 'Cash', receiptNumber: '' },
-    { daysAgo: 4, category: 'Salaries', description: 'Staff salary - Ramesh (cook)', amount: 15000, paymentMethod: 'Bank Transfer', receiptNumber: 'SAL-004' },
-    { daysAgo: 4, category: 'Supplies', description: 'Meat & poultry', amount: 5600, paymentMethod: 'Cash', receiptNumber: 'REC-005' },
-    { daysAgo: 5, category: 'Rent', description: 'Shop rent - March 2025', amount: 25000, paymentMethod: 'Bank Transfer', receiptNumber: 'RNT-2025-03' },
-    { daysAgo: 5, category: 'Utilities', description: 'Water bill', amount: 1200, paymentMethod: 'UPI', receiptNumber: '' },
-    { daysAgo: 5, category: 'Supplies', description: 'Spices & condiments', amount: 1800, paymentMethod: 'Cash', receiptNumber: '' },
-    { daysAgo: 6, category: 'Marketing', description: 'Pamphlet printing', amount: 1500, paymentMethod: 'Cash', receiptNumber: '' },
-    { daysAgo: 6, category: 'Maintenance', description: 'Plumbing repair', amount: 800, paymentMethod: 'Cash', receiptNumber: '' },
-    { daysAgo: 7, category: 'Salaries', description: 'Staff salary - Suresh (helper)', amount: 10000, paymentMethod: 'Bank Transfer', receiptNumber: 'SAL-005' },
-    { daysAgo: 7, category: 'Transport', description: 'Monthly vehicle fuel', amount: 2800, paymentMethod: 'UPI', receiptNumber: '' },
-    { daysAgo: 8, category: 'Food', description: 'Staff meals & tea', amount: 1200, paymentMethod: 'Cash', receiptNumber: '' },
-    { daysAgo: 9, category: 'Supplies', description: 'Packaging materials', amount: 2200, paymentMethod: 'UPI', receiptNumber: 'REC-006' },
-    { daysAgo: 10, category: 'Utilities', description: 'Internet bill', amount: 999, paymentMethod: 'UPI', receiptNumber: '' },
-    { daysAgo: 11, category: 'Maintenance', description: 'AC servicing', amount: 3500, paymentMethod: 'Bank Transfer', receiptNumber: 'MNT-007' },
-    { daysAgo: 12, category: 'Miscellaneous', description: 'Bank charges', amount: 250, paymentMethod: 'Bank Transfer', receiptNumber: '' },
-    { daysAgo: 14, category: 'Marketing', description: 'Google ads', amount: 3000, paymentMethod: 'UPI', receiptNumber: '' },
-    { daysAgo: 16, category: 'Rent', description: 'Parking area rent', amount: 5000, paymentMethod: 'Cheque', receiptNumber: 'RNT-PARK' },
-    { daysAgo: 18, category: 'Supplies', description: 'Dairy products', amount: 3400, paymentMethod: 'Cash', receiptNumber: '' },
-    { daysAgo: 20, category: 'Salaries', description: 'Staff salary - Anita (cashier)', amount: 12000, paymentMethod: 'Bank Transfer', receiptNumber: 'SAL-006' },
-    { daysAgo: 22, category: 'Utilities', description: 'Gas bill', amount: 2100, paymentMethod: 'UPI', receiptNumber: '' },
-    { daysAgo: 25, category: 'Food', description: 'Festival catering advance', amount: 8000, paymentMethod: 'Cheque', receiptNumber: 'FEST-001' },
+    { daysAgo: 0, category: 'Inventory Purchase', description: 'Vegetable supplies - morning', amount: 3200, paymentMethod: 'Cash', receiptNumber: 'REC-001', receiptNote: 'Fresh veggies from wholesale market' },
+    { daysAgo: 0, category: 'Transport & Delivery', description: 'Delivery auto charges', amount: 450, paymentMethod: 'Cash', receiptNumber: '', receiptNote: '' },
+    { daysAgo: 0, category: 'Food & Refreshments', description: 'Staff lunch', amount: 500, paymentMethod: 'UPI', receiptNumber: '', receiptNote: 'Lunch for kitchen staff' },
+    { daysAgo: 1, category: 'Inventory Purchase', description: 'Grocery & vegetables', amount: 4100, paymentMethod: 'UPI', receiptNumber: 'REC-002', receiptNote: '' },
+    { daysAgo: 1, category: 'Maintenance & Repair', description: 'Gas cylinder refill', amount: 1800, paymentMethod: 'Cash', receiptNumber: 'REC-003', receiptNote: '2 cylinders - commercial grade' },
+    { daysAgo: 1, category: 'Miscellaneous', description: 'Stationery & printing', amount: 300, paymentMethod: 'UPI', receiptNumber: '', receiptNote: '' },
+    { daysAgo: 2, category: 'Rent & Utilities', description: 'Electricity bill - March', amount: 8500, paymentMethod: 'Bank Transfer', receiptNumber: 'ELEC-2024-03', receiptNote: 'Commercial connection - 3 phase' },
+    { daysAgo: 2, category: 'Cleaning & Housekeeping', description: 'Cleaning supplies & chemicals', amount: 650, paymentMethod: 'Cash', receiptNumber: '', receiptNote: '' },
+    { daysAgo: 3, category: 'Marketing & Ads', description: 'Social media ads - Instagram', amount: 2000, paymentMethod: 'UPI', receiptNumber: '', receiptNote: '7-day campaign for weekend specials' },
+    { daysAgo: 3, category: 'Miscellaneous', description: 'Miscellaneous expenses', amount: 500, paymentMethod: 'Cash', receiptNumber: '', receiptNote: '' },
+    { daysAgo: 4, category: 'Salaries & Wages', description: 'Staff salary - Ramesh (cook)', amount: 15000, paymentMethod: 'Bank Transfer', receiptNumber: 'SAL-004', receiptNote: 'Monthly salary - March' },
+    { daysAgo: 4, category: 'Inventory Purchase', description: 'Meat & poultry', amount: 5600, paymentMethod: 'Cash', receiptNumber: 'REC-005', receiptNote: '' },
+    { daysAgo: 5, category: 'Rent & Utilities', description: 'Shop rent - March 2025', amount: 25000, paymentMethod: 'Bank Transfer', receiptNumber: 'RNT-2025-03', receiptNote: 'Monthly shop rent' },
+    { daysAgo: 5, category: 'Rent & Utilities', description: 'Water bill', amount: 1200, paymentMethod: 'UPI', receiptNumber: '', receiptNote: '' },
+    { daysAgo: 5, category: 'Inventory Purchase', description: 'Spices & condiments', amount: 1800, paymentMethod: 'Cash', receiptNumber: '', receiptNote: 'Bulk purchase - turmeric, cumin, coriander' },
+    { daysAgo: 6, category: 'Marketing & Ads', description: 'Pamphlet printing', amount: 1500, paymentMethod: 'Cash', receiptNumber: '', receiptNote: '500 pamphlets for local distribution' },
+    { daysAgo: 6, category: 'Maintenance & Repair', description: 'Plumbing repair', amount: 800, paymentMethod: 'Cash', receiptNumber: '', receiptNote: 'Kitchen sink pipe leak fix' },
+    { daysAgo: 7, category: 'Salaries & Wages', description: 'Staff salary - Suresh (helper)', amount: 10000, paymentMethod: 'Bank Transfer', receiptNumber: 'SAL-005', receiptNote: 'Monthly salary - March' },
+    { daysAgo: 7, category: 'Transport & Delivery', description: 'Monthly vehicle fuel', amount: 2800, paymentMethod: 'UPI', receiptNumber: '', receiptNote: '' },
+    { daysAgo: 8, category: 'Food & Refreshments', description: 'Staff meals & tea', amount: 1200, paymentMethod: 'Cash', receiptNumber: '', receiptNote: '' },
+    { daysAgo: 9, category: 'Inventory Purchase', description: 'Packaging materials', amount: 2200, paymentMethod: 'UPI', receiptNumber: 'REC-006', receiptNote: '' },
+    { daysAgo: 10, category: 'Phone & Internet', description: 'Internet bill', amount: 999, paymentMethod: 'UPI', receiptNumber: '', receiptNote: 'Fibre broadband - monthly' },
+    { daysAgo: 11, category: 'Maintenance & Repair', description: 'AC servicing', amount: 3500, paymentMethod: 'Bank Transfer', receiptNumber: 'MNT-007', receiptNote: 'Annual maintenance service' },
+    { daysAgo: 12, category: 'Miscellaneous', description: 'Bank charges', amount: 250, paymentMethod: 'Bank Transfer', receiptNumber: '', receiptNote: '' },
+    { daysAgo: 14, category: 'Marketing & Ads', description: 'Google ads', amount: 3000, paymentMethod: 'UPI', receiptNumber: '', receiptNote: 'Google Ads - local targeting' },
+    { daysAgo: 16, category: 'Rent & Utilities', description: 'Parking area rent', amount: 5000, paymentMethod: 'Cheque', receiptNumber: 'RNT-PARK', receiptNote: '' },
+    { daysAgo: 18, category: 'Inventory Purchase', description: 'Dairy products', amount: 3400, paymentMethod: 'Cash', receiptNumber: '', receiptNote: 'Milk, paneer, cream - daily supply' },
+    { daysAgo: 20, category: 'Salaries & Wages', description: 'Staff salary - Anita (cashier)', amount: 12000, paymentMethod: 'Bank Transfer', receiptNumber: 'SAL-006', receiptNote: 'Monthly salary - March' },
+    { daysAgo: 22, category: 'Phone & Internet', description: 'Mobile recharge - business', amount: 599, paymentMethod: 'UPI', receiptNumber: '', receiptNote: 'Jio business plan' },
+    { daysAgo: 25, category: 'Food & Refreshments', description: 'Festival catering advance', amount: 8000, paymentMethod: 'Cheque', receiptNumber: 'FEST-001', receiptNote: 'Holi festival arrangements' },
+    { daysAgo: 27, category: 'Cleaning & Housekeeping', description: 'Deep cleaning service', amount: 1500, paymentMethod: 'Cash', receiptNumber: '', receiptNote: 'Monthly deep cleaning' },
+    { daysAgo: 30, category: 'Rent & Utilities', description: 'Gas bill', amount: 2100, paymentMethod: 'UPI', receiptNumber: '', receiptNote: '' },
+    { daysAgo: 32, category: 'Salaries & Wages', description: 'Staff salary - Priya (waitress)', amount: 9000, paymentMethod: 'Bank Transfer', receiptNumber: 'SAL-007', receiptNote: 'Monthly salary - February' },
+    { daysAgo: 35, category: 'Marketing & Ads', description: 'Menu card printing', amount: 2500, paymentMethod: 'Cash', receiptNumber: '', receiptNote: '200 new menu cards' },
+    { daysAgo: 40, category: 'Inventory Purchase', description: 'Beverages stock', amount: 4500, paymentMethod: 'UPI', receiptNumber: '', receiptNote: 'Cold drinks and water bottles' },
   ];
 
   mockEntries.forEach((entry) => {
@@ -200,6 +223,7 @@ function generateMockExpenses(): Expense[] {
       paymentMethod: entry.paymentMethod,
       date: date.toISOString().split('T')[0],
       receiptNumber: entry.receiptNumber,
+      receiptNote: entry.receiptNote,
       createdAt: createdAt.toISOString(),
     });
   });
@@ -321,11 +345,12 @@ export default function ExpensesPanel() {
 
   // Form states
   const [formAmount, setFormAmount] = useState('');
-  const [formCategory, setFormCategory] = useState<ExpenseCategory>('Supplies');
+  const [formCategory, setFormCategory] = useState<ExpenseCategory>('Inventory Purchase');
   const [formDescription, setFormDescription] = useState('');
   const [formPaymentMethod, setFormPaymentMethod] = useState<PaymentMethod>('Cash');
   const [formDate, setFormDate] = useState(getTodayStr());
   const [formReceipt, setFormReceipt] = useState('');
+  const [formReceiptNote, setFormReceiptNote] = useState('');
 
   // Day form states
   const [openBalance, setOpenBalance] = useState('');
@@ -360,9 +385,7 @@ export default function ExpensesPanel() {
       if (storedTodayDay.date === getTodayStr()) {
         setTodayDay(storedTodayDay);
       } else {
-        // Day record is from a different date, archive it
         if (storedTodayDay.status === 'opened') {
-          // Auto-close previous day
           storedTodayDay.status = 'closed';
           storedTodayDay.closedAt = new Date().toISOString();
           const updatedHistory = [storedTodayDay, ...storedDayHistory];
@@ -381,11 +404,12 @@ export default function ExpensesPanel() {
   const todayStr = getTodayStr();
   const weekStart = getWeekStart();
   const monthStart = getMonthStart();
+  const lastMonthStart = getLastMonthStart();
+  const lastMonthEnd = getLastMonthEnd();
 
   const filteredExpenses = useMemo(() => {
     let result = [...expenses];
 
-    // Date filter
     if (dateFilter === 'today') {
       result = result.filter((e) => e.date === todayStr);
     } else if (dateFilter === 'week') {
@@ -396,17 +420,14 @@ export default function ExpensesPanel() {
       result = result.filter((e) => e.date >= customDateFrom && e.date <= customDateTo);
     }
 
-    // Category filter
     if (categoryFilter !== 'all') {
       result = result.filter((e) => e.category === categoryFilter);
     }
 
-    // Payment filter
     if (paymentFilter !== 'all') {
       result = result.filter((e) => e.paymentMethod === paymentFilter);
     }
 
-    // Search
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       result = result.filter(
@@ -436,11 +457,33 @@ export default function ExpensesPanel() {
     [expenses, monthStart]
   );
 
+  const lastMonthExpenses = useMemo(
+    () => expenses.filter((e) => e.date >= lastMonthStart && e.date <= lastMonthEnd).reduce((sum, e) => sum + e.amount, 0),
+    [expenses, lastMonthStart, lastMonthEnd]
+  );
+
   const avgDailyExpense = useMemo(() => {
     const monthExpList = expenses.filter((e) => e.date >= monthStart);
     const uniqueDays = new Set(monthExpList.map((e) => e.date));
     return uniqueDays.size > 0 ? Math.round(monthExpenses / uniqueDays.size) : 0;
   }, [expenses, monthStart, monthExpenses]);
+
+  // Biggest category this month
+  const biggestCategory = useMemo(() => {
+    const monthExps = expenses.filter((e) => e.date >= monthStart);
+    const map: Record<string, number> = {};
+    monthExps.forEach((e) => { map[e.category] = (map[e.category] || 0) + e.amount; });
+    const sorted = Object.entries(map).sort(([, a], [, b]) => b - a);
+    if (sorted.length === 0) return null;
+    return { name: sorted[0][0], amount: sorted[0][1] };
+  }, [expenses, monthStart]);
+
+  // vs last month percentage change
+  const vsLastMonth = useMemo(() => {
+    if (lastMonthExpenses === 0) return null;
+    const change = ((monthExpenses - lastMonthExpenses) / lastMonthExpenses) * 100;
+    return Math.round(change);
+  }, [monthExpenses, lastMonthExpenses]);
 
   // Category breakdown for pie chart
   const categoryBreakdown = useMemo(() => {
@@ -496,11 +539,12 @@ export default function ExpensesPanel() {
 
   const resetForm = useCallback(() => {
     setFormAmount('');
-    setFormCategory('Supplies');
+    setFormCategory('Inventory Purchase');
     setFormDescription('');
     setFormPaymentMethod('Cash');
     setFormDate(getTodayStr());
     setFormReceipt('');
+    setFormReceiptNote('');
     setEditExpenseId(null);
   }, []);
 
@@ -512,7 +556,6 @@ export default function ExpensesPanel() {
     }
 
     if (editExpenseId) {
-      // Edit existing
       setExpenses((prev) => {
         const updated = prev.map((e) =>
           e.id === editExpenseId
@@ -524,6 +567,7 @@ export default function ExpensesPanel() {
                 paymentMethod: formPaymentMethod,
                 date: formDate,
                 receiptNumber: formReceipt,
+                receiptNote: formReceiptNote,
               }
             : e
         );
@@ -532,7 +576,6 @@ export default function ExpensesPanel() {
       });
       toast.success('Expense updated successfully');
     } else {
-      // Add new
       const newExpense: Expense = {
         id: generateId(),
         amount,
@@ -541,6 +584,7 @@ export default function ExpensesPanel() {
         paymentMethod: formPaymentMethod,
         date: formDate,
         receiptNumber: formReceipt,
+        receiptNote: formReceiptNote,
         createdAt: new Date().toISOString(),
       };
 
@@ -554,7 +598,7 @@ export default function ExpensesPanel() {
 
     resetForm();
     setAddExpenseOpen(false);
-  }, [formAmount, formCategory, formDescription, formPaymentMethod, formDate, formReceipt, editExpenseId, expensesKey, resetForm]);
+  }, [formAmount, formCategory, formDescription, formPaymentMethod, formDate, formReceipt, formReceiptNote, editExpenseId, expensesKey, resetForm]);
 
   const handleEditExpense = useCallback((expense: Expense) => {
     setFormAmount(String(expense.amount));
@@ -563,6 +607,7 @@ export default function ExpensesPanel() {
     setFormPaymentMethod(expense.paymentMethod);
     setFormDate(expense.date);
     setFormReceipt(expense.receiptNumber);
+    setFormReceiptNote(expense.receiptNote || '');
     setEditExpenseId(expense.id);
     setAddExpenseOpen(true);
   }, []);
@@ -620,13 +665,10 @@ export default function ExpensesPanel() {
       return;
     }
 
-    // Calculate totals from today's expenses
     const todayExpList = expenses.filter((e) => e.date === getTodayStr());
     const totalExp = todayExpList.reduce((sum, e) => sum + e.amount, 0);
     const cashExp = todayExpList.filter((e) => e.paymentMethod === 'Cash').reduce((sum, e) => sum + e.amount, 0);
-    const upiExp = todayExpList.filter((e) => e.paymentMethod === 'UPI').reduce((sum, e) => sum + e.amount, 0);
 
-    // Mock sales data (in a real app, this would come from orders)
     const totalSales = 18500 + Math.floor(Math.random() * 5000);
     const cashSales = Math.round(totalSales * 0.45);
     const upiSales = totalSales - cashSales;
@@ -648,7 +690,6 @@ export default function ExpensesPanel() {
       closingNotes: closeNotes,
     };
 
-    // Add to history
     setDayHistory((prev) => {
       const updated = [closedDay, ...prev.slice(0, 6)];
       saveToStorage(dayHistoryKey, updated);
@@ -896,7 +937,7 @@ export default function ExpensesPanel() {
                 Add Expense
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="sm:max-w-lg">
               <DialogHeader>
                 <DialogTitle>{editExpenseId ? 'Edit Expense' : 'Add Expense'}</DialogTitle>
                 <DialogDescription>Record a new business expense.</DialogDescription>
@@ -917,9 +958,17 @@ export default function ExpensesPanel() {
                     <Select value={formCategory} onValueChange={(v) => setFormCategory(v as ExpenseCategory)}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
-                        {EXPENSE_CATEGORIES.map((c) => (
-                          <SelectItem key={c} value={c}>{c}</SelectItem>
-                        ))}
+                        {EXPENSE_CATEGORIES.map((c) => {
+                          const config = CATEGORY_CONFIG[c];
+                          return (
+                            <SelectItem key={c} value={c}>
+                              <span className="flex items-center gap-2">
+                                <span>{config.emoji}</span>
+                                <span>{c}</span>
+                              </span>
+                            </SelectItem>
+                          );
+                        })}
                       </SelectContent>
                     </Select>
                   </div>
@@ -953,13 +1002,23 @@ export default function ExpensesPanel() {
                     />
                   </div>
                 </div>
-                <div className="space-y-2">
-                  <Label>Receipt Number (optional)</Label>
-                  <Input
-                    placeholder="e.g. REC-007"
-                    value={formReceipt}
-                    onChange={(e) => setFormReceipt(e.target.value)}
-                  />
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Receipt Number (optional)</Label>
+                    <Input
+                      placeholder="e.g. REC-007"
+                      value={formReceipt}
+                      onChange={(e) => setFormReceipt(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Receipt Note (optional)</Label>
+                    <Input
+                      placeholder="Add a note..."
+                      value={formReceiptNote}
+                      onChange={(e) => setFormReceiptNote(e.target.value)}
+                    />
+                  </div>
                 </div>
               </div>
               <DialogFooter>
@@ -971,6 +1030,38 @@ export default function ExpensesPanel() {
             </DialogContent>
           </Dialog>
         </div>
+      </div>
+
+      {/* ─── Category Filter Bar ─── */}
+      <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin">
+        <button
+          onClick={() => { setCategoryFilter('all'); setCurrentPage(1); }}
+          className={`flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200 ${
+            categoryFilter === 'all'
+              ? 'bg-gray-900 text-white dark:bg-gray-100 dark:text-gray-900 shadow-sm'
+              : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
+          }`}
+        >
+          All
+        </button>
+        {EXPENSE_CATEGORIES.map((cat) => {
+          const config = CATEGORY_CONFIG[cat];
+          const isActive = categoryFilter === cat;
+          return (
+            <button
+              key={cat}
+              onClick={() => { setCategoryFilter(isActive ? 'all' : cat); setCurrentPage(1); }}
+              className={`flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200 ${
+                isActive
+                  ? `${config.bgClass} shadow-sm ring-1 ring-current`
+                  : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
+              }`}
+            >
+              <span>{config.emoji}</span>
+              <span className="whitespace-nowrap">{cat}</span>
+            </button>
+          );
+        })}
       </div>
 
       {/* ─── Day Status Widget ─── */}
@@ -1043,71 +1134,126 @@ export default function ExpensesPanel() {
         </Card>
       </motion.div>
 
-      {/* ─── Stat Cards ─── */}
+      {/* ─── Expense Summary Cards ─── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {[
-          {
-            title: "Today's Expenses",
-            value: todayExpenses,
-            icon: IndianRupee,
-            color: 'text-rose-600 dark:text-rose-400',
-            bg: 'bg-rose-50 dark:bg-rose-900/20',
-            gradient: 'from-rose-50/80 to-white dark:from-rose-900/10 dark:to-gray-900',
-            leftBorder: 'border-l-rose-500',
-          },
-          {
-            title: "This Week",
-            value: weekExpenses,
-            icon: TrendingDown,
-            color: 'text-amber-600 dark:text-amber-400',
-            bg: 'bg-amber-50 dark:bg-amber-900/20',
-            gradient: 'from-amber-50/80 to-white dark:from-amber-900/10 dark:to-gray-900',
-            leftBorder: 'border-l-amber-500',
-          },
-          {
-            title: "This Month",
-            value: monthExpenses,
-            icon: Wallet,
-            color: 'text-violet-600 dark:text-violet-400',
-            bg: 'bg-violet-50 dark:bg-violet-900/20',
-            gradient: 'from-violet-50/80 to-white dark:from-violet-900/10 dark:to-gray-900',
-            leftBorder: 'border-l-violet-500',
-          },
-          {
-            title: "Avg. Daily",
-            value: avgDailyExpense,
-            icon: TrendingUp,
-            color: 'text-teal-600 dark:text-teal-400',
-            bg: 'bg-teal-50 dark:bg-teal-900/20',
-            gradient: 'from-teal-50/80 to-white dark:from-teal-900/10 dark:to-gray-900',
-            leftBorder: 'border-l-teal-500',
-          },
-        ].map((stat) => {
-          const Icon = stat.icon;
-          return (
-            <motion.div
-              key={stat.title}
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3 }}
-            >
-              <Card className={`border border-gray-200 dark:border-gray-700 border-l-4 ${stat.leftBorder} shadow-sm bg-gradient-to-br ${stat.gradient} hover:shadow-md transition-shadow`}>
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <p className="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400">{stat.title}</p>
-                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${stat.bg}`}>
-                      <Icon className={`w-4 h-4 ${stat.color}`} />
-                    </div>
-                  </div>
-                  <p className={`text-xl sm:text-2xl font-bold ${stat.color}`}>
-                    {formatCurrency(stat.value)}
+        <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}>
+          <Card className="border border-gray-200 dark:border-gray-700 border-l-4 border-l-rose-500 shadow-sm bg-gradient-to-br from-rose-50/80 to-white dark:from-rose-900/10 dark:to-gray-900 hover:shadow-md transition-shadow">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400">This Month</p>
+                <div className="w-8 h-8 rounded-lg bg-rose-50 dark:bg-rose-900/20 flex items-center justify-center">
+                  <IndianRupee className="w-4 h-4 text-rose-600 dark:text-rose-400" />
+                </div>
+              </div>
+              <p className="text-xl sm:text-2xl font-bold text-rose-600 dark:text-rose-400">
+                {formatCurrency(monthExpenses)}
+              </p>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.05 }}>
+          <Card className="border border-gray-200 dark:border-gray-700 border-l-4 border-l-amber-500 shadow-sm bg-gradient-to-br from-amber-50/80 to-white dark:from-amber-900/10 dark:to-gray-900 hover:shadow-md transition-shadow">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400">Biggest Category</p>
+                <div className="w-8 h-8 rounded-lg bg-amber-50 dark:bg-amber-900/20 flex items-center justify-center">
+                  {biggestCategory ? (
+                    <span className="text-sm">{CATEGORY_CONFIG[biggestCategory.name as ExpenseCategory]?.emoji}</span>
+                  ) : (
+                    <TrendingUp className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                  )}
+                </div>
+              </div>
+              <p className="text-sm sm:text-base font-bold text-amber-600 dark:text-amber-400 truncate">
+                {biggestCategory ? biggestCategory.name : 'N/A'}
+              </p>
+              {biggestCategory && (
+                <p className="text-xs text-gray-500 dark:text-gray-400">{formatCurrency(biggestCategory.amount)}</p>
+              )}
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.1 }}>
+          <Card className="border border-gray-200 dark:border-gray-700 border-l-4 border-l-teal-500 shadow-sm bg-gradient-to-br from-teal-50/80 to-white dark:from-teal-900/10 dark:to-gray-900 hover:shadow-md transition-shadow">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400">Daily Average</p>
+                <div className="w-8 h-8 rounded-lg bg-teal-50 dark:bg-teal-900/20 flex items-center justify-center">
+                  <TrendingUp className="w-4 h-4 text-teal-600 dark:text-teal-400" />
+                </div>
+              </div>
+              <p className="text-xl sm:text-2xl font-bold text-teal-600 dark:text-teal-400">
+                {formatCurrency(avgDailyExpense)}
+              </p>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        <motion.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3, delay: 0.15 }}>
+          <Card className="border border-gray-200 dark:border-gray-700 border-l-4 border-l-violet-500 shadow-sm bg-gradient-to-br from-violet-50/80 to-white dark:from-violet-900/10 dark:to-gray-900 hover:shadow-md transition-shadow">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400">vs Last Month</p>
+                <div className="w-8 h-8 rounded-lg bg-violet-50 dark:bg-violet-900/20 flex items-center justify-center">
+                  {vsLastMonth !== null && vsLastMonth >= 0 ? (
+                    <TrendingUp className="w-4 h-4 text-violet-600 dark:text-violet-400" />
+                  ) : (
+                    <TrendingDown className="w-4 h-4 text-violet-600 dark:text-violet-400" />
+                  )}
+                </div>
+              </div>
+              {vsLastMonth !== null ? (
+                <>
+                  <p className={`text-xl sm:text-2xl font-bold ${vsLastMonth >= 0 ? 'text-red-600 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
+                    {vsLastMonth >= 0 ? '+' : ''}{vsLastMonth}%
                   </p>
-                </CardContent>
-              </Card>
-            </motion.div>
-          );
-        })}
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    {vsLastMonth >= 0 ? 'Higher than last month' : 'Lower than last month'}
+                  </p>
+                </>
+              ) : (
+                <p className="text-sm text-gray-400 dark:text-gray-500">No data</p>
+              )}
+            </CardContent>
+          </Card>
+        </motion.div>
       </div>
+
+      {/* ─── Monthly Expense Bar Chart ─── */}
+      <motion.div
+        initial={{ opacity: 0, y: 15 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.2 }}
+      >
+        <Card className="border border-gray-200 dark:border-gray-700">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base font-semibold">Monthly Expense Trend</CardTitle>
+            <CardDescription>Daily expenses for the current month</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="h-52">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={monthlyTrend}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" opacity={0.5} />
+                  <XAxis
+                    dataKey="date"
+                    tick={{ fontSize: 10, fill: '#9ca3af' }}
+                    interval={Math.max(0, Math.floor(monthlyTrend.length / 10) - 1)}
+                  />
+                  <YAxis
+                    tick={{ fontSize: 10, fill: '#9ca3af' }}
+                    tickFormatter={(v: number) => `₹${(v / 1000).toFixed(0)}k`}
+                  />
+                  <Tooltip content={<BarTooltip />} />
+                  <Bar dataKey="amount" fill="#f43f5e" radius={[3, 3, 0, 0]} maxBarSize={20} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
 
       {/* ─── Charts Row ─── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -1160,7 +1306,7 @@ export default function ExpensesPanel() {
           </Card>
         </motion.div>
 
-        {/* Monthly Trend Bar Chart */}
+        {/* Category List with amounts */}
         <motion.div
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
@@ -1168,27 +1314,37 @@ export default function ExpensesPanel() {
         >
           <Card className="border border-gray-200 dark:border-gray-700">
             <CardHeader className="pb-2">
-              <CardTitle className="text-base font-semibold">Monthly Trend</CardTitle>
-              <CardDescription>Daily expenses this month</CardDescription>
+              <CardTitle className="text-base font-semibold">Category Details</CardTitle>
+              <CardDescription>Breakdown with amounts</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={monthlyTrend}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" opacity={0.5} />
-                    <XAxis
-                      dataKey="date"
-                      tick={{ fontSize: 10, fill: '#9ca3af' }}
-                      interval={Math.max(0, Math.floor(monthlyTrend.length / 10) - 1)}
-                    />
-                    <YAxis
-                      tick={{ fontSize: 10, fill: '#9ca3af' }}
-                      tickFormatter={(v: number) => `₹${(v / 1000).toFixed(0)}k`}
-                    />
-                    <Tooltip content={<BarTooltip />} />
-                    <Bar dataKey="amount" fill="#f43f5e" radius={[3, 3, 0, 0]} maxBarSize={20} />
-                  </BarChart>
-                </ResponsiveContainer>
+              <div className="space-y-3 max-h-64 overflow-y-auto">
+                {categoryBreakdown.length > 0 ? categoryBreakdown.map((item) => {
+                  const config = CATEGORY_CONFIG[item.name as ExpenseCategory];
+                  const total = categoryBreakdown.reduce((s, d) => s + d.value, 0);
+                  const pct = total > 0 ? (item.value / total) * 100 : 0;
+                  return (
+                    <div key={item.name} className="flex items-center gap-3">
+                      <div className="flex items-center gap-2 w-36 flex-shrink-0">
+                        <span className="text-sm">{config?.emoji}</span>
+                        <span className="text-xs font-medium text-gray-700 dark:text-gray-300 truncate">{item.name}</span>
+                      </div>
+                      <div className="flex-1 h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                        <div
+                          className="h-full rounded-full transition-all duration-500"
+                          style={{ width: `${pct}%`, backgroundColor: item.color }}
+                        />
+                      </div>
+                      <span className="text-xs font-semibold text-gray-600 dark:text-gray-400 w-20 text-right">
+                        {formatCurrency(item.value)}
+                      </span>
+                    </div>
+                  );
+                }) : (
+                  <div className="flex items-center justify-center h-32 text-gray-400 dark:text-gray-500">
+                    No data for this period
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -1226,14 +1382,19 @@ export default function ExpensesPanel() {
 
             {/* Category Filter */}
             <Select value={categoryFilter} onValueChange={(v) => { setCategoryFilter(v); setCurrentPage(1); }}>
-              <SelectTrigger className="w-[150px]">
+              <SelectTrigger className="w-[170px]">
                 <Filter className="w-4 h-4 mr-1 text-gray-400" />
                 <SelectValue placeholder="Category" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Categories</SelectItem>
                 {EXPENSE_CATEGORIES.map((c) => (
-                  <SelectItem key={c} value={c}>{c}</SelectItem>
+                  <SelectItem key={c} value={c}>
+                    <span className="flex items-center gap-2">
+                      <span>{CATEGORY_CONFIG[c].emoji}</span>
+                      <span>{c}</span>
+                    </span>
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -1312,100 +1473,114 @@ export default function ExpensesPanel() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {paginatedExpenses.map((expense, idx) => (
-                        <TableRow key={expense.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
-                          <TableCell className="text-sm text-gray-600 dark:text-gray-300 whitespace-nowrap">
-                            {new Date(expense.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: '2-digit' })}
-                          </TableCell>
-                          <TableCell>
-                            <Badge className={`${CATEGORY_BG[expense.category]} border-0 text-xs`}>
-                              {expense.category}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-sm text-gray-700 dark:text-gray-300 max-w-[200px] truncate">
-                            {expense.description || '—'}
-                          </TableCell>
-                          <TableCell className="text-right font-semibold text-rose-600 dark:text-rose-400 whitespace-nowrap">
-                            {formatCurrency(expense.amount)}
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-1.5">
-                              <PaymentIcon method={expense.paymentMethod} />
-                              <span className="text-xs text-gray-600 dark:text-gray-400">{expense.paymentMethod}</span>
-                            </div>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex items-center justify-end gap-1">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 text-gray-400 hover:text-sky-600"
-                                onClick={() => handleEditExpense(expense)}
-                              >
-                                <Edit3 className="w-3.5 h-3.5" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 text-gray-400 hover:text-red-600"
-                                onClick={() => handleDeleteExpense(expense.id)}
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
+                      {paginatedExpenses.map((expense) => {
+                        const config = CATEGORY_CONFIG[expense.category];
+                        return (
+                          <TableRow key={expense.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                            <TableCell className="text-sm text-gray-600 dark:text-gray-300 whitespace-nowrap">
+                              {new Date(expense.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: '2-digit' })}
+                            </TableCell>
+                            <TableCell>
+                              <Badge className={`${config?.bgClass || CATEGORY_BG[expense.category]} border-0 text-xs gap-1`}>
+                                <span>{config?.emoji}</span>
+                                {expense.category}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-sm text-gray-700 dark:text-gray-300 max-w-[200px]">
+                              <div className="truncate">{expense.description || '—'}</div>
+                              {expense.receiptNote && (
+                                <div className="text-xs text-gray-400 dark:text-gray-500 truncate mt-0.5">{expense.receiptNote}</div>
+                              )}
+                            </TableCell>
+                            <TableCell className="text-right font-semibold text-rose-600 dark:text-rose-400 whitespace-nowrap">
+                              {formatCurrency(expense.amount)}
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-1.5">
+                                <PaymentIcon method={expense.paymentMethod} />
+                                <span className="text-xs text-gray-600 dark:text-gray-400">{expense.paymentMethod}</span>
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex items-center justify-end gap-1">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-gray-400 hover:text-sky-600"
+                                  onClick={() => handleEditExpense(expense)}
+                                >
+                                  <Edit3 className="w-3.5 h-3.5" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-gray-400 hover:text-red-600"
+                                  onClick={() => handleDeleteExpense(expense.id)}
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
                     </TableBody>
                   </Table>
                 </div>
 
                 {/* Mobile Card List */}
                 <div className="md:hidden divide-y divide-gray-100 dark:divide-gray-800">
-                  {paginatedExpenses.map((expense) => (
-                    <div key={expense.id} className="p-4 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
-                      <div className="flex items-start justify-between mb-2">
-                        <div>
-                          <div className="flex items-center gap-2 mb-1">
-                            <Badge className={`${CATEGORY_BG[expense.category]} border-0 text-xs`}>
-                              {expense.category}
-                            </Badge>
-                            <span className="text-xs text-gray-400">
-                              {new Date(expense.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}
-                            </span>
+                  {paginatedExpenses.map((expense) => {
+                    const config = CATEGORY_CONFIG[expense.category];
+                    return (
+                      <div key={expense.id} className="p-4 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                        <div className="flex items-start justify-between mb-2">
+                          <div>
+                            <div className="flex items-center gap-2 mb-1">
+                              <Badge className={`${config?.bgClass || CATEGORY_BG[expense.category]} border-0 text-xs gap-1`}>
+                                <span>{config?.emoji}</span>
+                                {expense.category}
+                              </Badge>
+                              <span className="text-xs text-gray-400">
+                                {new Date(expense.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}
+                              </span>
+                            </div>
+                            <p className="text-sm text-gray-700 dark:text-gray-300">{expense.description || '—'}</p>
+                            {expense.receiptNote && (
+                              <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{expense.receiptNote}</p>
+                            )}
                           </div>
-                          <p className="text-sm text-gray-700 dark:text-gray-300">{expense.description || '—'}</p>
+                          <p className="font-semibold text-rose-600 dark:text-rose-400 whitespace-nowrap">
+                            {formatCurrency(expense.amount)}
+                          </p>
                         </div>
-                        <p className="font-semibold text-rose-600 dark:text-rose-400 whitespace-nowrap">
-                          {formatCurrency(expense.amount)}
-                        </p>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-1.5">
+                            <PaymentIcon method={expense.paymentMethod} />
+                            <span className="text-xs text-gray-500 dark:text-gray-400">{expense.paymentMethod}</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 text-gray-400 hover:text-sky-600"
+                              onClick={() => handleEditExpense(expense)}
+                            >
+                              <Edit3 className="w-3 h-3" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 text-gray-400 hover:text-red-600"
+                              onClick={() => handleDeleteExpense(expense.id)}
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </Button>
+                          </div>
+                        </div>
                       </div>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-1.5">
-                          <PaymentIcon method={expense.paymentMethod} />
-                          <span className="text-xs text-gray-500 dark:text-gray-400">{expense.paymentMethod}</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7 text-gray-400 hover:text-sky-600"
-                            onClick={() => handleEditExpense(expense)}
-                          >
-                            <Edit3 className="w-3 h-3" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7 text-gray-400 hover:text-red-600"
-                            onClick={() => handleDeleteExpense(expense.id)}
-                          >
-                            <Trash2 className="w-3 h-3" />
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
 
                 {/* Pagination */}

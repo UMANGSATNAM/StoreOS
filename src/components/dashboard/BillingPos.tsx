@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAppStore } from '@/lib/store';
 import type { CartItem } from '@/lib/types';
 import { Button } from '@/components/ui/button';
@@ -37,6 +38,9 @@ import {
   Download,
   Copy,
   Share2,
+  Receipt,
+  Pencil,
+  PartyPopper,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -132,6 +136,9 @@ export default function BillingPos() {
   const [itemDiscounts, setItemDiscounts] = useState<Record<string, string>>({});
   const [isProcessing, setIsProcessing] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [showCustomAmount, setShowCustomAmount] = useState(false);
+  const [customAmountValue, setCustomAmountValue] = useState('');
+  const [showConfetti, setShowConfetti] = useState(false);
 
   const searchInputRef = useRef<HTMLInputElement>(null);
   const searchDropdownRef = useRef<HTMLDivElement>(null);
@@ -506,7 +513,9 @@ export default function BillingPos() {
 
       setShowReceipt(true);
       setShowSuccess(true);
+      setShowConfetti(true);
       setTimeout(() => setShowSuccess(false), 3000);
+      setTimeout(() => setShowConfetti(false), 4000);
 
       // Clear cart
       clearCart();
@@ -626,11 +635,49 @@ export default function BillingPos() {
       {/* Success Animation Overlay */}
       {showSuccess && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-emerald-500/20 backdrop-blur-sm animate-in fade-in duration-300">
-          <div className="bg-white dark:bg-gray-900 rounded-2xl p-8 shadow-2xl flex flex-col items-center gap-4 animate-in zoom-in duration-300">
-            <CheckCircle2 className="w-20 h-20 text-emerald-500 animate-bounce" />
+          <motion.div
+            initial={{ scale: 0.5, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+            className="bg-white dark:bg-gray-900 rounded-2xl p-8 shadow-2xl flex flex-col items-center gap-4"
+          >
+            <motion.div
+              animate={{ rotate: [0, 10, -10, 0], scale: [1, 1.2, 1] }}
+              transition={{ duration: 0.6 }}
+            >
+              <CheckCircle2 className="w-20 h-20 text-emerald-500" />
+            </motion.div>
             <h2 className="text-2xl font-bold text-emerald-700">Payment Successful!</h2>
             <p className="text-gray-500">Order completed successfully</p>
-          </div>
+          </motion.div>
+        </div>
+      )}
+      {/* Confetti / Celebration Overlay */}
+      {showConfetti && (
+        <div className="fixed inset-0 z-40 pointer-events-none overflow-hidden">
+          {Array.from({ length: 30 }).map((_, i) => {
+            const colors = ['#10b981', '#0ea5e9', '#f59e0b', '#8b5cf6', '#f43f5e', '#14b8a6'];
+            const color = colors[i % colors.length];
+            const left = Math.random() * 100;
+            const delay = Math.random() * 0.5;
+            const size = 6 + Math.random() * 8;
+            return (
+              <motion.div
+                key={i}
+                initial={{ y: -20, x: 0, opacity: 1, rotate: 0 }}
+                animate={{ y: '100vh', x: (Math.random() - 0.5) * 200, opacity: 0, rotate: Math.random() * 720 }}
+                transition={{ duration: 2 + Math.random(), delay, ease: 'easeOut' }}
+                className="absolute rounded-sm"
+                style={{
+                  left: `${left}%`,
+                  top: -10,
+                  width: size,
+                  height: size,
+                  backgroundColor: color,
+                }}
+              />
+            );
+          })}
         </div>
       )}
 
@@ -710,22 +757,27 @@ export default function BillingPos() {
                   <div key={i} className="h-8 w-20 bg-gray-200 dark:bg-gray-700 rounded-md animate-pulse flex-shrink-0" />
                 ))
               ) : (
-                categories.map(cat => (
-                  <Button
-                    key={cat.id}
-                    variant={selectedCategory === cat.id ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setSelectedCategory(cat.id)}
-                    className={
-                      selectedCategory === cat.id
-                        ? 'bg-emerald-600 hover:bg-emerald-700 text-white flex-shrink-0'
-                        : 'flex-shrink-0'
-                    }
-                  >
-                    {cat.icon && <span className="mr-1">{cat.icon}</span>}
-                    {cat.name}
-                  </Button>
-                ))
+                categories.map(cat => {
+                  const catColors = ['#10b981', '#f59e0b', '#8b5cf6', '#0ea5e9', '#f43f5e', '#14b8a6', '#ec4899', '#6366f1'];
+                  const catColor = cat.color || catColors[categories.indexOf(cat) % catColors.length];
+                  return (
+                    <Button
+                      key={cat.id}
+                      variant={selectedCategory === cat.id ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setSelectedCategory(cat.id)}
+                      className={
+                        selectedCategory === cat.id
+                          ? 'bg-emerald-600 hover:bg-emerald-700 text-white flex-shrink-0'
+                          : 'flex-shrink-0'
+                      }
+                    >
+                      <span className="w-1.5 h-1.5 rounded-full mr-1.5 flex-shrink-0" style={{ backgroundColor: catColor }} />
+                      {cat.icon && <span className="mr-1">{cat.icon}</span>}
+                      {cat.name}
+                    </Button>
+                  );
+                })
               )}
             </div>
           </div>
@@ -750,14 +802,16 @@ export default function BillingPos() {
                   const isOutOfStock = product.stock <= 0;
                   const isLowStock = product.stock > 0 && product.stock <= product.lowStockAlert;
                   return (
-                    <button
+                    <motion.button
                       key={product.id}
                       onClick={() => { if (!isOutOfStock) handleAddToCart(product); }}
                       disabled={isOutOfStock}
-                      className={`relative flex flex-col items-start p-3 rounded-xl border-2 transition-all duration-150 text-left group
+                      whileHover={!isOutOfStock ? { y: -2, boxShadow: '0 8px 25px -5px rgba(16, 185, 129, 0.15)' } : {}}
+                      whileTap={!isOutOfStock ? { scale: 0.97 } : {}}
+                      className={`relative flex flex-col items-start p-3 rounded-xl border-2 transition-all duration-200 text-left group
                         ${isOutOfStock
                           ? 'bg-gray-100 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700 opacity-60 cursor-not-allowed'
-                          : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 hover:border-emerald-400 hover:shadow-md hover:shadow-emerald-500/10 active:scale-[0.97] cursor-pointer'
+                          : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 hover:border-emerald-400 cursor-pointer'
                         }`}
                     >
                       {/* Stock Badge */}
@@ -767,7 +821,7 @@ export default function BillingPos() {
                         </Badge>
                       )}
                       {isLowStock && !isOutOfStock && (
-                        <Badge variant="secondary" className="absolute top-2 right-2 bg-amber-500 text-white text-[10px] px-1.5 py-0">
+                        <Badge variant="secondary" className="absolute top-2 right-2 bg-amber-500 text-white text-[10px] px-1.5 py-0 animate-pulse">
                           Low Stock
                         </Badge>
                       )}
@@ -781,18 +835,20 @@ export default function BillingPos() {
                       </p>
                       {/* Price & Stock */}
                       <div className="flex items-baseline justify-between w-full mt-1.5">
-                        <span className="font-bold text-emerald-600 dark:text-emerald-400">₹{product.price}</span>
+                        <span className="font-extrabold text-base text-emerald-600 dark:text-emerald-400">₹{product.price}</span>
                         <span className="text-[10px] text-gray-400">
                           {product.stock} {product.unit}
                         </span>
                       </div>
+                      {/* Subtle divider */}
+                      <div className="w-full h-px bg-gray-100 dark:bg-gray-800 mt-2" />
                       {/* Hover indicator */}
                       {!isOutOfStock && (
                         <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-emerald-500/0 group-hover:bg-emerald-500/10 transition-colors pointer-events-none">
                           <Plus className="w-6 h-6 text-emerald-600 opacity-0 group-hover:opacity-100 transition-opacity" />
                         </div>
                       )}
-                    </button>
+                    </motion.button>
                   );
                 })}
               </div>
@@ -814,6 +870,48 @@ export default function BillingPos() {
                   ₹{amount}
                 </Button>
               ))}
+              {showCustomAmount ? (
+                <div className="flex gap-1 flex-1">
+                  <Input
+                    value={customAmountValue}
+                    onChange={(e) => setCustomAmountValue(e.target.value)}
+                    placeholder="₹ Amount"
+                    type="number"
+                    className="h-8 text-sm flex-1"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && customAmountValue) {
+                        handleAddQuickAmount(parseFloat(customAmountValue));
+                        setCustomAmountValue('');
+                        setShowCustomAmount(false);
+                      }
+                    }}
+                    autoFocus
+                  />
+                  <Button
+                    size="sm"
+                    className="h-8 bg-emerald-600 hover:bg-emerald-700 text-white"
+                    onClick={() => {
+                      if (customAmountValue) {
+                        handleAddQuickAmount(parseFloat(customAmountValue));
+                        setCustomAmountValue('');
+                        setShowCustomAmount(false);
+                      }
+                    }}
+                  >
+                    Add
+                  </Button>
+                </div>
+              ) : (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowCustomAmount(true)}
+                  className="flex-1 font-semibold border-dashed border-emerald-300 dark:border-emerald-700 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 hover:border-emerald-500"
+                >
+                  <Pencil className="w-3 h-3 mr-1" />
+                  Custom
+                </Button>
+              )}
             </div>
           </div>
         </div>
@@ -827,9 +925,16 @@ export default function BillingPos() {
                 <ShoppingBag className="w-5 h-5 text-emerald-600" />
                 <h2 className="font-bold text-lg text-gray-900 dark:text-gray-100">Current Bill</h2>
                 {cart.length > 0 && (
-                  <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300">
-                    {cart.length} item{cart.length !== 1 ? 's' : ''}
-                  </Badge>
+                  <motion.div
+                    key={cart.length}
+                    initial={{ scale: 0.5 }}
+                    animate={{ scale: 1 }}
+                    transition={{ type: 'spring', stiffness: 500, damping: 15 }}
+                  >
+                    <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300">
+                      {cart.reduce((sum, item) => sum + item.quantity, 0)} item{cart.reduce((sum, item) => sum + item.quantity, 0) !== 1 ? 's' : ''}
+                    </Badge>
+                  </motion.div>
                 )}
               </div>
               <div className="flex items-center gap-1">
@@ -838,10 +943,11 @@ export default function BillingPos() {
                     variant="outline"
                     size="sm"
                     onClick={() => setShowHeldBills(true)}
-                    className="text-amber-600 border-amber-300 hover:bg-amber-50 dark:hover:bg-amber-950/30"
+                    className="text-amber-600 border-amber-300 hover:bg-amber-50 dark:hover:bg-amber-950/30 relative"
                   >
                     <Pause className="w-3.5 h-3.5 mr-1" />
-                    Held ({heldBills.length})
+                    Held
+                    <span className="ml-1 w-5 h-5 rounded-full bg-amber-500 text-white text-[10px] flex items-center justify-center font-bold">{heldBills.length}</span>
                   </Button>
                 )}
               </div>
@@ -914,8 +1020,20 @@ export default function BillingPos() {
                   </div>
                 </div>
               ) : (
-                cart.map(item => (
-                  <Card key={item.productId} className="border border-gray-200 dark:border-gray-800 shadow-none">
+                <AnimatePresence mode="popLayout">
+                  {cart.map(item => (
+                    <motion.div
+                      key={item.productId}
+                      initial={{ opacity: 0, x: 50 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -50 }}
+                      transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+                    >
+                      <Card className="border border-gray-200 dark:border-gray-800 shadow-none mb-2 group relative">
+                        {/* Receipt preview icon on hover */}
+                        <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Receipt className="w-3.5 h-3.5 text-gray-300 dark:text-gray-600" />
+                        </div>
                     <CardContent className="p-3">
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1 min-w-0">
@@ -999,7 +1117,9 @@ export default function BillingPos() {
                       )}
                     </CardContent>
                   </Card>
-                ))
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
               )}
             </div>
           </ScrollArea>
@@ -1050,15 +1170,21 @@ export default function BillingPos() {
                 )}
               </div>
 
-              {/* Tax Breakdown */}
-              <div className="text-xs text-gray-500 space-y-0.5">
-                <div className="flex justify-between">
+              {/* Tax Breakdown with visual bars */}
+              <div className="text-xs text-gray-500 space-y-1">
+                <div className="flex justify-between items-center">
                   <span>CGST ({storeTaxRate / 2}%)</span>
                   <span>₹{Math.round(taxAmount / 2 * 100) / 100}</span>
                 </div>
-                <div className="flex justify-between">
+                <div className="w-full h-1.5 rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden">
+                  <div className="h-full bg-sky-400 rounded-full transition-all duration-500" style={{ width: `${taxAmount > 0 ? 50 : 0}%` }} />
+                </div>
+                <div className="flex justify-between items-center">
                   <span>SGST ({storeTaxRate / 2}%)</span>
                   <span>₹{Math.round(taxAmount / 2 * 100) / 100}</span>
+                </div>
+                <div className="w-full h-1.5 rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden">
+                  <div className="h-full bg-emerald-400 rounded-full transition-all duration-500" style={{ width: `${taxAmount > 0 ? 50 : 0}%` }} />
                 </div>
               </div>
 
@@ -1066,7 +1192,7 @@ export default function BillingPos() {
 
               <div className="flex justify-between items-center">
                 <span className="font-bold text-lg text-gray-900 dark:text-gray-100">Total</span>
-                <span className="font-bold text-xl text-emerald-600 dark:text-emerald-400">
+                <span className="font-extrabold text-2xl text-emerald-600 dark:text-emerald-400">
                   ₹{totalAmount}
                 </span>
               </div>
@@ -1075,64 +1201,80 @@ export default function BillingPos() {
             {/* Payment Method */}
             <div className="px-3 pb-2">
               <div className="grid grid-cols-4 gap-1.5">
-                <Button
-                  variant={paymentMethod === 'cash' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setPaymentMethod('cash')}
-                  className={paymentMethod === 'cash' ? 'bg-emerald-600 hover:bg-emerald-700 text-white h-9' : 'h-9'}
-                >
-                  <Banknote className="w-3.5 h-3.5 mr-1" />
-                  Cash
-                </Button>
-                <Button
-                  variant={paymentMethod === 'upi' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setPaymentMethod('upi')}
-                  className={paymentMethod === 'upi' ? 'bg-emerald-600 hover:bg-emerald-700 text-white h-9' : 'h-9'}
-                >
-                  <Smartphone className="w-3.5 h-3.5 mr-1" />
-                  UPI
-                </Button>
-                <Button
-                  variant={paymentMethod === 'card' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setPaymentMethod('card')}
-                  className={paymentMethod === 'card' ? 'bg-emerald-600 hover:bg-emerald-700 text-white h-9' : 'h-9'}
-                >
-                  <CreditCard className="w-3.5 h-3.5 mr-1" />
-                  Card
-                </Button>
-                <Button
-                  variant={paymentMethod === 'split' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setPaymentMethod('split')}
-                  className={paymentMethod === 'split' ? 'bg-emerald-600 hover:bg-emerald-700 text-white h-9' : 'h-9'}
-                >
-                  <SplitSquareHorizontal className="w-3.5 h-3.5 mr-1" />
-                  Split
-                </Button>
+                {[
+                  { method: 'cash', icon: Banknote, label: 'Cash' },
+                  { method: 'upi', icon: Smartphone, label: 'UPI' },
+                  { method: 'card', icon: CreditCard, label: 'Card' },
+                  { method: 'split', icon: SplitSquareHorizontal, label: 'Split' },
+                ].map(({ method, icon: PayIcon, label }) => (
+                  <motion.button
+                    key={method}
+                    onClick={() => setPaymentMethod(method)}
+                    whileTap={{ scale: 0.95 }}
+                    className={`relative flex flex-col items-center justify-center h-12 rounded-lg border-2 transition-all duration-200 ${
+                      paymentMethod === method
+                        ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20 shadow-sm'
+                        : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 hover:border-gray-300 dark:hover:border-gray-600'
+                    }`}
+                  >
+                    <PayIcon className={`w-4 h-4 mb-0.5 ${paymentMethod === method ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-400'}`} />
+                    <span className={`text-[10px] font-semibold ${paymentMethod === method ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-500'}`}>{label}</span>
+                    {/* Selected checkmark */}
+                    {paymentMethod === method && (
+                      <motion.div
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-emerald-500 flex items-center justify-center"
+                      >
+                        <CheckCircle2 className="w-3 h-3 text-white" />
+                      </motion.div>
+                    )}
+                  </motion.button>
+                ))}
               </div>
 
               {/* Cash Payment Details */}
               {paymentMethod === 'cash' && (
-                <div className="mt-2 flex items-center gap-2">
-                  <div className="flex-1">
-                    <label className="text-[11px] text-gray-500 mb-0.5 block">Amount Received</label>
-                    <Input
-                      value={cashReceived}
-                      onChange={(e) => setCashReceived(e.target.value)}
-                      placeholder="0"
-                      type="number"
-                      className="h-8 text-sm"
-                    />
-                  </div>
-                  <div className="flex-1">
-                    <label className="text-[11px] text-gray-500 mb-0.5 block">Change</label>
-                    <div className="h-8 px-3 rounded-md border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 flex items-center">
-                      <span className="font-semibold text-sm text-emerald-600">
-                        ₹{changeAmount || 0}
-                      </span>
+                <div className="mt-2 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1">
+                      <label className="text-[11px] text-gray-500 mb-0.5 block">Amount Received</label>
+                      <Input
+                        value={cashReceived}
+                        onChange={(e) => setCashReceived(e.target.value)}
+                        placeholder="0"
+                        type="number"
+                        className="h-8 text-sm"
+                      />
                     </div>
+                    <div className="flex-1">
+                      <label className="text-[11px] text-gray-500 mb-0.5 block">Change</label>
+                      <div className="h-8 px-3 rounded-md border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 flex items-center">
+                        <span className="font-semibold text-sm text-emerald-600">
+                          ₹{changeAmount || 0}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  {/* Quick amount buttons */}
+                  <div className="flex gap-1.5">
+                    {[100, 200, 500, 1000, 2000].map(amt => (
+                      <button
+                        key={amt}
+                        onClick={() => setCashReceived(String(amt))}
+                        className="flex-1 text-[10px] font-semibold py-1 rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 text-gray-600 dark:text-gray-400 hover:text-emerald-600 transition-colors"
+                      >
+                        ₹{amt}
+                      </button>
+                    ))}
+                    {totalAmount > 0 && (
+                      <button
+                        onClick={() => setCashReceived(String(Math.ceil(totalAmount)))}
+                        className="flex-1 text-[10px] font-semibold py-1 rounded border border-emerald-300 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition-colors"
+                      >
+                        ₹{Math.ceil(totalAmount)}
+                      </button>
+                    )}
                   </div>
                 </div>
               )}
@@ -1402,7 +1544,8 @@ export default function BillingPos() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Pause className="w-5 h-5 text-amber-500" />
-              Held Bills ({heldBills.length})
+              Held Bills
+              <span className="w-6 h-6 rounded-full bg-amber-500 text-white text-xs flex items-center justify-center font-bold">{heldBills.length}</span>
             </DialogTitle>
           </DialogHeader>
           <ScrollArea className="max-h-80">
@@ -1414,7 +1557,7 @@ export default function BillingPos() {
             ) : (
               <div className="space-y-2">
                 {heldBills.map(bill => (
-                  <Card key={bill.id} className="border border-gray-200 dark:border-gray-700">
+                  <Card key={bill.id} className="border border-gray-200 dark:border-gray-700 group hover:border-amber-300 dark:hover:border-amber-700 transition-colors">
                     <CardContent className="p-3">
                       <div className="flex items-center justify-between mb-2">
                         <div>
@@ -1430,6 +1573,19 @@ export default function BillingPos() {
                         <span className="font-bold text-emerald-600">
                           ₹{bill.items.reduce((sum, item) => sum + item.total, 0).toFixed(2)}
                         </span>
+                      </div>
+                      {/* Mini preview of items */}
+                      <div className="flex flex-wrap gap-1 mb-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        {bill.items.slice(0, 3).map((item, idx) => (
+                          <span key={idx} className="text-[10px] bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 px-1.5 py-0.5 rounded">
+                            {item.name} ×{item.quantity}
+                          </span>
+                        ))}
+                        {bill.items.length > 3 && (
+                          <span className="text-[10px] bg-gray-100 dark:bg-gray-800 text-gray-400 px-1.5 py-0.5 rounded">
+                            +{bill.items.length - 3} more
+                          </span>
+                        )}
                       </div>
                       <div className="flex gap-2">
                         <Button

@@ -712,6 +712,53 @@ export default function ProductsPanel() {
     setCsvDragOver(false);
   }
 
+  // ─── CSV Export ───
+
+  function handleExportCSV() {
+    if (products.length === 0) {
+      toast.error('No products to export');
+      return;
+    }
+
+    const columns = [
+      { key: 'name' as const, label: 'Product Name' },
+      { key: 'sku' as const, label: 'SKU' },
+      { key: 'price' as const, label: 'Price' },
+      { key: 'costPrice' as const, label: 'Cost Price' },
+      { key: 'stock' as const, label: 'Stock' },
+      { key: 'unit' as const, label: 'Unit' },
+      { key: 'categoryName' as const, label: 'Category' },
+      { key: 'barcode' as const, label: 'Barcode' },
+      { key: 'lowStockThreshold' as const, label: 'Low Stock Threshold' },
+      { key: 'isActive' as const, label: 'Active' },
+    ];
+
+    const header = columns.map((col) => `"${col.label}"`).join(',');
+    const rows = filteredProducts.map((product) =>
+      columns
+        .map((col) => {
+          const value = product[col.key];
+          if (value === null || value === undefined) return '""';
+          const str = String(value);
+          return `"${str.replace(/"/g, '""')}"`;
+        })
+        .join(',')
+    );
+
+    const csvContent = [header, ...rows].join('\n');
+    const date = new Date().toISOString().split('T')[0];
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `storeos-products-${date}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    toast.success(`Exported ${filteredProducts.length} products to CSV`);
+  }
+
   // ─── Format helpers ───
 
   function formatCurrency(amount: number) {
@@ -856,6 +903,10 @@ export default function ProductsPanel() {
           <Button variant="outline" size="sm" onClick={() => setCsvDialogOpen(true)}>
             <Upload className="h-4 w-4 mr-1" />
             Import CSV
+          </Button>
+          <Button variant="outline" size="sm" onClick={handleExportCSV}>
+            <Download className="h-4 w-4 mr-1" />
+            Export CSV
           </Button>
           <Button variant="outline" size="sm" onClick={() => setCategoryDialogOpen(true)}>
             <Settings className="h-4 w-4 mr-1" />

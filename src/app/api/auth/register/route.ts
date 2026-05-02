@@ -53,10 +53,25 @@ export async function POST(request: NextRequest) {
       { user: userWithoutPassword, message: 'Registration successful' },
       { status: 201 }
     );
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Registration error:', error);
+    // Provide specific error messages instead of generic "Internal server error"
+    if (error instanceof Error) {
+      if (error.message.includes('UNIQUE constraint')) {
+        return NextResponse.json(
+          { error: 'An account with this email already exists. Please log in instead.' },
+          { status: 409 }
+        );
+      }
+      if (error.message.includes('FOREIGN KEY') || error.message.includes('foreign')) {
+        return NextResponse.json(
+          { error: 'Database relationship error. Please try again.' },
+          { status: 500 }
+        );
+      }
+    }
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Unable to create account right now. Please try again in a moment.' },
       { status: 500 }
     );
   }

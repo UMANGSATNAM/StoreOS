@@ -114,6 +114,7 @@ import {
   RotateCcw,
   CircleDot,
   Wallet,
+  Globe,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslation, t as translate } from '@/lib/i18n';
@@ -436,6 +437,25 @@ function DashboardOverview({ storeId, niche }: { storeId: string; niche: string 
     { id: '8', type: 'customer' as const, icon: UserPlus, description: 'New customer: Meera Joshi signed up', time: '1 hr ago', color: 'text-purple-600 dark:text-purple-400', bg: 'bg-purple-50 dark:bg-purple-900/20', border: 'border-l-purple-500' },
   ], []);
 
+  // ─── Relative time formatter ──────────────────────────────
+  const formatRelativeTime = (timeStr: string): string => {
+    // Parse common patterns like "2 min ago", "1 hr ago"
+    const minMatch = timeStr.match(/^(\d+)\s*min/);
+    const hrMatch = timeStr.match(/^(\d+)\s*hr/);
+    if (minMatch) {
+      const mins = parseInt(minMatch[1]);
+      if (mins < 2) return 'just now';
+      if (mins < 60) return `${mins}m ago`;
+      return `${Math.floor(mins / 60)}h ${mins % 60}m ago`;
+    }
+    if (hrMatch) {
+      const hrs = parseInt(hrMatch[1]);
+      if (hrs === 1) return '1h ago';
+      return `${hrs}h ago`;
+    }
+    return timeStr;
+  };
+
   // ─── Sparkline data per stat card ───────────────────────────
   const sparklineData = useMemo(() => ({
     sales: [8200, 9100, 7800, 11200, 10450, 12100, reports?.todaySales ?? 12450],
@@ -665,7 +685,7 @@ function DashboardOverview({ storeId, niche }: { storeId: string; niche: string 
 
   const statCards = [
     {
-      title: "Today's Sales",
+      title: tI18n('todaySalesLabel'),
       value: reports ? reports.todaySales : 0,
       displayValue: loading ? '₹0' : formatStatValue(reports?.todaySales || 0, '₹'),
       yesterdayValue: yesterdayValues.sales,
@@ -678,7 +698,7 @@ function DashboardOverview({ storeId, niche }: { storeId: string; niche: string 
       sparkColor: '#10b981',
     },
     {
-      title: 'Orders Today',
+      title: tI18n('ordersTodayLabel'),
       value: reports?.ordersCount || 0,
       displayValue: loading ? '0' : formatStatValue(reports?.ordersCount || 0),
       yesterdayValue: yesterdayValues.orders,
@@ -691,7 +711,7 @@ function DashboardOverview({ storeId, niche }: { storeId: string; niche: string 
       sparkColor: '#0ea5e9',
     },
     {
-      title: 'Products',
+      title: tI18n('productsLabelShort'),
       value: productCount,
       displayValue: loading ? '0' : formatStatValue(productCount),
       yesterdayValue: yesterdayValues.products,
@@ -704,7 +724,7 @@ function DashboardOverview({ storeId, niche }: { storeId: string; niche: string 
       sparkColor: '#f59e0b',
     },
     {
-      title: 'Customers',
+      title: tI18n('customersLabelShort'),
       value: customerCount,
       displayValue: loading ? '0' : formatStatValue(customerCount),
       yesterdayValue: yesterdayValues.customers,
@@ -807,18 +827,58 @@ function DashboardOverview({ storeId, niche }: { storeId: string; niche: string 
     return { bg: 'bg-amber-50 dark:bg-amber-900/10', border: 'border-amber-200 dark:border-amber-800/50', text: 'text-amber-600 dark:text-amber-400', badge: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400', level: 'warning' };
   };
 
+  // ─── Daily motivational tips ───────────────────────────────
+  const dailyTips = useMemo(() => {
+    const tips = [
+      '💡 Tip: Use Ctrl+K for quick search',
+      '💡 Tip: Press ? to see all keyboard shortcuts',
+      '💡 Tip: Hold F4 to park a bill for later',
+      '💡 Tip: Use Ctrl+D to jump back to Dashboard',
+      '💡 Tip: Try Ctrl+E to toggle dark mode',
+      '💡 Tip: Press / to focus the search bar',
+      '💡 Tip: Use number keys 1-9 for quick tab navigation',
+    ];
+    const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / (1000 * 60 * 60 * 24));
+    return tips[dayOfYear % tips.length];
+  }, []);
+
+  // ─── Today's Summary data ─────────────────────────────────
+  const todaySummary = useMemo(() => ({
+    ordersToday: reports?.ordersCount ?? 0,
+    revenueToday: reports?.todaySales ?? 0,
+    bestSeller: displayTopProducts.length > 0 ? displayTopProducts[0].name : '—',
+  }), [reports, displayTopProducts]);
+
+  // ─── Niche icon with floating animation ──────────────────
+  const nicheIcon = getNicheBySlug(niche as NicheSlug)?.icon || '🏪';
+
   return (
     <div className="space-y-6">
       {/* ─── Enhanced Welcome Section ─── */}
       <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 overflow-hidden rounded-xl px-5 py-4 -mx-1">
-        {/* Background gradient pattern */}
+        {/* Animated background gradient pattern */}
         <div className="absolute inset-0 bg-gradient-to-br from-emerald-50/60 via-transparent to-teal-50/40 dark:from-emerald-950/20 dark:via-transparent dark:to-teal-950/10 -z-10" />
-        <div className="absolute inset-0 opacity-[0.03] dark:opacity-[0.04] -z-10" style={{
+        {/* Animated dot grid pattern */}
+        <div className="absolute inset-0 opacity-[0.03] dark:opacity-[0.04] -z-10 animate-pulse" style={{
           backgroundImage: 'radial-gradient(circle, #10b981 1px, transparent 1px)',
           backgroundSize: '16px 16px',
+          animationDuration: '4s',
+        }} />
+        {/* Animated grid lines */}
+        <div className="absolute inset-0 opacity-[0.02] dark:opacity-[0.03] -z-10" style={{
+          backgroundImage: 'linear-gradient(#10b981 1px, transparent 1px), linear-gradient(90deg, #10b981 1px, transparent 1px)',
+          backgroundSize: '24px 24px',
         }} />
         <div>
           <div className="flex items-center gap-2 mb-1">
+            {/* Floating niche icon */}
+            <motion.span
+              className="text-2xl hidden sm:inline-block"
+              animate={{ y: [0, -4, 0] }}
+              transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+            >
+              {nicheIcon}
+            </motion.span>
             <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100">
               {getGreeting()}, {store?.name || 'Store'}
             </h1>
@@ -831,12 +891,43 @@ function DashboardOverview({ storeId, niche }: { storeId: string; niche: string 
             <span className="text-gray-300 dark:text-gray-600">·</span>
             {getSubscriptionDisplay()}
           </div>
+          {/* Daily Tip */}
+          <motion.p
+            initial={{ opacity: 0, y: 5 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5, duration: 0.5 }}
+            className="text-xs text-gray-400 dark:text-gray-500 mt-2 italic"
+          >
+            {dailyTips}
+          </motion.p>
         </div>
+        {/* Today's Summary Mini Card */}
+        <motion.div
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.3, duration: 0.4 }}
+          className="flex gap-3 sm:gap-4 bg-white/70 dark:bg-gray-800/50 backdrop-blur-sm rounded-xl px-4 py-3 border border-gray-100 dark:border-gray-700/50 shadow-sm"
+        >
+          <div className="text-center min-w-[60px]">
+            <p className="text-lg font-bold text-emerald-600 dark:text-emerald-400">{todaySummary.ordersToday || '—'}</p>
+            <p className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">Orders</p>
+          </div>
+          <div className="w-px bg-gray-200 dark:bg-gray-700" />
+          <div className="text-center min-w-[70px]">
+            <p className="text-lg font-bold text-sky-600 dark:text-sky-400">{todaySummary.revenueToday > 0 ? `₹${todaySummary.revenueToday.toLocaleString('en-IN')}` : '—'}</p>
+            <p className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">Revenue</p>
+          </div>
+          <div className="w-px bg-gray-200 dark:bg-gray-700 hidden sm:block" />
+          <div className="text-center min-w-[70px] hidden sm:block">
+            <p className="text-sm font-bold text-amber-600 dark:text-amber-400 truncate max-w-[80px]">{todaySummary.bestSeller}</p>
+            <p className="text-[10px] text-gray-400 dark:text-gray-500 font-medium">Best Seller</p>
+          </div>
+        </motion.div>
       </div>
 
       {/* ─── Stat Cards with Sparklines & vs Yesterday ─── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {statCards.map((stat) => {
+        {statCards.map((stat, idx) => {
           const Icon = stat.icon;
           const bothZero = stat.value === 0 && stat.yesterdayValue === 0;
           const diff = stat.yesterdayValue > 0 ? Math.round(((stat.value - stat.yesterdayValue) / stat.yesterdayValue) * 100) : 0;
@@ -846,10 +937,14 @@ function DashboardOverview({ storeId, niche }: { storeId: string; niche: string 
             ? 'No data yet'
             : stat.yesterdayValue === 0
               ? '—'
-              : `${trendUp ? '+' : ''}${diff}% vs yesterday`;
+              : `${trendUp ? '+' : ''}${diff}% ${tI18n('vsYesterday')}`;
           const showTrendIcon = !bothZero && stat.yesterdayValue > 0;
           return (
-            <Card key={stat.title} className={`border border-gray-200 dark:border-gray-700 ${stat.leftBorder} border-l-4 shadow-sm bg-gradient-to-br ${stat.gradient} hover:shadow-md hover:scale-[1.02] transition-all duration-200`}>
+            <Card key={stat.title} className={`stat-card-enter border border-gray-200 dark:border-gray-700 ${stat.leftBorder} border-l-4 shadow-sm bg-gradient-to-br ${stat.gradient} hover:shadow-md hover:scale-[1.02] hover:border-transparent transition-all duration-200 group relative overflow-hidden`} style={{ animationDelay: `${idx * 80}ms` }}>
+              {/* Gradient border animation on hover */}
+              <div className="absolute inset-0 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" style={{
+                background: `linear-gradient(135deg, ${stat.sparkColor}33 0%, transparent 50%, ${stat.sparkColor}22 100%)`,
+              }} />
               <CardContent className="p-4">
                 <div className="flex items-center justify-between mb-1">
                   <p className="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400">
@@ -908,20 +1003,26 @@ function DashboardOverview({ storeId, niche }: { storeId: string; niche: string 
                   <CardTitle className="text-lg font-semibold">Sales Overview</CardTitle>
                   <CardDescription>Revenue trend for the selected period</CardDescription>
                 </div>
-                <div className="flex items-center bg-gray-100 dark:bg-gray-800 rounded-lg p-0.5">
-                  {(['7', '30', '90'] as const).map((p) => (
-                    <button
-                      key={p}
-                      onClick={() => setSalesPeriod(p)}
-                      className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
-                        salesPeriod === p
-                          ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm'
-                          : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
-                      }`}
-                    >
-                      {p === '7' ? '7 Days' : p === '30' ? '30 Days' : '90 Days'}
-                    </button>
-                  ))}
+                <div className="flex items-center gap-2">
+                  {/* Period label */}
+                  <Badge variant="secondary" className="text-[10px] hidden sm:inline-flex">
+                    {salesPeriod === '7' ? 'Last 7 Days' : salesPeriod === '30' ? 'Last 30 Days' : 'Last 90 Days'}
+                  </Badge>
+                  <div className="flex items-center bg-gray-100 dark:bg-gray-800 rounded-lg p-0.5">
+                    {(['7', '30', '90'] as const).map((p) => (
+                      <button
+                        key={p}
+                        onClick={() => setSalesPeriod(p)}
+                        className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
+                          salesPeriod === p
+                            ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm'
+                            : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
+                        }`}
+                      >
+                        {p === '7' ? '7 Days' : p === '30' ? '30 Days' : '90 Days'}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
             </CardHeader>
@@ -976,6 +1077,18 @@ function DashboardOverview({ storeId, niche }: { storeId: string; niche: string 
                           name === 'sales' ? 'Sales' : 'Orders',
                         ]}
                       />
+                      {/* Average reference line */}
+                      <Line
+                        yAxisId="left"
+                        type="monotone"
+                        dataKey={() => chartSummary.avg}
+                        stroke="#94a3b8"
+                        strokeWidth={1}
+                        strokeDasharray="4 4"
+                        dot={false}
+                        activeDot={false}
+                        name="avgRef"
+                      />
                       <Area
                         yAxisId="left"
                         type="monotone"
@@ -1011,6 +1124,11 @@ function DashboardOverview({ storeId, niche }: { storeId: string; niche: string 
                 <span className="text-gray-500 dark:text-gray-400">
                   Best: <span className="font-bold text-emerald-600 dark:text-emerald-400">₹{chartSummary.best.toLocaleString('en-IN')}</span>
                   <span className="text-gray-400 text-xs ml-1">({chartSummary.bestDay})</span>
+                </span>
+                {/* Average line legend */}
+                <span className="text-gray-400 text-xs flex items-center gap-1">
+                  <span className="w-4 h-px border-t border-dashed border-slate-400" />
+                  Avg line
                 </span>
               </div>
             </CardContent>
@@ -1235,7 +1353,7 @@ function DashboardOverview({ storeId, niche }: { storeId: string; niche: string 
                       {/* Content */}
                       <div className={`pb-3 flex-1 min-w-0 ${idx === activityFeed.length - 1 ? 'pb-0' : ''}`}>
                         <p className="text-sm text-gray-700 dark:text-gray-300 leading-snug group-hover:text-gray-900 dark:group-hover:text-gray-100 transition-colors">{item.description}</p>
-                        <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5">{item.time}</p>
+                        <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5">{formatRelativeTime(item.time)}</p>
                       </div>
                       {/* Hover arrow */}
                       <ArrowUpRight className="w-3.5 h-3.5 text-gray-300 dark:text-gray-600 self-center opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
@@ -1810,9 +1928,9 @@ function PlaceholderTab({ tab, label }: { tab: string; label: string }) {
 // ─── Main Dashboard Component ────────────────────────────────
 
 export default function PosDashboard() {
-  const { user, store, subscription, logout, dashboardTab, setDashboardTab, globalSearch, setGlobalSearch, cashRegister } =
+  const { user, store, subscription, logout, dashboardTab, setDashboardTab, globalSearch, setGlobalSearch, cashRegister, language, setLanguage } =
     useAppStore();
-  const { t, language } = useTranslation();
+  const { t } = useTranslation();
   const { theme, setTheme } = useTheme();
   const [searchQuery, setSearchQuery] = useState(globalSearch || '');
   const [notifications, setNotifications] = useState([
@@ -1846,6 +1964,7 @@ export default function PosDashboard() {
     billing: 'billing',
     products: 'products',
     suppliers: 'suppliers',
+    expenses: 'expenses',
     customers: 'customers',
     orders: 'orders',
     staff: 'staff',
@@ -1858,8 +1977,8 @@ export default function PosDashboard() {
     members: 'members',
     students: 'students',
     vehicles: 'vehicles',
-    kitchen: 'dashboard',
-    'cash-register': 'dashboard',
+    kitchen: 'kitchenDisplay',
+    'cash-register': 'cashRegister',
   };
 
   // Build full nav items including niche-specific
@@ -2242,7 +2361,7 @@ export default function PosDashboard() {
         {/* Navigation */}
         <SidebarContent className="overflow-y-auto">
           <SidebarGroup>
-            <SidebarGroupLabel className="text-[10px] font-bold tracking-widest text-gray-400 dark:text-gray-500 uppercase">Main</SidebarGroupLabel>
+            <SidebarGroupLabel className="text-[10px] font-bold tracking-widest text-gray-400 dark:text-gray-500 uppercase">{t('main')}</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
                 {navItems.slice(0, 3).map((item) => {
@@ -2270,7 +2389,7 @@ export default function PosDashboard() {
             </SidebarGroupContent>
           </SidebarGroup>
           <SidebarGroup>
-            <SidebarGroupLabel className="text-[10px] font-bold tracking-widest text-gray-400 dark:text-gray-500 uppercase">Management</SidebarGroupLabel>
+            <SidebarGroupLabel className="text-[10px] font-bold tracking-widest text-gray-400 dark:text-gray-500 uppercase">{t('management')}</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
                 {navItems.slice(3, -2).map((item) => {
@@ -2302,7 +2421,7 @@ export default function PosDashboard() {
             </SidebarGroupContent>
           </SidebarGroup>
           <SidebarGroup>
-            <SidebarGroupLabel className="text-[10px] font-bold tracking-widest text-gray-400 dark:text-gray-500 uppercase">System</SidebarGroupLabel>
+            <SidebarGroupLabel className="text-[10px] font-bold tracking-widest text-gray-400 dark:text-gray-500 uppercase">{t('system')}</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
                 {navItems.slice(-2).map((item) => {
@@ -2341,7 +2460,7 @@ export default function PosDashboard() {
         <SidebarFooter className="p-3 bg-gradient-to-t from-emerald-50/50 to-transparent dark:from-emerald-950/20 dark:to-transparent">
           {/* Subscription Badge */}
           <div className="flex items-center justify-between px-3 py-2 rounded-lg bg-white/60 dark:bg-gray-800/40 group-data-[collapsible=icon]:hidden">
-            <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">Plan</span>
+            <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">{t('plan')}</span>
             {getSubBadge()}
           </div>
 
@@ -2432,20 +2551,20 @@ export default function PosDashboard() {
               <DropdownMenuContent align="end" className="w-48">
                 <DropdownMenuItem onClick={() => setDashboardTab('billing')}>
                   <Receipt className="w-4 h-4 mr-2" />
-                  New Bill
+                  {t('newBill')}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setDashboardTab('products')}>
                   <Plus className="w-4 h-4 mr-2" />
-                  Add Product
+                  {t('addProduct')}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setDashboardTab('customers')}>
                   <Users className="w-4 h-4 mr-2" />
-                  Add Customer
+                  {t('addCustomer')}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => setDashboardTab('reports')}>
                   <BarChart3 className="w-4 h-4 mr-2" />
-                  View Reports
+                  {t('viewReports')}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -2515,6 +2634,37 @@ export default function PosDashboard() {
               </DropdownMenuContent>
             </DropdownMenu>
 
+            {/* Language Toggle */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-9 w-9 relative" title={t('language')}>
+                  <Globe className="w-4 h-4" />
+                  <span className="absolute -bottom-0.5 -right-0.5 text-[8px] font-bold text-emerald-600 dark:text-emerald-400 leading-none">
+                    {language === 'hi' ? 'हि' : 'EN'}
+                  </span>
+                  <span className="sr-only">{t('language')}</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-44">
+                <DropdownMenuItem
+                  onClick={() => setLanguage('en')}
+                  className={language === 'en' ? 'bg-emerald-50 dark:bg-emerald-900/20 font-semibold' : ''}
+                >
+                  <span className="mr-2 text-base">🇬🇧</span>
+                  English
+                  {language === 'en' && <CheckCircle2 className="w-3.5 h-3.5 ml-auto text-emerald-600 dark:text-emerald-400" />}
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => setLanguage('hi')}
+                  className={language === 'hi' ? 'bg-emerald-50 dark:bg-emerald-900/20 font-semibold' : ''}
+                >
+                  <span className="mr-2 text-base">🇮🇳</span>
+                  हिंदी
+                  {language === 'hi' && <CheckCircle2 className="w-3.5 h-3.5 ml-auto text-emerald-600 dark:text-emerald-400" />}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
             {/* Dark Mode Toggle */}
             <Button variant="ghost" size="icon" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} className="h-9 w-9">
               {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
@@ -2531,16 +2681,20 @@ export default function PosDashboard() {
               <DropdownMenuContent align="end" className="w-48">
                 <DropdownMenuItem onClick={() => setDashboardTab('billing')}>
                   <Receipt className="w-4 h-4 mr-2" />
-                  New Bill
+                  {t('billing')}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setDashboardTab('products')}>
                   <Plus className="w-4 h-4 mr-2" />
-                  Add Product
+                  {t('products')}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => setLanguage(language === 'en' ? 'hi' : 'en')}>
+                  <Globe className="w-4 h-4 mr-2" />
+                  {language === 'en' ? 'हिंदी' : 'English'}
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={handleLogout}>
                   <LogOut className="w-4 h-4 mr-2" />
-                  Logout
+                  {t('logOut')}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

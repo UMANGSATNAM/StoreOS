@@ -442,3 +442,118 @@
   70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
   100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
 }
+
+/* ─── Staggered list entrance ─── */
+@keyframes staggerIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+.stagger-item {
+  animation: staggerIn 0.35s ease-out both;
+}
+.stagger-item:nth-child(1) { animation-delay: 0ms; }
+.stagger-item:nth-child(2) { animation-delay: 50ms; }
+.stagger-item:nth-child(3) { animation-delay: 100ms; }
+.stagger-item:nth-child(4) { animation-delay: 150ms; }
+.stagger-item:nth-child(5) { animation-delay: 200ms; }
+.stagger-item:nth-child(6) { animation-delay: 250ms; }
+
+/* ─── Stat card entrance ─── */
+@keyframes statCardIn {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.stat-card-enter {
+  animation: statCardIn 0.4s ease-out both;
+}
+.stat-card-enter:nth-child(1) { animation-delay: 0ms; }
+.stat-card-enter:nth-child(2) { animation-delay: 80ms; }
+.stat-card-enter:nth-child(3) { animation-delay: 160ms; }
+.stat-card-enter:nth-child(4) { animation-delay: 240ms; }
+
+/* ─── Smooth number counter ─── */
+@keyframes countUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.count-up {
+  animation: countUp 0.5s ease-out;
+}
+
+/* ─── Language toggle badge ─── */
+.lang-badge {
+  font-size: 7px;
+  line-height: 1;
+  position: absolute;
+  bottom: 1px;
+  right: 1px;
+  font-weight: 700;
+  padding: 1px 2px;
+  border-radius: 2px;
+  pointer-events: none;
+}
+
+/* ─── Mobile bottom safe area ─── */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+/* ─── Mobile touch improvements ─── */
+@media (max-width: 640px) {
+  /* Larger touch targets for buttons */
+  button, [role="button"] {
+    min-height: 36px;
+    min-width: 36px;
+  }
+  /* Better spacing for small screens */
+  .mobile-compact {
+    gap: 0.5rem;
+    padding: 0.75rem;
+  }
+}
+
+/* ─── Smooth tab transitions ─── */
+.tab-content-enter {
+  animation: tabEnter 0.25s ease-out;
+}
+@keyframes tabEnter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ─── Export button hover glow ─── */
+.export-btn-glow {
+  position: relative;
+  overflow: hidden;
+}
+.export-btn-glow::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), transparent);
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.export-btn-glow:hover::after {
+  opacity: 1;
+}

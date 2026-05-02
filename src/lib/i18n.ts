@@ -128,6 +128,27 @@ type TranslationKeys = {
   switchAccount: string;
   helpSupport: string;
   keyboardShortcuts: string;
+
+  // Dashboard stat cards
+  todaySalesLabel: string;
+  ordersTodayLabel: string;
+  productsLabelShort: string;
+  customersLabelShort: string;
+  vsYesterday: string;
+  main: string;
+  management: string;
+  system: string;
+  plan: string;
+  newBill: string;
+  addProduct: string;
+  addCustomer: string;
+  viewReports: string;
+  quickActions: string;
+  exportCSV: string;
+  kitchenDisplay: string;
+  cashRegister: string;
+  expenses: string;
+  suppliers: string;
 };
 
 const translations: Record<Language, TranslationKeys> = {
@@ -254,6 +275,27 @@ const translations: Record<Language, TranslationKeys> = {
     switchAccount: 'Switch Account',
     helpSupport: 'Help & Support',
     keyboardShortcuts: 'Keyboard Shortcuts',
+
+    // Dashboard stat cards
+    todaySalesLabel: "Today's Sales",
+    ordersTodayLabel: 'Orders Today',
+    productsLabelShort: 'Products',
+    customersLabelShort: 'Customers',
+    vsYesterday: 'vs yesterday',
+    main: 'Main',
+    management: 'Management',
+    system: 'System',
+    plan: 'Plan',
+    newBill: 'New Bill',
+    addProduct: 'Add Product',
+    addCustomer: 'Add Customer',
+    viewReports: 'View Reports',
+    quickActions: 'Quick Actions',
+    exportCSV: 'Export CSV',
+    kitchenDisplay: 'Kitchen Display',
+    cashRegister: 'Cash Register',
+    expenses: 'Expenses',
+    suppliers: 'Suppliers',
   },
 
   hi: {
@@ -379,6 +421,27 @@ const translations: Record<Language, TranslationKeys> = {
     switchAccount: 'खाता बदलें',
     helpSupport: 'सहायता और समर्थन',
     keyboardShortcuts: 'कीबोर्ड शॉर्टकट',
+
+    // Dashboard stat cards
+    todaySalesLabel: 'आज की बिक्री',
+    ordersTodayLabel: 'आज के ऑर्डर',
+    productsLabelShort: 'उत्पाद',
+    customersLabelShort: 'ग्राहक',
+    vsYesterday: 'कल से',
+    main: 'मुख्य',
+    management: 'प्रबंधन',
+    system: 'सिस्टम',
+    plan: 'योजना',
+    newBill: 'नया बिल',
+    addProduct: 'उत्पाद जोड़ें',
+    addCustomer: 'ग्राहक जोड़ें',
+    viewReports: 'रिपोर्ट देखें',
+    quickActions: 'त्वरित कार्रवाई',
+    exportCSV: 'CSV निर्यात',
+    kitchenDisplay: 'किचन डिस्प्ले',
+    cashRegister: 'कैश रजिस्टर',
+    expenses: 'खर्चे',
+    suppliers: 'सप्लायर',
   },
 };
 
@@ -401,19 +464,20 @@ export function t(key: keyof TranslationKeys, lang: Language = 'en'): string {
  * Usage:
  *   const { t, language, setLanguage } = useTranslation();
  *   <span>{t('dashboard')}</span>
+ *
+ * NOTE: For setting the language, prefer using useAppStore's setLanguage
+ * directly rather than the one from this hook, to avoid ESLint no-require-imports.
  */
 export function useTranslation() {
-  // We import useAppStore directly; store.ts only imports the Language
-  // *type* from this module (erased at compile time), so there is no
-  // runtime circular-dependency issue.
+  // Lazy-require to avoid circular dependency at module load time.
+  // store.ts only imports the Language *type* from this module (erased at
+  // compile time), so there is no runtime circular-dependency issue.
   // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const storeMod = require('@/lib/store') as typeof import('@/lib/store');
-  const language: Language = storeMod.useAppStore((s: { language: Language }) => s.language) || 'en';
-  const setLanguage = storeMod.useAppStore((s: { setLanguage: (lang: Language) => void }) => s.setLanguage);
+  const useAppStore = require('@/lib/store').useAppStore;
+  const language: Language = useAppStore((s: { language: Language }) => s.language) || 'en';
 
   return {
     language,
-    setLanguage,
     t: (key: keyof TranslationKeys) => t(key, language),
   };
 }

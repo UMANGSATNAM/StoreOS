@@ -205,15 +205,15 @@ function FeatureCard({ feature, index }: { feature: typeof FEATURES[number]; ind
       transition={{ duration: 0.5, delay: index * 0.12, ease: 'easeOut' }}
     >
       <Card className="group hover:shadow-xl hover:-translate-y-2 transition-all duration-300 border-gray-200 dark:border-gray-800 h-full overflow-hidden relative">
-        {/* Subtle gradient background */}
-        <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 ${feature.bg}`} />
+        {/* Always-visible subtle gradient background matching icon color */}
+        <div className={`absolute inset-0 opacity-30 group-hover:opacity-60 transition-opacity duration-500 ${feature.bg}`} />
         <CardContent className="p-6 relative z-10">
           <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-4 transition-all duration-300 group-hover:shadow-lg ${feature.bg}`}
             style={{
               boxShadow: undefined,
             }}
           >
-            <div className="relative">
+            <div className="relative feature-icon-pulse" style={{ animationDelay: `${index * 0.5}s` }}>
               <Icon className={`w-6 h-6 ${feature.color} transition-all duration-300 group-hover:scale-110`} />
               {/* Glow effect on hover */}
               <div className={`absolute inset-0 ${feature.color} blur-lg opacity-0 group-hover:opacity-30 transition-opacity duration-300`} />
@@ -554,6 +554,13 @@ export default function LandingPage() {
     setDemoLoading(true);
     try {
       const res = await fetch('/api/seed', { method: 'POST' });
+      if (!res.ok) {
+        const data = await res.json();
+        toast.error('Demo setup failed', {
+          description: data.error || 'Please try again or refresh the page.',
+        });
+        return;
+      }
       const data = await res.json();
       if (data.success) {
         setUser({
@@ -585,6 +592,9 @@ export default function LandingPage() {
       }
     } catch (err) {
       console.error('Demo login failed:', err);
+      toast.error('Connection error', {
+        description: 'Unable to reach the server. Please check your connection and try again.',
+      });
     } finally {
       setDemoLoading(false);
     }
@@ -820,6 +830,163 @@ export default function LandingPage() {
           height: 1px;
           background: linear-gradient(90deg, transparent, rgba(16, 185, 129, 0.3), rgba(20, 184, 166, 0.3), rgba(16, 185, 129, 0.3), transparent);
         }
+        /* ── Hero Gradient Mesh ── */
+        @keyframes meshGradient1 {
+          0%, 100% { transform: translate(0, 0) scale(1); }
+          25% { transform: translate(30px, -20px) scale(1.05); }
+          50% { transform: translate(-20px, 20px) scale(0.95); }
+          75% { transform: translate(10px, -10px) scale(1.02); }
+        }
+        @keyframes meshGradient2 {
+          0%, 100% { transform: translate(0, 0) scale(1); }
+          25% { transform: translate(-40px, 10px) scale(0.95); }
+          50% { transform: translate(20px, -30px) scale(1.08); }
+          75% { transform: translate(-10px, 20px) scale(1); }
+        }
+        @keyframes meshGradient3 {
+          0%, 100% { transform: translate(0, 0) scale(1.05); }
+          33% { transform: translate(25px, -15px) scale(0.98); }
+          66% { transform: translate(-15px, 25px) scale(1.02); }
+        }
+        .mesh-gradient-1 { animation: meshGradient1 12s ease-in-out infinite; }
+        .mesh-gradient-2 { animation: meshGradient2 15s ease-in-out infinite; }
+        .mesh-gradient-3 { animation: meshGradient3 18s ease-in-out infinite; }
+        /* ── Floating Dots ── */
+        @keyframes dotFloat1 {
+          0%, 100% { transform: translateY(0) translateX(0); opacity: 0.4; }
+          50% { transform: translateY(-15px) translateX(5px); opacity: 0.9; }
+        }
+        @keyframes dotFloat2 {
+          0%, 100% { transform: translateY(0) translateX(0); opacity: 0.3; }
+          50% { transform: translateY(-10px) translateX(-8px); opacity: 0.7; }
+        }
+        @keyframes dotFloat3 {
+          0%, 100% { transform: translateY(0) translateX(0); opacity: 0.5; }
+          50% { transform: translateY(-20px) translateX(3px); opacity: 1; }
+        }
+        .dot-float-1 { animation: dotFloat1 3s ease-in-out infinite; }
+        .dot-float-2 { animation: dotFloat2 4s ease-in-out infinite 0.5s; }
+        .dot-float-3 { animation: dotFloat3 3.5s ease-in-out infinite 1s; }
+        .dot-float-4 { animation: dotFloat1 4.5s ease-in-out infinite 1.5s; }
+        .dot-float-5 { animation: dotFloat2 3.2s ease-in-out infinite 0.8s; }
+        .dot-float-6 { animation: dotFloat3 5s ease-in-out infinite 2s; }
+        /* ── Feature Icon Pulse ── */
+        @keyframes iconPulse {
+          0%, 100% { transform: scale(1); }
+          50% { transform: scale(1.1); }
+        }
+        .feature-icon-pulse {
+          animation: iconPulse 3s ease-in-out infinite;
+        }
+        /* ── Most Popular Badge Pulse ── */
+        @keyframes popularBadgePulse {
+          0%, 100% { transform: translateX(-50%) scale(1); box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4); }
+          50% { transform: translateX(-50%) scale(1.08); box-shadow: 0 0 16px 4px rgba(245, 158, 11, 0.25); }
+        }
+        .popular-badge-pulse {
+          animation: popularBadgePulse 2s ease-in-out infinite !important;
+        }
+        /* ── Pricing Shimmer Border ── */
+        @keyframes pricingShimmer {
+          0% { background-position: -200% 0; }
+          100% { background-position: 200% 0; }
+        }
+        .pricing-shimmer-border {
+          background: linear-gradient(90deg, #10b981, #14b8a6, #0ea5e9, #8b5cf6, #10b981);
+          background-size: 200% 100%;
+          animation: pricingShimmer 3s linear infinite;
+          border-radius: 0.75rem;
+        }
+        /* ── Pricing Checkmark Bounce ── */
+        @keyframes checkBounceIn {
+          0% { transform: scale(1); }
+          30% { transform: scale(1.4); }
+          60% { transform: scale(0.9); }
+          100% { transform: scale(1); }
+        }
+        .pricing-feature-row:hover .pricing-check-animate {
+          animation: checkBounceIn 0.4s ease;
+        }
+        /* ── Price Gradient Text ── */
+        .price-gradient-text {
+          background: linear-gradient(135deg, #059669, #14b8a6, #0ea5e9);
+          -webkit-background-clip: text;
+          background-clip: text;
+          -webkit-text-fill-color: transparent;
+        }
+        /* ── Niche Quick Preview Tooltip ── */
+        .niche-tooltip {
+          visibility: hidden;
+          opacity: 0;
+          transition: all 0.25s ease;
+          transform: translateY(8px);
+          pointer-events: none;
+        }
+        .niche-card-wrapper:hover .niche-tooltip {
+          visibility: visible;
+          opacity: 1;
+          transform: translateY(0);
+        }
+        /* ── Demo Button Glow ── */
+        .demo-glow {
+          position: absolute;
+          inset: -6px;
+          border-radius: 9999px;
+          background: radial-gradient(circle, rgba(245, 158, 11, 0.5) 0%, transparent 70%);
+          filter: blur(10px);
+          opacity: 0;
+          transition: opacity 0.4s ease;
+          z-index: -1;
+        }
+        .demo-glow-wrap:hover .demo-glow {
+          opacity: 1;
+        }
+        /* ── Feature Dotted Lines ── */
+        .feature-dotted-line {
+          position: absolute;
+          top: 50%;
+          border-top: 2px dashed rgba(16, 185, 129, 0.15);
+          pointer-events: none;
+        }
+        /* ── Quote Icon Background ── */
+        .quote-icon-bg {
+          position: absolute;
+          top: 12px;
+          right: 16px;
+          width: 48px;
+          height: 48px;
+          opacity: 0.06;
+          pointer-events: none;
+        }
+        .dark .quote-icon-bg {
+          opacity: 0.04;
+        }
+        /* ── App Store Badge Styles ── */
+        .app-store-badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          padding: 8px 16px;
+          border-radius: 8px;
+          border: 1px solid rgba(255,255,255,0.15);
+          background: rgba(255,255,255,0.05);
+          color: white;
+          font-size: 11px;
+          line-height: 1.2;
+          transition: all 0.2s ease;
+        }
+        .app-store-badge:hover {
+          background: rgba(255,255,255,0.1);
+          border-color: rgba(255,255,255,0.25);
+        }
+        .app-store-badge .badge-text-small {
+          font-size: 9px;
+          opacity: 0.7;
+        }
+        .app-store-badge .badge-text-large {
+          font-size: 14px;
+          font-weight: 600;
+        }
       `}</style>
       {/* ═══════════════════ NAVBAR ═══════════════════ */}
       <nav
@@ -935,6 +1102,11 @@ export default function LandingPage() {
         {/* Background Gradient - Animated */}
         <div className="absolute inset-0 bg-gradient-to-br from-emerald-50 via-white to-teal-50 dark:from-gray-950 dark:via-gray-950 dark:to-emerald-950/30 hero-gradient-animated" />
 
+        {/* Animated Gradient Mesh - multiple overlapping radial gradients */}
+        <div className="absolute top-[10%] left-[20%] w-[500px] h-[500px] bg-gradient-to-br from-emerald-400/20 via-teal-400/10 to-transparent rounded-full blur-3xl mesh-gradient-1" />
+        <div className="absolute top-[20%] right-[15%] w-[400px] h-[400px] bg-gradient-to-bl from-cyan-400/15 via-emerald-300/10 to-transparent rounded-full blur-3xl mesh-gradient-2" />
+        <div className="absolute bottom-[10%] left-[40%] w-[350px] h-[350px] bg-gradient-to-tr from-teal-400/15 via-emerald-300/10 to-transparent rounded-full blur-3xl mesh-gradient-3" />
+
         {/* Glowing/Pulsing Gradient Orb behind hero text */}
         <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-br from-emerald-400/20 via-teal-400/15 to-cyan-400/10 dark:from-emerald-600/10 dark:via-teal-600/5 dark:to-cyan-600/5 rounded-full blur-3xl pulse-orb" />
         <div className="absolute top-1/3 left-[30%] w-[400px] h-[400px] bg-gradient-to-tr from-emerald-300/15 to-teal-300/10 dark:from-emerald-700/5 dark:to-teal-700/5 rounded-full blur-3xl pulse-orb" style={{ animationDelay: '2s' }} />
@@ -955,6 +1127,16 @@ export default function LandingPage() {
         <div className="absolute bottom-32 left-[20%] w-16 h-16 bg-teal-400/10 dark:bg-teal-500/10 rounded-full float-shape-3" />
         <div className="absolute bottom-48 right-[25%] w-24 h-24 bg-emerald-200/15 dark:bg-emerald-300/10 rounded-full float-shape-4" />
 
+        {/* Floating decorative dots around hero text */}
+        <div className="absolute top-[30%] left-[5%] w-2.5 h-2.5 bg-emerald-400/60 dark:bg-emerald-400/40 rounded-full dot-float-1" />
+        <div className="absolute top-[25%] right-[8%] w-2 h-2 bg-teal-400/50 dark:bg-teal-400/30 rounded-full dot-float-2" />
+        <div className="absolute top-[55%] left-[12%] w-3 h-3 bg-emerald-300/40 dark:bg-emerald-300/20 rounded-full dot-float-3" />
+        <div className="absolute top-[45%] right-[5%] w-2 h-2 bg-cyan-400/40 dark:bg-cyan-400/20 rounded-full dot-float-4" />
+        <div className="absolute top-[65%] left-[25%] w-1.5 h-1.5 bg-emerald-500/50 dark:bg-emerald-500/30 rounded-full dot-float-5" />
+        <div className="absolute top-[20%] left-[40%] w-2 h-2 bg-teal-300/30 dark:bg-teal-300/15 rounded-full dot-float-6" />
+        <div className="absolute bottom-[25%] right-[18%] w-2.5 h-2.5 bg-emerald-400/35 dark:bg-emerald-400/20 rounded-full dot-float-1" style={{ animationDelay: '2s' }} />
+        <div className="absolute bottom-[35%] left-[8%] w-1.5 h-1.5 bg-cyan-300/40 dark:bg-cyan-300/20 rounded-full dot-float-3" style={{ animationDelay: '1.2s' }} />
+
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
             {/* Left: Copy */}
@@ -973,7 +1155,9 @@ export default function LandingPage() {
 
               <FadeIn delay={0.1}>
                 <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-tight tracking-tight">
-                  Run Your Store on{' '}
+                  <span className="bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 dark:from-white dark:via-gray-100 dark:to-white bg-clip-text text-transparent">
+                    Run Your Store on{' '}
+                  </span>
                   <span className="autopilot-shimmer relative">
                     Autopilot
                   </span>
@@ -996,19 +1180,22 @@ export default function LandingPage() {
                     Start Free Trial
                     <ArrowRight className="w-4 h-4 ml-1" />
                   </Button>
-                  <Button
-                    size="lg"
-                    onClick={handleTryDemo}
-                    disabled={demoLoading}
-                    className="rounded-full bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-600 hover:via-amber-500 hover:to-amber-600 text-white shadow-lg shadow-amber-500/25 px-8 h-12 text-base shimmer-btn relative overflow-hidden"
-                  >
-                    {demoLoading ? (
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    ) : (
-                      <Play className="w-4 h-4 mr-2" />
-                    )}
-                    {demoLoading ? 'Loading Demo...' : 'Try Demo'}
-                  </Button>
+                  <div className="demo-glow-wrap relative">
+                    <div className="demo-glow" />
+                    <Button
+                      size="lg"
+                      onClick={handleTryDemo}
+                      disabled={demoLoading}
+                      className="rounded-full bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-600 hover:via-amber-500 hover:to-amber-600 text-white shadow-lg shadow-amber-500/25 px-8 h-12 text-base shimmer-btn relative overflow-hidden"
+                    >
+                      {demoLoading ? (
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      ) : (
+                        <Play className="w-4 h-4 mr-2" />
+                      )}
+                      {demoLoading ? 'Loading Demo...' : 'Try Demo'}
+                    </Button>
+                  </div>
                 </div>
               </FadeIn>
 
@@ -1034,21 +1221,31 @@ export default function LandingPage() {
 
               {/* Trusted badge */}
               <FadeIn delay={0.5}>
-                <div className="mt-6 inline-flex items-center gap-2 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-full px-4 py-2 border border-gray-200/50 dark:border-gray-700/50 shadow-sm">
-                  <div className="flex -space-x-2">
-                    {['bg-emerald-500', 'bg-amber-500', 'bg-sky-500', 'bg-violet-500'].map((bg, i) => (
-                      <div key={i} className={`w-6 h-6 rounded-full ${bg} border-2 border-white dark:border-gray-800 flex items-center justify-center text-white text-[8px] font-bold`}>
-                        {['R', 'P', 'A', 'S'][i]}
-                      </div>
-                    ))}
+                <div className="mt-6 flex flex-wrap items-center gap-3">
+                  <div className="inline-flex items-center gap-2 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-full px-4 py-2 border border-gray-200/50 dark:border-gray-700/50 shadow-sm">
+                    <div className="flex -space-x-2">
+                      {['bg-emerald-500', 'bg-amber-500', 'bg-sky-500', 'bg-violet-500'].map((bg, i) => (
+                        <div key={i} className={`w-6 h-6 rounded-full ${bg} border-2 border-white dark:border-gray-800 flex items-center justify-center text-white text-[8px] font-bold`}>
+                          {['R', 'P', 'A', 'S'][i]}
+                        </div>
+                      ))}
+                    </div>
+                    <span className="text-sm text-gray-600 dark:text-gray-300">
+                      Trusted by <span className="font-bold text-emerald-600 dark:text-emerald-400"><AnimatedCounter target={10000} />+</span> stores
+                    </span>
                   </div>
-                  <span className="text-sm text-gray-600 dark:text-gray-300">
-                    Trusted by <span className="font-bold text-emerald-600 dark:text-emerald-400"><AnimatedCounter target={10000} />+</span> stores
-                  </span>
-                  <div className="flex gap-0.5">
-                    {Array.from({ length: 5 }).map((_, i) => (
-                      <Star key={i} className="w-3 h-3 fill-amber-400 text-amber-400" />
-                    ))}
+                  <div className="inline-flex items-center gap-1.5 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-full px-4 py-2 border border-gray-200/50 dark:border-gray-700/50 shadow-sm">
+                    <div className="flex gap-0.5">
+                      {Array.from({ length: 5 }).map((_, i) => (
+                        <Star key={i} className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                      ))}
+                    </div>
+                    <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">4.9</span>
+                    <span className="text-sm text-gray-500 dark:text-gray-400">Rating</span>
+                  </div>
+                  <div className="inline-flex items-center gap-1.5 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-full px-4 py-2 border border-gray-200/50 dark:border-gray-700/50 shadow-sm">
+                    <Shield className="w-4 h-4 text-emerald-500" />
+                    <span className="text-sm text-gray-600 dark:text-gray-300">14-day <span className="font-semibold text-emerald-600 dark:text-emerald-400">free trial</span></span>
                   </div>
                 </div>
               </FadeIn>
@@ -1230,28 +1427,59 @@ export default function LandingPage() {
               const isPopular = niche.slug === 'restaurant' || niche.slug === 'grocery';
               return (
                 <StaggerItem key={niche.slug}>
-                  <Card className={`group hover:shadow-xl hover:-translate-y-2 hover:scale-[1.02] transition-all duration-300 cursor-pointer border-gray-200 dark:border-gray-800 h-full border-t-4 ${getNicheBorderTop(niche.color)} ${getNicheGlowShadow(niche.color)} niche-shimmer gradient-border relative`}>
-                    {/* Popular Badge */}
-                    {isPopular && (
-                      <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-20 popular-ribbon-bounce">
-                        <Badge className="bg-gradient-to-r from-amber-500 to-orange-500 text-white border-0 rounded-full px-2.5 py-0.5 text-[10px] font-bold shadow-md shadow-amber-500/25">
-                          <Sparkles className="w-2.5 h-2.5 mr-0.5" />
-                          Most Popular
-                        </Badge>
+                  <div className="niche-card-wrapper relative h-full">
+                    <Card className={`group hover:shadow-xl hover:-translate-y-2 hover:scale-[1.02] transition-all duration-300 cursor-pointer border-gray-200 dark:border-gray-800 h-full border-t-4 ${getNicheBorderTop(niche.color)} ${getNicheGlowShadow(niche.color)} niche-shimmer gradient-border relative`}>
+                      {/* Popular Badge */}
+                      {isPopular && (
+                        <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-20 popular-badge-pulse">
+                          <Badge className="bg-gradient-to-r from-amber-500 to-orange-500 text-white border-0 rounded-full px-2.5 py-0.5 text-[10px] font-bold shadow-md shadow-amber-500/25">
+                            <Sparkles className="w-2.5 h-2.5 mr-0.5" />
+                            Most Popular
+                          </Badge>
+                        </div>
+                      )}
+                      <CardContent className="p-4 text-center flex flex-col items-center gap-2">
+                        <motion.div
+                          className={`w-12 h-12 rounded-xl flex items-center justify-center text-2xl ${getNicheColorClass(niche.color)}`}
+                          whileHover={{ y: -4, scale: 1.15 }}
+                          transition={{ type: 'spring', stiffness: 400, damping: 15 }}
+                        >
+                          {niche.icon}
+                        </motion.div>
+                        <h3 className="font-semibold text-sm leading-tight">{niche.name}</h3>
+                        <p className="text-[13px] text-gray-500 dark:text-gray-400 leading-snug">{niche.description}</p>
+                      </CardContent>
+                    </Card>
+                    {/* Quick Preview Tooltip */}
+                    <div className="niche-tooltip absolute -bottom-2 left-1/2 -translate-x-1/2 translate-y-full z-30 w-52">
+                      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 p-3 text-left">
+                        <p className="text-xs font-semibold text-gray-700 dark:text-gray-200 mb-2">Key Features</p>
+                        <div className="space-y-1.5">
+                          {(niche.slug === 'restaurant' ? ['Table Management', 'KOT Printing', 'Zomato Integration'] :
+                            niche.slug === 'grocery' ? ['Barcode Scanning', 'Khata Book', 'Expiry Tracking'] :
+                            niche.slug === 'salon' ? ['Appointment Booking', 'Stylist Schedule', 'Membership Plans'] :
+                            niche.slug === 'pharmacy' ? ['Batch Tracking', 'Expiry Alerts', 'Prescription Mgmt'] :
+                            niche.slug === 'clothing' ? ['Size/Color Variants', 'Trial Room Mgmt', 'Seasonal Sales'] :
+                            niche.slug === 'electronics' ? ['Serial Tracking', 'Warranty Mgmt', 'Repair Tickets'] :
+                            niche.slug === 'bakery' ? ['Recipe Management', 'Pre-order System', 'Kitchen Display'] :
+                            niche.slug === 'gym' ? ['Membership Plans', 'Attendance Tracking', 'Diet Charts'] :
+                            niche.slug === 'coaching' ? ['Batch Management', 'Fee Collection', 'Attendance'] :
+                            niche.slug === 'clinic' ? ['Patient Records', 'Appointment Slots', 'Prescriptions'] :
+                            niche.slug === 'garage' ? ['Job Card System', 'Vehicle History', 'Spare Parts'] :
+                            niche.slug === 'hotel' ? ['Room Booking', 'Check-in/Out', 'Channel Manager'] :
+                            niche.slug === 'wholesale' ? ['Bulk Pricing', 'Credit Management', 'Delivery Tracking'] :
+                            niche.slug === 'jewellery' ? ['Weight-based Billing', 'Hallmark Tracking', 'Old Gold Exchange'] :
+                            ['Fast Billing', 'Smart Inventory', 'GST Reports']
+                          ).map((feature, fi) => (
+                            <div key={fi} className="flex items-center gap-1.5">
+                              <Check className="w-3 h-3 text-emerald-500 shrink-0" />
+                              <span className="text-[11px] text-gray-600 dark:text-gray-300">{feature}</span>
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                    )}
-                    <CardContent className="p-4 text-center flex flex-col items-center gap-2">
-                      <motion.div
-                        className={`w-12 h-12 rounded-xl flex items-center justify-center text-2xl ${getNicheColorClass(niche.color)}`}
-                        whileHover={{ y: -4, scale: 1.15 }}
-                        transition={{ type: 'spring', stiffness: 400, damping: 15 }}
-                      >
-                        {niche.icon}
-                      </motion.div>
-                      <h3 className="font-semibold text-sm leading-tight">{niche.name}</h3>
-                      <p className="text-[13px] text-gray-500 dark:text-gray-400 leading-snug">{niche.description}</p>
-                    </CardContent>
-                  </Card>
+                    </div>
+                  </div>
                 </StaggerItem>
               );
             })}
@@ -1279,7 +1507,14 @@ export default function LandingPage() {
             </div>
           </FadeIn>
 
-          <div className="mt-14 grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="mt-14 grid sm:grid-cols-2 lg:grid-cols-3 gap-6 relative">
+            {/* Connecting dotted lines between cards (desktop only) */}
+            <div className="hidden lg:block">
+              {/* Row 1: between cards 0-1 and 1-2 */}
+              <div className="feature-dotted-line" style={{ left: '33.33%', width: '33.33%', top: 'calc(16.67% + 24px)' }} />
+              {/* Row 2: between cards 3-4 and 4-5 */}
+              <div className="feature-dotted-line" style={{ left: '33.33%', width: '33.33%', top: 'calc(50% + 24px)' }} />
+            </div>
             {FEATURES.map((feature, index) => (
               <FeatureCard key={feature.title} feature={feature} index={index} />
             ))}
@@ -1443,7 +1678,7 @@ export default function LandingPage() {
                     <div className="mt-4">
                       <div className="flex items-baseline justify-center gap-1">
                         {tier.price > 0 && <IndianRupee className={`w-7 h-7 ${tier.popular ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-600 dark:text-gray-400'}`} />}
-                        <span className={`${tier.popular ? 'text-6xl' : 'text-5xl'} font-extrabold tracking-tight`}>{tier.price > 0 ? tier.price : 'Free'}</span>
+                        <span className={`${tier.popular ? 'text-6xl price-gradient-text' : 'text-5xl'} font-extrabold tracking-tight`}>{tier.price > 0 ? tier.price : 'Free'}</span>
                         {tier.price > 0 && <span className="text-gray-500 dark:text-gray-400 text-lg">{tier.period}</span>}
                         {tier.price === 0 && <span className="text-gray-500 dark:text-gray-400 text-lg ml-1">{tier.period}</span>}
                       </div>
@@ -1475,14 +1710,14 @@ export default function LandingPage() {
                   <CardContent className={`pb-2 ${tier.popular ? 'relative z-10' : ''}`}>
                     <div className="space-y-3">
                       {tier.features.map((feature) => (
-                        <div key={feature.name} className="flex items-start gap-3">
-                          <div className={`w-5 h-5 rounded-full flex items-center justify-center mt-0.5 shrink-0 ${
+                        <div key={feature.name} className="flex items-start gap-3 pricing-feature-row group/row">
+                          <div className={`w-5 h-5 rounded-full flex items-center justify-center mt-0.5 shrink-0 transition-all duration-200 ${
                             feature.included
-                              ? 'bg-emerald-100 dark:bg-emerald-900/30'
+                              ? 'bg-emerald-100 dark:bg-emerald-900/30 group-hover/row:bg-emerald-200 dark:group-hover/row:bg-emerald-800/40'
                               : 'bg-gray-100 dark:bg-gray-800'
                           }`}>
                             {feature.included ? (
-                              <Check className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+                              <Check className="w-3 h-3 text-emerald-600 dark:text-emerald-400 pricing-check-animate" />
                             ) : (
                               <X className="w-3 h-3 text-gray-400" />
                             )}
@@ -1595,9 +1830,10 @@ export default function LandingPage() {
                         <Card className={`h-full border-gray-200 dark:border-gray-800 hover:shadow-xl transition-all duration-500 overflow-hidden relative bg-gradient-to-br from-white via-white to-emerald-50/30 dark:from-gray-900 dark:via-gray-900 dark:to-emerald-950/20 ${
                           isHighlighted ? 'shadow-xl ring-2 ring-emerald-500/30 scale-[1.02]' : ''
                         }`}>
-                          <div className="absolute top-3 right-4 text-6xl font-serif text-emerald-500/10 dark:text-emerald-400/10 leading-none select-none pointer-events-none">
-                            &ldquo;
-                          </div>
+                          {/* Quote icon in background */}
+                          <svg className="quote-icon-bg" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M9.983 3v7.391c0 5.704-3.731 9.57-8.983 10.609l-.995-2.151c2.432-.917 3.995-3.638 3.995-5.849h-4v-10h9.983zm14.017 0v7.391c0 5.704-3.748 9.571-9 10.609l-.996-2.151c2.433-.917 3.996-3.638 3.996-5.849h-3.983v-10h9.983z"/>
+                          </svg>
                           <div className={`h-1.5 bg-gradient-to-r ${t.color} transition-all duration-500 ${isHighlighted ? 'h-2' : ''}`} />
                           <CardContent className="p-6">
                             <div className="flex gap-0.5 mb-3">
@@ -1647,9 +1883,10 @@ export default function LandingPage() {
                         transition={{ duration: 0.4, ease: 'easeInOut' }}
                       >
                         <Card className="border-gray-200 dark:border-gray-800 overflow-hidden relative bg-gradient-to-br from-white via-white to-emerald-50/30 dark:from-gray-900 dark:via-gray-900 dark:to-emerald-950/20">
-                          <div className="absolute top-3 right-4 text-6xl font-serif text-emerald-500/10 dark:text-emerald-400/10 leading-none select-none pointer-events-none">
-                            &ldquo;
-                          </div>
+                          {/* Quote icon in background */}
+                          <svg className="quote-icon-bg" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M9.983 3v7.391c0 5.704-3.731 9.57-8.983 10.609l-.995-2.151c2.432-.917 3.995-3.638 3.995-5.849h-4v-10h9.983zm14.017 0v7.391c0 5.704-3.748 9.571-9 10.609l-.996-2.151c2.433-.917 3.996-3.638 3.996-5.849h-3.983v-10h9.983z"/>
+                          </svg>
                           <div className={`h-1.5 bg-gradient-to-r ${t.color}`} />
                           <CardContent className="p-6">
                             <div className="flex gap-0.5 mb-3">
@@ -1854,6 +2091,27 @@ export default function LandingPage() {
                   </form>
                 )}
                 <p className="text-[11px] text-gray-600 mt-1.5">No spam. Unsubscribe anytime.</p>
+              </div>
+              {/* App Store Badges */}
+              <div className="mt-6 flex gap-3">
+                <a href="#" className="app-store-badge" aria-label="Download on the App Store">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
+                  </svg>
+                  <div>
+                    <div className="badge-text-small">Download on the</div>
+                    <div className="badge-text-large">App Store</div>
+                  </div>
+                </a>
+                <a href="#" className="app-store-badge" aria-label="Get it on Google Play">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M3 20.5v-17c0-.59.34-1.11.84-1.35L13.69 12l-9.85 9.85c-.5-.24-.84-.76-.84-1.35zm13.81-5.38L6.05 21.34l8.49-8.49 2.27 2.27zm3.35-1.86c.43.25.79.73.79 1.24s-.36.99-.79 1.24l-2.27 1.33-2.5-2.5 2.5-2.5 2.27 1.19zM6.05 2.66l10.76 6.22-2.27 2.27-8.49-8.49z"/>
+                  </svg>
+                  <div>
+                    <div className="badge-text-small">GET IT ON</div>
+                    <div className="badge-text-large">Google Play</div>
+                  </div>
+                </a>
               </div>
             </div>
 
