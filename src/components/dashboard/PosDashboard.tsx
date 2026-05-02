@@ -2,8 +2,10 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAppStore } from '@/lib/store';
+import { useTheme } from 'next-themes';
 import { NICHES, getNicheBySlug } from '@/lib/types';
 import type { NicheSlug } from '@/lib/types';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -66,6 +68,7 @@ import {
   GraduationCap,
   Car,
   MoreHorizontal,
+  Clock,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import BillingPos from '@/components/dashboard/BillingPos';
@@ -227,6 +230,16 @@ function DashboardOverview({ storeId, niche }: { storeId: string; niche: string 
     stock: number;
     lowStockThreshold: number;
   }>>([]);
+
+  const salesData = [
+    { day: 'Mon', sales: 12400, orders: 18 },
+    { day: 'Tue', sales: 18200, orders: 24 },
+    { day: 'Wed', sales: 15800, orders: 21 },
+    { day: 'Thu', sales: 22100, orders: 32 },
+    { day: 'Fri', sales: 19500, orders: 28 },
+    { day: 'Sat', sales: 28400, orders: 42 },
+    { day: 'Sun', sales: 21300, orders: 31 },
+  ];
 
   const accent = getNicheAccent(niche);
   const accentBg = getNicheAccentBg(niche);
@@ -511,31 +524,59 @@ function DashboardOverview({ storeId, niche }: { storeId: string; niche: string 
           </CardContent>
         </Card>
 
-        {/* Sales Chart Placeholder */}
+        {/* Sales Chart */}
         <Card className="shadow-sm">
           <CardHeader className="pb-3">
             <CardTitle className="text-lg font-semibold">Sales Overview</CardTitle>
             <CardDescription>Revenue trend for the past 7 days</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="flex flex-col items-center justify-center py-8 text-gray-500 dark:text-gray-400">
-              <div className="w-full flex items-end gap-1.5 h-32 mb-4">
-                {[40, 65, 50, 80, 55, 90, 70].map((h, i) => (
-                  <div
-                    key={i}
-                    className="flex-1 rounded-t bg-gradient-to-t from-emerald-500 to-emerald-300 dark:from-emerald-600 dark:to-emerald-400 opacity-80 transition-all duration-300 hover:opacity-100"
-                    style={{ height: `${h}%` }}
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={salesData} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="salesGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" className="dark:opacity-20" />
+                  <XAxis
+                    dataKey="day"
+                    tick={{ fontSize: 12, fill: '#9ca3af' }}
+                    axisLine={{ stroke: '#e5e7eb' }}
+                    tickLine={false}
                   />
-                ))}
-              </div>
-              <div className="flex justify-between w-full text-xs text-gray-400 dark:text-gray-500 px-1">
-                {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day) => (
-                  <span key={day}>{day}</span>
-                ))}
-              </div>
-              <p className="text-xs mt-4 text-gray-400 dark:text-gray-500">
-                Interactive sales chart coming soon
-              </p>
+                  <YAxis
+                    tick={{ fontSize: 12, fill: '#9ca3af' }}
+                    axisLine={false}
+                    tickLine={false}
+                    tickFormatter={(value: number) => `₹${(value / 1000).toFixed(0)}k`}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '8px',
+                      boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)',
+                      fontSize: '12px',
+                    }}
+                    formatter={(value: number, name: string) => [
+                      name === 'sales' ? `₹${value.toLocaleString('en-IN')}` : value,
+                      name === 'sales' ? 'Sales' : 'Orders',
+                    ]}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="sales"
+                    stroke="#10b981"
+                    strokeWidth={2.5}
+                    fill="url(#salesGradient)"
+                    dot={{ r: 4, fill: '#10b981', strokeWidth: 2, stroke: '#fff' }}
+                    activeDot={{ r: 6, fill: '#10b981', strokeWidth: 2, stroke: '#fff' }}
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
             </div>
           </CardContent>
         </Card>
@@ -585,9 +626,10 @@ function PlaceholderTab({ tab, label }: { tab: string; label: string }) {
 // ─── Main Dashboard Component ────────────────────────────────
 
 export default function PosDashboard() {
-  const { user, store, subscription, theme, toggleTheme, logout, dashboardTab, setDashboardTab } =
+  const { user, store, subscription, logout, dashboardTab, setDashboardTab, globalSearch, setGlobalSearch } =
     useAppStore();
-  const [searchQuery, setSearchQuery] = useState('');
+  const { theme, setTheme } = useTheme();
+  const [searchQuery, setSearchQuery] = useState(globalSearch || '');
   const [notifications, setNotifications] = useState(3);
 
   const niche = store?.niche || 'restaurant';
@@ -595,11 +637,6 @@ export default function PosDashboard() {
   const nicheAccent = getNicheAccent(niche);
   const nicheAccentBg = getNicheAccentBg(niche);
   const nicheRing = getNicheRing(niche);
-
-  // Apply dark mode
-  useEffect(() => {
-    document.documentElement.classList.toggle('dark', theme === 'dark');
-  }, [theme]);
 
   // Get niche-specific nav
   const nicheNavItem = NICHE_NAV_ITEMS[niche];
@@ -617,12 +654,12 @@ export default function PosDashboard() {
   const getSubBadge = () => {
     switch (subStatus) {
       case 'active':
-        return <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border-0 text-[10px]">Active</Badge>;
+        return <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border-0 text-[10px] gap-1"><Zap className="w-3 h-3" />Active</Badge>;
       case 'past_due':
-        return <Badge className="bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 border-0 text-[10px]">Past Due</Badge>;
+        return <Badge className="bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 border-0 text-[10px] gap-1"><AlertTriangle className="w-3 h-3" />Past Due</Badge>;
       case 'trial':
       default:
-        return <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border-0 text-[10px]">Trial</Badge>;
+        return <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border-0 text-[10px] gap-1"><Clock className="w-3 h-3" />Trial</Badge>;
     }
   };
 
@@ -693,14 +730,56 @@ export default function PosDashboard() {
     toast.success('Logged out successfully');
   };
 
+  const handleGlobalSearch = async () => {
+    const query = searchQuery.trim();
+    if (!query) return;
+
+    const storeId = store?.id;
+    if (!storeId) return;
+
+    try {
+      // Check if search matches product names
+      const prodRes = await fetch(`/api/products?storeId=${storeId}&search=${encodeURIComponent(query)}`);
+      if (prodRes.ok) {
+        const prodData = await prodRes.json();
+        if (prodData.products && prodData.products.length > 0) {
+          setGlobalSearch(query);
+          setDashboardTab('products');
+          return;
+        }
+      }
+
+      // Check if search matches customer names
+      const custRes = await fetch(`/api/customers?storeId=${storeId}&search=${encodeURIComponent(query)}`);
+      if (custRes.ok) {
+        const custData = await custRes.json();
+        if (custData.customers && custData.customers.length > 0) {
+          setGlobalSearch(query);
+          setDashboardTab('customers');
+          return;
+        }
+      }
+
+      // Default: go to Products tab with search
+      setGlobalSearch(query);
+      setDashboardTab('products');
+    } catch {
+      // Fallback: go to products
+      setGlobalSearch(query);
+      setDashboardTab('products');
+    }
+  };
+
   return (
     <SidebarProvider>
       {/* ═══════════════════ SIDEBAR ═══════════════════ */}
-      <Sidebar collapsible="icon" className="border-r border-gray-200 dark:border-gray-800">
+      <Sidebar collapsible="icon" className="border-r border-gray-200 dark:border-gray-800 relative">
+        {/* Subtle border-right glow */}
+        <div className={`absolute right-0 top-0 bottom-0 w-px bg-gradient-to-b from-emerald-400/40 via-emerald-500/20 to-transparent dark:from-emerald-500/30 dark:via-emerald-600/10`} />
         {/* Logo Area */}
-        <SidebarHeader className="p-4">
+        <SidebarHeader className="p-4 bg-gradient-to-r from-emerald-50/80 to-transparent dark:from-emerald-950/30 dark:to-transparent">
           <div className="flex items-center gap-2">
-            <div className={`w-9 h-9 rounded-lg ${getNicheSidebarBg(niche)} flex items-center justify-center shrink-0`}>
+            <div className={`w-9 h-9 rounded-lg ${getNicheSidebarBg(niche)} flex items-center justify-center shrink-0 shadow-md shadow-emerald-500/20`}>
               <Zap className="w-5 h-5 text-white" />
             </div>
             <div className="flex flex-col min-w-0 group-data-[collapsible=icon]:hidden">
@@ -729,10 +808,10 @@ export default function PosDashboard() {
                         isActive={isActive}
                         onClick={() => setDashboardTab(item.tab)}
                         tooltip={item.label}
-                        className={`transition-colors ${
+                        className={`transition-all duration-200 ${
                           isActive
-                            ? `${nicheAccent} font-semibold ${nicheAccentBg}`
-                            : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100'
+                            ? `${nicheAccent} font-semibold ${nicheAccentBg} scale-[1.02]`
+                            : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:scale-[1.02] hover:bg-gray-100 dark:hover:bg-gray-800/50'
                         }`}
                       >
                         <Icon className="w-4 h-4" />
@@ -749,10 +828,10 @@ export default function PosDashboard() {
         <SidebarSeparator />
 
         {/* Footer */}
-        <SidebarFooter className="p-3">
+        <SidebarFooter className="p-3 bg-gradient-to-t from-emerald-50/50 to-transparent dark:from-emerald-950/20 dark:to-transparent">
           {/* Subscription Badge */}
-          <div className="flex items-center justify-between px-2 group-data-[collapsible=icon]:hidden">
-            <span className="text-xs text-gray-500 dark:text-gray-400">Plan</span>
+          <div className="flex items-center justify-between px-2 py-1.5 rounded-lg bg-white/60 dark:bg-gray-800/40 group-data-[collapsible=icon]:hidden">
+            <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">Plan</span>
             {getSubBadge()}
           </div>
 
@@ -818,11 +897,12 @@ export default function PosDashboard() {
 
           {/* Search Bar */}
           <div className="flex-1 max-w-md relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 cursor-pointer" onClick={handleGlobalSearch} />
             <Input
-              placeholder="Search products, customers, orders..."
+              placeholder="Search products, customers, orders... (Enter to search)"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') handleGlobalSearch(); }}
               className="pl-9 h-9 bg-gray-100 dark:bg-gray-800 border-0 focus-visible:ring-1 focus-visible:ring-gray-300 dark:focus-visible:ring-gray-600 text-sm"
             />
           </div>
@@ -875,7 +955,7 @@ export default function PosDashboard() {
             </Button>
 
             {/* Dark Mode Toggle */}
-            <Button variant="ghost" size="icon" onClick={toggleTheme} className="h-9 w-9">
+            <Button variant="ghost" size="icon" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} className="h-9 w-9">
               {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
               <span className="sr-only">Toggle theme</span>
             </Button>

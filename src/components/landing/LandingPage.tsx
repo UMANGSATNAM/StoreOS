@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, useInView } from 'framer-motion';
 import { useAppStore } from '@/lib/store';
+import { useTheme } from 'next-themes';
 import { NICHES } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
@@ -136,6 +137,27 @@ function getNicheColorClass(color: string): string {
   return map[color] || 'bg-gray-100 text-gray-600 dark:bg-gray-800/30 dark:text-gray-400';
 }
 
+function getNicheBorderTop(color: string): string {
+  const map: Record<string, string> = {
+    orange: 'border-t-orange-500',
+    pink: 'border-t-pink-500',
+    emerald: 'border-t-emerald-500',
+    violet: 'border-t-violet-500',
+    green: 'border-t-green-500',
+    cyan: 'border-t-cyan-500',
+    blue: 'border-t-blue-500',
+    red: 'border-t-red-500',
+    slate: 'border-t-slate-500',
+    amber: 'border-t-amber-500',
+    zinc: 'border-t-zinc-500',
+    yellow: 'border-t-yellow-500',
+    lime: 'border-t-lime-500',
+    teal: 'border-t-teal-500',
+    indigo: 'border-t-indigo-500',
+  };
+  return map[color] || 'border-t-gray-500';
+}
+
 // ─── Testimonials Data ────────────────────────────────────────
 
 const TESTIMONIALS = [
@@ -231,8 +253,7 @@ export default function LandingPage() {
   const setUser = useAppStore((s) => s.setUser);
   const setStore = useAppStore((s) => s.setStore);
   const setSubscription = useAppStore((s) => s.setSubscription);
-  const theme = useAppStore((s) => s.theme);
-  const toggleTheme = useAppStore((s) => s.toggleTheme);
+  const { theme, setTheme } = useTheme();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [demoLoading, setDemoLoading] = useState(false);
@@ -255,6 +276,13 @@ export default function LandingPage() {
           niche: data.demoStore.niche,
           template: 'rest-classic',
           onboardingComplete: true,
+          taxRate: data.demoStore.taxRate ?? 5,
+          ownerName: data.demoStore.ownerName,
+          city: data.demoStore.city,
+          state: data.demoStore.state,
+          phone: data.demoStore.phone,
+          address: data.demoStore.address,
+          gstNumber: data.demoStore.gstNumber,
         });
         setSubscription({
           plan: data.demoSubscription.plan,
@@ -291,6 +319,25 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100 overflow-x-hidden">
+      {/* Global styles for animations */}
+      <style jsx global>{`
+        @keyframes heroGradient {
+          0% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+          100% { background-position: 0% 50%; }
+        }
+        @keyframes float {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-12px); }
+        }
+        .hero-gradient-animated {
+          background-size: 200% 200%;
+          animation: heroGradient 8s ease infinite;
+        }
+        .float-animation {
+          animation: float 4s ease-in-out infinite;
+        }
+      `}</style>
       {/* ═══════════════════ NAVBAR ═══════════════════ */}
       <nav
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
@@ -347,7 +394,7 @@ export default function LandingPage() {
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={toggleTheme}
+                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
                 className="rounded-full"
               >
                 {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
@@ -356,7 +403,7 @@ export default function LandingPage() {
 
             {/* Mobile Menu Toggle */}
             <div className="flex items-center gap-2 md:hidden">
-              <Button variant="ghost" size="icon" onClick={toggleTheme} className="rounded-full">
+              <Button variant="ghost" size="icon" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} className="rounded-full">
                 {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
               </Button>
               <Button variant="ghost" size="icon" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
@@ -402,8 +449,8 @@ export default function LandingPage() {
 
       {/* ═══════════════════ HERO SECTION ═══════════════════ */}
       <section className="relative pt-28 pb-20 sm:pt-36 sm:pb-28 overflow-hidden">
-        {/* Background Gradient */}
-        <div className="absolute inset-0 bg-gradient-to-br from-emerald-50 via-white to-teal-50 dark:from-gray-950 dark:via-gray-950 dark:to-emerald-950/30" />
+        {/* Background Gradient - Animated */}
+        <div className="absolute inset-0 bg-gradient-to-br from-emerald-50 via-white to-teal-50 dark:from-gray-950 dark:via-gray-950 dark:to-emerald-950/30 hero-gradient-animated" />
         <div className="absolute top-20 left-1/4 w-96 h-96 bg-emerald-200/30 dark:bg-emerald-800/10 rounded-full blur-3xl" />
         <div className="absolute bottom-10 right-1/4 w-80 h-80 bg-teal-200/30 dark:bg-teal-800/10 rounded-full blur-3xl" />
 
@@ -478,7 +525,7 @@ export default function LandingPage() {
 
             {/* Right: POS Mockup */}
             <FadeIn direction="left" delay={0.3}>
-              <div className="relative">
+              <div className="relative float-animation">
                 <div className="absolute -inset-4 bg-gradient-to-r from-emerald-500/20 to-teal-500/20 rounded-3xl blur-2xl" />
                 <div className="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 overflow-hidden">
                   {/* Mockup Title Bar */}
@@ -575,7 +622,7 @@ export default function LandingPage() {
           <StaggerContainer className="mt-14 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
             {NICHES.map((niche) => (
               <StaggerItem key={niche.slug}>
-                <Card className="group hover:shadow-lg hover:-translate-y-1 transition-all duration-300 cursor-pointer border-gray-200 dark:border-gray-800 h-full">
+                <Card className={`group hover:shadow-lg hover:-translate-y-1 transition-all duration-300 cursor-pointer border-gray-200 dark:border-gray-800 h-full border-t-4 ${getNicheBorderTop(niche.color)}`}>
                   <CardContent className="p-4 text-center flex flex-col items-center gap-2">
                     <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-2xl transition-transform duration-300 group-hover:scale-110 ${getNicheColorClass(niche.color)}`}>
                       {niche.icon}
@@ -714,9 +761,13 @@ export default function LandingPage() {
           <FadeIn delay={0.2}>
             <div className="mt-14 flex justify-center">
               <Card className="relative max-w-md w-full border-2 border-emerald-500 dark:border-emerald-600 shadow-xl shadow-emerald-500/10">
-                <div className="absolute -top-4 left-1/2 -translate-x-1/2">
+                <div className="absolute -top-4 left-1/2 -translate-x-1/2 flex gap-2">
                   <Badge className="bg-emerald-600 text-white border-0 rounded-full px-4 py-1 text-sm shadow-lg shadow-emerald-600/25">
+                    <Sparkles className="w-3 h-3 mr-1" />
                     Most Popular
+                  </Badge>
+                  <Badge className="bg-amber-500 text-white border-0 rounded-full px-3 py-1 text-xs shadow-lg shadow-amber-500/25">
+                    🔥 Popular
                   </Badge>
                 </div>
                 <CardHeader className="text-center pb-2 pt-8">

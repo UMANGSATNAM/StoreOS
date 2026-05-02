@@ -86,6 +86,13 @@ export interface AppStore {
   niche: string;
   template: string;
   onboardingComplete: boolean;
+  taxRate?: number;
+  ownerName?: string;
+  city?: string;
+  state?: string;
+  phone?: string;
+  address?: string;
+  gstNumber?: string;
 }
 
 // --- Subscription Types ---

@@ -160,8 +160,15 @@ export default function StoreSetup() {
         id: createdStore.id,
         name: createdStore.name,
         niche: createdStore.niche,
-        template: createdStore.template,
+        template: createdStore.template || onboardingTemplate || 'default',
         onboardingComplete: createdStore.onboardingComplete,
+        taxRate: createdStore.taxRate,
+        ownerName: createdStore.ownerName,
+        city: createdStore.city,
+        state: createdStore.state,
+        phone: createdStore.phone,
+        address: createdStore.address,
+        gstNumber: createdStore.gstNumber,
       });
 
       toast.success('Welcome to StoreOS! Your POS is ready.', {

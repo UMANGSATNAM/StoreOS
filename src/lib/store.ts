@@ -46,6 +46,10 @@ interface AppState {
   dashboardTab: string;
   setDashboardTab: (tab: string) => void;
 
+  // --- Global Search ---
+  globalSearch: string;
+  setGlobalSearch: (query: string) => void;
+
   // --- Sidebar ---
   sidebarOpen: boolean;
   setSidebarOpen: (open: boolean) => void;
@@ -155,6 +159,10 @@ export const useAppStore = create<AppState>()(
       // --- Dashboard Tab ---
       dashboardTab: 'overview',
       setDashboardTab: (tab) => set({ dashboardTab: tab }),
+
+      // --- Global Search ---
+      globalSearch: '',
+      setGlobalSearch: (query) => set({ globalSearch: query }),
 
       // --- Sidebar ---
       sidebarOpen: true,

@@ -39,8 +39,13 @@ export async function POST(request: NextRequest) {
 
     const { password: _, ...userWithoutPassword } = user;
 
+    // Extract store and subscription for convenience at top level
+    const { store, subscription } = userWithoutPassword as typeof userWithoutPassword & { store?: unknown; subscription?: unknown };
+
     return NextResponse.json({
       user: userWithoutPassword,
+      store: store || null,
+      subscription: subscription || null,
       message: 'Login successful',
     });
   } catch (error) {

@@ -123,7 +123,7 @@ const emptyCustomerForm: CustomerFormData = {
 // ─── Main Component ───
 
 export default function CustomersPanel() {
-  const { store } = useAppStore();
+  const { store, globalSearch, setGlobalSearch } = useAppStore();
   const storeId = store?.id || '';
 
   // Data state
@@ -131,7 +131,7 @@ export default function CustomersPanel() {
   const [loading, setLoading] = useState(true);
 
   // Search
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState(globalSearch || '');
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -178,6 +178,14 @@ export default function CustomersPanel() {
   useEffect(() => {
     setCurrentPage(1);
   }, [search]);
+
+  // Consume global search from Zustand and clear it
+  useEffect(() => {
+    if (globalSearch) {
+      setSearch(globalSearch);
+      setGlobalSearch('');
+    }
+  }, [globalSearch, setGlobalSearch]);
 
   // ─── Filtered Customers ───
 

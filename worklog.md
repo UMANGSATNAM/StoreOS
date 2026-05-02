@@ -252,3 +252,146 @@ Next Phase Priorities:
 2. Integrate next-themes for proper dark mode support
 3. Polish UI with more animations and details
 4. Test full user flow end-to-end
+
+---
+Task ID: feat-1
+Agent: fullstack-improver
+Task: Fix store setup flow and add key features
+
+Work Log:
+- **Task 1: Fixed StoreSetup.tsx to pass taxRate to Zustand**
+  - Updated `setStore` call in handleSubmit to include all fields from the created store response: taxRate, ownerName, city, state, phone, address, gstNumber
+  - Template field now uses `createdStore.template || onboardingTemplate || 'default'` fallback
+  - This ensures BillingPos uses the correct tax rate instead of defaulting to 18% GST
+
+- **Task 2: Fixed Login Flow to load store data into Zustand**
+  - Updated `/api/auth/login/route.ts` to return `store` and `subscription` at the top level of the response (in addition to nested in user)
+  - Updated `LoginPage.tsx` to read store/subscription from the top-level response fields
+  - Added full store field mapping including taxRate, ownerName, city, state, phone, address, gstNumber
+  - This ensures returning users get complete store data after login
+
+- **Task 3: Added Seed Data for Multiple Niches**
+  - Completely rewrote `/api/seed/route.ts` with a `NicheSeedConfig` architecture
+  - Added `niche` body parameter (default: 'restaurant') to POST /api/seed
+  - Added **Grocery/Kirana** niche config: Patel Fresh Mart, Ahmedabad, 0% tax, 6 categories (Grains, Pulses, Oils, Spices, Dairy, Snacks), 25 products with realistic Indian grocery items (Rice ₹60/kg, Atta ₹280/5kg, Dal ₹120/kg, Oil ₹180/L, etc.), some low stock items
+  - Added **Salon & Spa** niche config: Glamour Studio, Delhi, 18% GST, 5 categories (Hair Services, Skin Care, Nail Care, Bridal Packages, Men Services), 22 services (Haircut ₹300, Facial ₹800, Hair Color ₹1500, Manicure ₹400, Keratin ₹4000, Bridal Makeup ₹15000, etc.)
+  - Each niche has niche-specific seed data (restaurant: tables, salon: appointments)
+  - Orders are auto-generated with correct tax rates per niche
+  - Also cleans up niche-specific data (appointments, vehicles, rooms, members, students) on re-seed
+
+- **Task 4: Added Quick Search in Dashboard**
+  - Added `globalSearch` field and `setGlobalSearch` action to Zustand store
+  - Made the top-bar search functional in PosDashboard: pressing Enter or clicking search icon triggers `handleGlobalSearch()`
+  - Search logic: queries products API first, then customers API; navigates to Products tab if products match, Customers tab if only customers match, Products tab as default
+  - ProductsPanel and CustomersPanel now read `globalSearch` from Zustand and pre-fill their local search
+  - Global search is consumed (cleared) after being applied to prevent stale values
+
+Stage Summary:
+- Store onboarding now correctly passes all store fields (especially taxRate) to Zustand
+- Login flow now loads complete store + subscription data into Zustand
+- Seed API supports 3 niches: restaurant, grocery, salon (via body.niche parameter)
+- Dashboard search bar is functional with smart tab navigation
+- Lint passes with no errors
+
+---
+Task ID: style-1
+Agent: style-enhancer
+Task: Enhance dashboard overview, sidebar styling, landing page, and receipt modal
+
+Work Log:
+- Replaced placeholder bar chart in DashboardOverview with real recharts AreaChart
+  - Added AreaChart with gradient fill (emerald color for restaurant niche)
+  - XAxis showing day names, YAxis showing sales values with ₹ formatter
+  - Custom Tooltip showing sales and orders
+  - ResponsiveContainer for adaptive sizing
+  - Added salesData mock: 7 days with sales and orders
+- Improved PosDashboard sidebar styling
+  - Added subtle gradient background to sidebar header (emerald-50/80 → transparent)
+  - Added border-right glow effect with niche color gradient
+  - Added shadow to logo icon (shadow-md shadow-emerald-500/20)
+  - Improved nav item hover states: scale-[1.02], transition-all duration-200, hover bg
+  - Made subscription badge more prominent with icon (Zap for Active, AlertTriangle for Past Due, Clock for Trial)
+  - Enhanced subscription badge container with bg-white/60 rounded-lg styling
+  - Added gradient footer background (from-emerald-50/50 to-transparent)
+- Enhanced Landing Page styling
+  - Added animated gradient to hero background (CSS @keyframes heroGradient, 8s infinite)
+  - Added floating animation to POS mockup (CSS @keyframes float, 4s ease-in-out)
+  - Added colored top border to niche cards using getNicheBorderTop() helper (border-t-4)
+  - Added "Popular" badge (amber-colored) to pricing card alongside "Most Popular"
+  - Added Sparkles icon to "Most Popular" badge
+- Enhanced Receipt Modal in BillingPos
+  - Better receipt layout with proper borders (border-b-2, border-dashed separators)
+  - Store logo placeholder at top (Package icon in rounded emerald container)
+  - GSTIN display when available
+  - Receipt number and date displayed prominently in rounded bg container
+  - Item table with proper columns (Item, Qty, Rate, Amount) and uppercase headers
+  - Tax breakdown: CGST + SGST shown separately
+  - Total in big bold text (text-2xl) with emerald color
+  - "Thank you! Visit again! 🙏" footer with font-semibold
+  - Print button and Close button with icons at bottom
+  - Whole receipt wrapped in bordered card-like container
+
+Stage Summary:
+- Real AreaChart replacing placeholder bars in dashboard overview
+- Sidebar polished with gradient headers, glow borders, animated nav items, prominent badges
+- Landing page enhanced with animated hero gradient, floating mockup, colored niche cards, popular badge
+- Receipt modal redesigned with professional receipt layout, logo, tax breakdown, bold totals
+
+---
+Task ID: cron-review-1
+Agent: QA Review Agent
+Task: Periodic review, QA testing, bug fixes, and feature enhancements
+
+Work Log:
+- Performed QA testing using agent-browser on landing page, auth flow, dashboard, billing/POS
+- **BUG FIX: Cart not working** — Product card hover overlay (absolute inset-0 div) was intercepting click events. Fixed by adding `pointer-events-none` class to the overlay div.
+- **BUG FIX: Theme toggle not working** — Replaced Zustand-based theme management with next-themes (ThemeProvider in layout.tsx). Now properly applies `dark` class to document.documentElement.
+- **BUG FIX: Tax rate hardcoded** — BillingPos was using hardcoded 18% GST instead of store's configured rate. Fixed by reading `store.taxRate` from Zustand with fallback to 18%.
+- **BUG FIX: Store data not fully loaded** — AppStore type expanded to include taxRate, ownerName, city, state, phone, address, gstNumber. LandingPage Try Demo, StoreSetup, and LoginPage all now pass complete store data.
+- **ENHANCEMENT: Real charts** — Dashboard overview now has recharts AreaChart with gradient fills, proper tooltips, and responsive containers
+- **ENHANCEMENT: Multi-niche seed** — Seed API now supports `niche` body parameter for restaurant, grocery, and salon niches
+- **ENHANCEMENT: Functional search** — Dashboard search bar queries products/customers APIs and navigates to the relevant tab
+- **ENHANCEMENT: Login flow** — Login API now returns store and subscription data; LoginPage loads full store data into Zustand
+- **ENHANCEMENT: Styling** — Animated hero gradient, floating POS mockup, colored niche card borders, popular badge, receipt redesign
+
+Stage Summary:
+- All critical bugs fixed (cart clicks, dark mode, tax rate, data flow)
+- Enhanced with real charts, multi-niche demo, functional search, professional receipt
+- Lint passes with zero errors
+- Dev server compiles and runs successfully
+
+Current Project Status:
+✅ COMPLETE — StoreOS POS SaaS Platform
+- ✅ Landing page with animated hero, 15 niche cards, pricing, testimonials
+- ✅ Auth (login/signup) with password strength, form validation
+- ✅ 3-step onboarding (niche → template → store setup) with full data pass-through
+- ✅ POS Dashboard with niche-aware sidebar, real charts, functional search
+- ✅ Billing/POS with cart, payments (Cash/UPI/Card/Split), professional receipts
+- ✅ Products & Inventory with CRUD, categories, CSV import, low stock alerts
+- ✅ Customer management with loyalty points, purchase history
+- ✅ Orders management with status tracking, filters
+- ✅ Staff management with roles, shifts, commission
+- ✅ Reports & Analytics with recharts (AreaChart, BarChart, PieChart)
+- ✅ Settings with 8 tabs (Profile, Tax, Receipt, Payment, Branding, Subscription, WhatsApp, Data)
+- ✅ 6 niche-specific panels (Tables, Appointments, Rooms, Members, Students, Vehicles)
+- ✅ Admin Super Panel with platform analytics, store management
+- ✅ Dark mode via next-themes (persists across sessions)
+- ✅ Seed API with 3 niche configurations (restaurant, grocery, salon)
+- ✅ "Try Demo" quick-login button on landing page
+- ✅ 17+ API routes, Prisma database, Zustand state management
+- ✅ Responsive design, keyboard shortcuts, toast notifications
+
+Unresolved Issues / Risks:
+- Agent-browser click doesn't trigger React onClick reliably (workaround: use JS click)
+- Some niche-specific features are placeholder-level (e.g., Zomato integration, WhatsApp API)
+- PWA/offline mode not yet implemented
+- No actual Razorpay/Stripe integration (mock only)
+- Seed data limited to 3 niches (restaurant, grocery, salon)
+
+Priority Recommendations for Next Phase:
+1. Add more niche seed data for remaining 12 business types
+2. Implement PWA with service worker for offline billing
+3. Add real Razorpay payment integration
+4. Implement WhatsApp notification service
+5. Add multi-language support (English + Hindi)
+6. Performance optimization for large product catalogs

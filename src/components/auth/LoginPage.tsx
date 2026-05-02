@@ -78,22 +78,33 @@ export default function LoginPage() {
       };
       setUser(appUser);
 
-      if (apiUser.subscription) {
+      // Set subscription from top-level response
+      const apiSubscription = data.subscription;
+      if (apiSubscription) {
         const appSub: AppSubscription = {
-          plan: apiUser.subscription.plan,
-          status: apiUser.subscription.status,
-          trialEndsAt: apiUser.subscription.trialEndsAt,
+          plan: apiSubscription.plan,
+          status: apiSubscription.status,
+          trialEndsAt: apiSubscription.trialEndsAt,
         };
         setSubscription(appSub);
       }
 
-      if (apiUser.store) {
+      // Set store from top-level response with full data
+      const apiStore = data.store;
+      if (apiStore) {
         const appStore: AppStore = {
-          id: apiUser.store.id,
-          name: apiUser.store.name,
-          niche: apiUser.store.niche,
-          template: apiUser.store.template,
-          onboardingComplete: apiUser.store.onboardingComplete,
+          id: apiStore.id,
+          name: apiStore.name,
+          niche: apiStore.niche,
+          template: apiStore.template,
+          onboardingComplete: apiStore.onboardingComplete,
+          taxRate: apiStore.taxRate,
+          ownerName: apiStore.ownerName,
+          city: apiStore.city,
+          state: apiStore.state,
+          phone: apiStore.phone,
+          address: apiStore.address,
+          gstNumber: apiStore.gstNumber,
         };
         setStore(appStore);
         setCurrentView({ page: 'dashboard' });

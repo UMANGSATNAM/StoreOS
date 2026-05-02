@@ -136,7 +136,7 @@ export default function BillingPos() {
 
   // ─── Computed Values ────────────────────────────────────────────
   const subtotal = cartTotal();
-  const storeTaxRate = store?.id ? 18 : 0; // Default 18% GST; in real app from store config
+  const storeTaxRate = store?.taxRate ?? 18;
   const taxAmount = Math.round(subtotal * (storeTaxRate / 100) * 100) / 100;
   const totalDiscount = couponDiscount;
   const totalAmount = Math.round((subtotal + taxAmount - totalDiscount) * 100) / 100;
@@ -684,7 +684,7 @@ export default function BillingPos() {
                   return (
                     <button
                       key={product.id}
-                      onClick={() => !isOutOfStock && handleAddToCart(product)}
+                      onClick={() => { if (!isOutOfStock) handleAddToCart(product); }}
                       disabled={isOutOfStock}
                       className={`relative flex flex-col items-start p-3 rounded-xl border-2 transition-all duration-150 text-left group
                         ${isOutOfStock
@@ -720,7 +720,7 @@ export default function BillingPos() {
                       </div>
                       {/* Hover indicator */}
                       {!isOutOfStock && (
-                        <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-emerald-500/0 group-hover:bg-emerald-500/10 transition-colors">
+                        <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-emerald-500/0 group-hover:bg-emerald-500/10 transition-colors pointer-events-none">
                           <Plus className="w-6 h-6 text-emerald-600 opacity-0 group-hover:opacity-100 transition-opacity" />
                         </div>
                       )}
@@ -1175,54 +1175,68 @@ export default function BillingPos() {
             </DialogTitle>
           </DialogHeader>
           {receiptData && (
-            <div className="space-y-4 print:space-y-2">
-              {/* Store Header */}
-              <div className="text-center border-b border-dashed border-gray-300 dark:border-gray-600 pb-3">
-                <h3 className="font-bold text-lg">{store?.name || 'StoreOS'}</h3>
-                <p className="text-xs text-gray-500">
-                  {store?.id && '123 Business Street, City'}
+            <div className="space-y-3 print:space-y-2 bg-white dark:bg-gray-900 rounded-lg border border-gray-200 dark:border-gray-700 p-6 print:p-4 print:border-0">
+              {/* Store Logo & Header */}
+              <div className="text-center border-b-2 border-gray-900 dark:border-gray-100 pb-4">
+                <div className="w-14 h-14 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center mx-auto mb-2">
+                  <Package className="w-7 h-7 text-emerald-600 dark:text-emerald-400" />
+                </div>
+                <h3 className="font-bold text-xl tracking-tight">{store?.name || 'StoreOS'}</h3>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  {store?.address || '123 Business Street, City'}
                 </p>
                 <p className="text-xs text-gray-500">
-                  {store?.id && 'Phone: +91-9876543210'}
+                  {store?.phone ? `Phone: ${store.phone}` : 'Phone: +91-9876543210'}
                 </p>
+                {store?.gstNumber && (
+                  <p className="text-xs text-gray-500 mt-0.5">GSTIN: {store.gstNumber}</p>
+                )}
               </div>
 
-              {/* Receipt Info */}
+              {/* Receipt Number & Date - Prominent */}
+              <div className="flex items-center justify-between bg-gray-50 dark:bg-gray-800/50 rounded-lg px-3 py-2">
+                <div>
+                  <p className="text-[10px] text-gray-400 uppercase tracking-wider font-medium">Receipt No.</p>
+                  <p className="text-sm font-bold text-gray-900 dark:text-gray-100">#{receiptData.orderNumber}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-[10px] text-gray-400 uppercase tracking-wider font-medium">Date & Time</p>
+                  <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{receiptData.date}</p>
+                </div>
+              </div>
+
+              {/* Customer & Payment Info */}
               <div className="flex justify-between text-xs text-gray-600 dark:text-gray-400">
-                <span>Receipt: {receiptData.orderNumber}</span>
-                <span>{receiptData.date}</span>
-              </div>
-              <div className="flex justify-between text-xs text-gray-600 dark:text-gray-400">
-                <span>Customer: {receiptData.customerName}</span>
-                <span>Payment: {receiptData.paymentMethod.toUpperCase()}</span>
+                <span>Customer: <span className="font-medium text-gray-900 dark:text-gray-100">{receiptData.customerName}</span></span>
+                <span>Payment: <span className="font-medium text-gray-900 dark:text-gray-100">{receiptData.paymentMethod.toUpperCase()}</span></span>
               </div>
 
-              <Separator className="border-dashed" />
+              <div className="border-t border-dashed border-gray-300 dark:border-gray-600" />
 
-              {/* Items */}
-              <div className="space-y-1">
-                <div className="grid grid-cols-12 text-xs font-semibold text-gray-500 pb-1 border-b border-gray-100 dark:border-gray-800">
+              {/* Items Table */}
+              <div>
+                <div className="grid grid-cols-12 text-[10px] font-bold text-gray-500 uppercase tracking-wider pb-2 border-b border-gray-200 dark:border-gray-700">
                   <span className="col-span-5">Item</span>
                   <span className="col-span-2 text-center">Qty</span>
-                  <span className="col-span-2 text-right">Price</span>
-                  <span className="col-span-3 text-right">Total</span>
+                  <span className="col-span-2 text-right">Rate</span>
+                  <span className="col-span-3 text-right">Amount</span>
                 </div>
                 {receiptData.items.map(item => (
-                  <div key={item.productId} className="grid grid-cols-12 text-xs py-0.5">
-                    <span className="col-span-5 truncate">{item.name}</span>
-                    <span className="col-span-2 text-center">{item.quantity}</span>
-                    <span className="col-span-2 text-right">₹{item.price}</span>
-                    <span className="col-span-3 text-right font-medium">₹{item.total}</span>
+                  <div key={item.productId} className="grid grid-cols-12 text-xs py-1.5 border-b border-gray-100 dark:border-gray-800 last:border-0">
+                    <span className="col-span-5 truncate font-medium text-gray-900 dark:text-gray-100">{item.name}</span>
+                    <span className="col-span-2 text-center text-gray-600 dark:text-gray-400">{item.quantity}</span>
+                    <span className="col-span-2 text-right text-gray-600 dark:text-gray-400">₹{item.price}</span>
+                    <span className="col-span-3 text-right font-semibold text-gray-900 dark:text-gray-100">₹{item.total}</span>
                   </div>
                 ))}
               </div>
 
-              <Separator className="border-dashed" />
+              <div className="border-t border-dashed border-gray-300 dark:border-gray-600" />
 
-              {/* Totals */}
-              <div className="space-y-1 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-gray-600 dark:text-gray-400">Subtotal</span>
+              {/* Totals with Tax Breakdown */}
+              <div className="space-y-1.5 text-sm">
+                <div className="flex justify-between text-gray-600 dark:text-gray-400">
+                  <span>Subtotal</span>
                   <span>₹{receiptData.subtotal}</span>
                 </div>
                 {receiptData.discountAmount > 0 && (
@@ -1231,27 +1245,32 @@ export default function BillingPos() {
                     <span>-₹{receiptData.discountAmount}</span>
                   </div>
                 )}
-                <div className="flex justify-between text-gray-600 dark:text-gray-400">
-                  <span>Tax (GST)</span>
-                  <span>₹{receiptData.taxAmount}</span>
+                <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400">
+                  <span>CGST ({(store?.taxRate ?? 18) / 2}%)</span>
+                  <span>₹{Math.round(receiptData.taxAmount / 2 * 100) / 100}</span>
                 </div>
-                <Separator className="border-dashed" />
-                <div className="flex justify-between font-bold text-lg">
-                  <span>Total</span>
-                  <span className="text-emerald-600">₹{receiptData.totalAmount}</span>
+                <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400">
+                  <span>SGST ({(store?.taxRate ?? 18) / 2}%)</span>
+                  <span>₹{Math.round(receiptData.taxAmount / 2 * 100) / 100}</span>
+                </div>
+                <div className="border-t-2 border-gray-900 dark:border-gray-100 pt-2 mt-2">
+                  <div className="flex justify-between font-bold text-2xl">
+                    <span>TOTAL</span>
+                    <span className="text-emerald-600 dark:text-emerald-400">₹{receiptData.totalAmount}</span>
+                  </div>
                 </div>
               </div>
 
-              <Separator className="border-dashed" />
+              <div className="border-t border-dashed border-gray-300 dark:border-gray-600" />
 
               {/* Footer */}
-              <div className="text-center text-xs text-gray-500 space-y-1">
-                <p>Thank you! Visit again! 🙏</p>
-                <p className="text-[10px]">Powered by StoreOS</p>
+              <div className="text-center space-y-1.5 py-2">
+                <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Thank you! Visit again! 🙏</p>
+                <p className="text-[10px] text-gray-400">Powered by StoreOS • storeos.in</p>
               </div>
 
-              {/* Print Button */}
-              <div className="flex gap-2 print:hidden">
+              {/* Action Buttons */}
+              <div className="flex gap-2 print:hidden pt-2">
                 <Button
                   onClick={() => window.print()}
                   className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white"
@@ -1260,6 +1279,7 @@ export default function BillingPos() {
                   Print Receipt
                 </Button>
                 <Button variant="outline" onClick={() => setShowReceipt(false)} className="flex-1">
+                  <X className="w-4 h-4 mr-1.5" />
                   Close
                 </Button>
               </div>

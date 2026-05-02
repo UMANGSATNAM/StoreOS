@@ -168,7 +168,7 @@ const emptyProductForm: ProductFormData = {
 // ─── Main Component ───
 
 export default function ProductsPanel() {
-  const { store } = useAppStore();
+  const { store, globalSearch, setGlobalSearch } = useAppStore();
   const storeId = store?.id || '';
 
   // Data state
@@ -177,7 +177,7 @@ export default function ProductsPanel() {
   const [loading, setLoading] = useState(true);
 
   // Filter & Search
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState(globalSearch || '');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [stockFilter, setStockFilter] = useState<StockFilter>('all');
 
@@ -255,6 +255,14 @@ export default function ProductsPanel() {
   useEffect(() => {
     setCurrentPage(1);
   }, [search, categoryFilter, stockFilter]);
+
+  // Consume global search from Zustand and clear it
+  useEffect(() => {
+    if (globalSearch) {
+      setSearch(globalSearch);
+      setGlobalSearch('');
+    }
+  }, [globalSearch, setGlobalSearch]);
 
   // ─── Filtered & Sorted Products ───
 
