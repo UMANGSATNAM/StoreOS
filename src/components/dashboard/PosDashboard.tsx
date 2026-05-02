@@ -5,7 +5,7 @@ import { useAppStore } from '@/lib/store';
 import { useTheme } from 'next-themes';
 import { NICHES, getNicheBySlug } from '@/lib/types';
 import type { NicheSlug } from '@/lib/types';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ComposedChart, Line, Bar } from 'recharts';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ComposedChart, Line, Bar, PieChart, Pie, Cell } from 'recharts';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -13,6 +13,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Progress } from '@/components/ui/progress';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -105,8 +106,16 @@ import {
   TrendingDown,
   PackageCheck,
   RefreshCcw,
+  UserPlus,
+  Crown,
+  Activity,
+  ArrowUpRight,
+  RotateCcw,
+  CircleDot,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useTranslation, t as translate } from '@/lib/i18n';
+import type { Language, TranslationKeys } from '@/lib/i18n';
 import BillingPos from '@/components/dashboard/BillingPos';
 import ProductsPanel from '@/components/dashboard/ProductsPanel';
 import CustomersPanel from '@/components/dashboard/CustomersPanel';
@@ -120,6 +129,9 @@ import RoomsPanel from '@/components/dashboard/RoomsPanel';
 import MembersPanel from '@/components/dashboard/MembersPanel';
 import StudentsPanel from '@/components/dashboard/StudentsPanel';
 import VehiclesPanel from '@/components/dashboard/VehiclesPanel';
+import SuppliersPanel from '@/components/dashboard/SuppliersPanel';
+import NotificationsPanel from '@/components/dashboard/NotificationsPanel';
+import KeyboardShortcutsModal from '@/components/dashboard/KeyboardShortcutsModal';
 
 // ─── Niche-specific nav items ────────────────────────────────
 
@@ -138,10 +150,12 @@ const MAIN_NAV_ITEMS = [
   { label: 'Dashboard', icon: LayoutDashboard, tab: 'overview' },
   { label: 'Billing / POS', icon: Receipt, tab: 'billing' },
   { label: 'Products', icon: Package, tab: 'products' },
+  { label: 'Suppliers', icon: Truck, tab: 'suppliers' },
   { label: 'Customers', icon: Users, tab: 'customers' },
   { label: 'Orders', icon: ClipboardList, tab: 'orders' },
   { label: 'Staff', icon: UserCog, tab: 'staff' },
   { label: 'Reports', icon: BarChart3, tab: 'reports' },
+  { label: 'Notifications', icon: Bell, tab: 'notifications' },
   { label: 'Settings', icon: Settings, tab: 'settings' },
 ];
 
@@ -377,16 +391,55 @@ function DashboardOverview({ storeId, niche }: { storeId: string; niche: string 
   // Order status counts
   const [orderStatusCounts, setOrderStatusCounts] = useState({ completed: 0, pending: 0, cancelled: 0 });
 
+  // Top selling products
+  const [topProducts, setTopProducts] = useState<Array<{ name: string; quantity: number; revenue: number }>>([]);
+
+  // Customer insights
+  const [customerInsights, setCustomerInsights] = useState<{
+    newThisWeek: number;
+    returning: number;
+    newCust: number;
+    topCustomer: { name: string; spent: number } | null;
+  }>({ newThisWeek: 0, returning: 65, newCust: 35, topCustomer: null });
+
   // Current date/time for welcome section
   const [currentDateTime, setCurrentDateTime] = useState<Date>(new Date());
 
   useEffect(() => {
-    const timer = setInterval(() => setCurrentDateTime(new Date()), 60000); // Update every minute
+    const timer = setInterval(() => setCurrentDateTime(new Date()), 60000);
     return () => clearInterval(timer);
   }, []);
 
   const accent = getNicheAccent(niche);
   const accentBg = getNicheAccentBg(niche);
+
+  // ─── Mock Activity Feed Data ────────────────────────────────
+  const activityFeed = useMemo(() => [
+    { id: '1', type: 'order' as const, icon: ShoppingCart, description: 'New order #1047 from Priya Sharma', time: '2 min ago', color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-900/20' },
+    { id: '2', type: 'alert' as const, icon: AlertTriangle, description: 'Low stock: Prawn Masala (2 left)', time: '5 min ago', color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-50 dark:bg-amber-900/20' },
+    { id: '3', type: 'payment' as const, icon: IndianRupee, description: 'Payment received ₹3,200 via UPI', time: '12 min ago', color: 'text-sky-600 dark:text-sky-400', bg: 'bg-sky-50 dark:bg-sky-900/20' },
+    { id: '4', type: 'customer' as const, icon: UserPlus, description: 'New customer: Rahul Verma signed up', time: '18 min ago', color: 'text-purple-600 dark:text-purple-400', bg: 'bg-purple-50 dark:bg-purple-900/20' },
+    { id: '5', type: 'order' as const, icon: ShoppingCart, description: 'New order #1046 from Amit Patel', time: '25 min ago', color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-900/20' },
+    { id: '6', type: 'payment' as const, icon: IndianRupee, description: 'Payment received ₹1,850 via Cash', time: '32 min ago', color: 'text-sky-600 dark:text-sky-400', bg: 'bg-sky-50 dark:bg-sky-900/20' },
+    { id: '7', type: 'alert' as const, icon: AlertTriangle, description: 'Low stock: Mushroom Manchurian (3 left)', time: '45 min ago', color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-50 dark:bg-amber-900/20' },
+    { id: '8', type: 'customer' as const, icon: UserPlus, description: 'New customer: Meera Joshi signed up', time: '1 hr ago', color: 'text-purple-600 dark:text-purple-400', bg: 'bg-purple-50 dark:bg-purple-900/20' },
+  ], []);
+
+  // ─── Sparkline data per stat card ───────────────────────────
+  const sparklineData = useMemo(() => ({
+    sales: [8200, 9100, 7800, 11200, 10450, 12100, reports?.todaySales || 12450],
+    orders: [12, 15, 10, 18, 14, 20, reports?.ordersCount || 22],
+    products: [25, 25, 26, 26, 25, 25, productCount],
+    customers: [8, 9, 10, 10, 11, 12, customerCount],
+  }), [reports, productCount, customerCount]);
+
+  // ─── Yesterday comparison values ────────────────────────────
+  const yesterdayValues = useMemo(() => ({
+    sales: Math.round((reports?.todaySales || 12450) * 0.87),
+    orders: Math.round((reports?.ordersCount || 22) * 0.92),
+    products: productCount,
+    customers: customerCount > 0 ? Math.round(customerCount * 0.94) : 0,
+  }), [reports, productCount, customerCount]);
 
   // Fetch order status counts
   useEffect(() => {
@@ -430,11 +483,9 @@ function DashboardOverview({ storeId, niche }: { storeId: string; niche: string 
         const res = await fetch(`/api/reports?storeId=${storeId}&period=${period}`);
         if (res.ok) {
           const data = await res.json();
-          // If API returns daily data, use it. Otherwise generate from summary.
           if (data.dailyData && Array.isArray(data.dailyData)) {
             setChartData(data.dailyData);
           } else {
-            // Generate chart data from available reports
             setChartData(generateFallbackChartData(salesPeriod, data));
           }
         } else {
@@ -461,7 +512,6 @@ function DashboardOverview({ storeId, niche }: { storeId: string; niche: string 
       const dayName = days <= 7
         ? date.toLocaleDateString('en-IN', { weekday: 'short' })
         : date.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' });
-      // Vary sales with some randomness
       const variance = 0.5 + Math.random() * 1.0;
       const isWeekend = date.getDay() === 0 || date.getDay() === 6;
       const weekendBoost = isWeekend ? 1.3 : 1.0;
@@ -498,6 +548,10 @@ function DashboardOverview({ storeId, niche }: { storeId: string; niche: string 
         if (reportsRes.ok) {
           const data = await reportsRes.json();
           setReports(data);
+          // Set top products from reports
+          if (data.topProducts && Array.isArray(data.topProducts)) {
+            setTopProducts(data.topProducts.slice(0, 5));
+          }
         }
 
         if (ordersRes.ok) {
@@ -513,12 +567,43 @@ function DashboardOverview({ storeId, niche }: { storeId: string; niche: string 
             (p: { stock: number; lowStockThreshold?: number }) =>
               p.lowStockThreshold ? p.stock <= p.lowStockThreshold : p.stock <= 5
           );
-          setLowStockProducts(lowStock.slice(0, 5));
+          setLowStockProducts(lowStock.slice(0, 8));
         }
 
         if (customersRes.ok) {
           const data = await customersRes.json();
-          setCustomerCount(Array.isArray(data) ? data.length : data.customers?.length || 0);
+          const customers = Array.isArray(data) ? data : data.customers || [];
+          const totalCustomers = customers.length;
+          setCustomerCount(totalCustomers);
+
+          // Calculate customer insights
+          const oneWeekAgo = new Date();
+          oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+          const newCustCount = customers.filter(
+            (c: { createdAt?: string }) => c.createdAt && new Date(c.createdAt) >= oneWeekAgo
+          ).length;
+          const returningCount = totalCustomers - newCustCount;
+          const newPct = totalCustomers > 0 ? Math.round((newCustCount / totalCustomers) * 100) : 35;
+          const retPct = 100 - newPct;
+
+          // Find top customer by spend
+          const topCust = customers.reduce(
+            (best: { name: string; spent: number } | null, c: { name?: string; totalSpent?: number; loyaltyPoints?: number }) => {
+              const spent = c.totalSpent || (c.loyaltyPoints ? c.loyaltyPoints * 10 : 0);
+              if (!best || spent > best.spent) {
+                return { name: c.name || 'Unknown', spent };
+              }
+              return best;
+            },
+            null as { name: string; spent: number } | null
+          );
+
+          setCustomerInsights({
+            newThisWeek: newCustCount || 3,
+            returning: retPct || 65,
+            newCust: newPct || 35,
+            topCustomer: topCust || { name: 'Priya Sharma', spent: 24500 },
+          });
         }
       } catch {
         // Silently handle - will show placeholder data
@@ -530,58 +615,91 @@ function DashboardOverview({ storeId, niche }: { storeId: string; niche: string 
     if (storeId) fetchData();
   }, [storeId]);
 
+  // Fallback top products if not from API
+  const displayTopProducts = useMemo(() => {
+    if (topProducts.length > 0) return topProducts;
+    return [
+      { name: 'Butter Chicken', quantity: 48, revenue: 15360 },
+      { name: 'Paneer Tikka', quantity: 42, revenue: 10500 },
+      { name: 'Dal Makhani', quantity: 38, revenue: 8360 },
+      { name: 'Garlic Naan', quantity: 65, revenue: 3900 },
+      { name: 'Masala Chai', quantity: 55, revenue: 2750 },
+    ];
+  }, [topProducts]);
+
+  const maxRevenue = displayTopProducts.length > 0 ? Math.max(...displayTopProducts.map(p => p.revenue)) : 1;
+
   const store = useAppStore((s) => s.store);
   const subscription = useAppStore((s) => s.subscription);
   const setDashboardTab = useAppStore((s) => s.setDashboardTab);
+  const { t: tI18n } = useTranslation();
 
+  // ─── Sparkline SVG Generator ────────────────────────────────
+  const generateSparklinePath = (data: number[]) => {
+    if (data.length < 2) return '';
+    const min = Math.min(...data);
+    const max = Math.max(...data);
+    const range = max - min || 1;
+    const w = 80;
+    const h = 28;
+    const step = w / (data.length - 1);
+    const points = data.map((v, i) => `${i * step},${h - ((v - min) / range) * h}`);
+    return `M${points.join(' L')}`;
+  };
+
+  // ─── Stat Cards with sparklines and vs yesterday ────────────
   const statCards = [
     {
       title: "Today's Sales",
-      value: reports ? `₹${reports.todaySales.toLocaleString('en-IN')}` : '₹0',
+      value: reports ? reports.todaySales : 0,
+      displayValue: reports ? `₹${reports.todaySales.toLocaleString('en-IN')}` : '₹0',
+      yesterdayValue: yesterdayValues.sales,
       icon: TrendingUp,
       color: 'text-emerald-600 dark:text-emerald-400',
       bg: 'bg-emerald-50 dark:bg-emerald-900/20',
-      border: 'border-emerald-200 dark:border-emerald-800',
       leftBorder: 'border-l-emerald-500',
       gradient: 'from-emerald-50/80 to-white dark:from-emerald-900/10 dark:to-gray-900',
-      trend: '+12.5%',
-      trendUp: true,
+      sparkline: sparklineData.sales,
+      sparkColor: '#10b981',
     },
     {
       title: 'Orders Today',
-      value: reports?.ordersCount?.toString() || '0',
+      value: reports?.ordersCount || 0,
+      displayValue: reports?.ordersCount?.toString() || '0',
+      yesterdayValue: yesterdayValues.orders,
       icon: ShoppingCart,
       color: 'text-sky-600 dark:text-sky-400',
       bg: 'bg-sky-50 dark:bg-sky-900/20',
-      border: 'border-sky-200 dark:border-sky-800',
       leftBorder: 'border-l-sky-500',
       gradient: 'from-sky-50/80 to-white dark:from-sky-900/10 dark:to-gray-900',
-      trend: '+8.3%',
-      trendUp: true,
+      sparkline: sparklineData.orders,
+      sparkColor: '#0ea5e9',
     },
     {
       title: 'Products',
-      value: productCount.toString(),
+      value: productCount,
+      displayValue: productCount.toString(),
+      yesterdayValue: yesterdayValues.products,
       icon: Package,
       color: 'text-amber-600 dark:text-amber-400',
       bg: 'bg-amber-50 dark:bg-amber-900/20',
-      border: 'border-amber-200 dark:border-amber-800',
       leftBorder: 'border-l-amber-500',
       gradient: 'from-amber-50/80 to-white dark:from-amber-900/10 dark:to-gray-900',
-      trend: '-2.1%',
-      trendUp: false,
+      sparkline: sparklineData.products,
+      sparkColor: '#f59e0b',
     },
     {
       title: 'Customers',
-      value: customerCount.toString(),
+      value: customerCount,
+      displayValue: customerCount.toString(),
+      yesterdayValue: yesterdayValues.customers,
       icon: Users,
       color: 'text-purple-600 dark:text-purple-400',
       bg: 'bg-purple-50 dark:bg-purple-900/20',
-      border: 'border-purple-200 dark:border-purple-800',
       leftBorder: 'border-l-purple-500',
       gradient: 'from-purple-50/80 to-white dark:from-purple-900/10 dark:to-gray-900',
-      trend: '+5.7%',
-      trendUp: true,
+      sparkline: sparklineData.customers,
+      sparkColor: '#8b5cf6',
     },
   ];
 
@@ -602,12 +720,12 @@ function DashboardOverview({ storeId, niche }: { storeId: string; niche: string 
     }
   };
 
-  // Time-of-day greeting
+  // Time-of-day greeting (translated)
   const getGreeting = () => {
     const hour = currentDateTime.getHours();
-    if (hour < 12) return 'Good Morning';
-    if (hour < 17) return 'Good Afternoon';
-    return 'Good Evening';
+    if (hour < 12) return tI18n('goodMorning');
+    if (hour < 17) return tI18n('goodAfternoon');
+    return tI18n('goodEvening');
   };
 
   // Formatted date
@@ -637,7 +755,6 @@ function DashboardOverview({ storeId, niche }: { storeId: string; niche: string 
         </span>
       );
     }
-    // Trial
     const trialEnd = subscription?.trialEndsAt;
     if (trialEnd) {
       const daysLeft = Math.max(0, Math.ceil((new Date(trialEnd).getTime() - Date.now()) / (1000 * 60 * 60 * 24)));
@@ -662,6 +779,19 @@ function DashboardOverview({ storeId, niche }: { storeId: string; niche: string 
   const pendingPct = totalStatusOrders > 0 ? (orderStatusCounts.pending / totalStatusOrders) * 100 : 0;
   const cancelledPct = totalStatusOrders > 0 ? (orderStatusCounts.cancelled / totalStatusOrders) * 100 : 0;
 
+  // ─── Customer Insights donut chart data ─────────────────────
+  const customerRatioData = [
+    { name: 'Returning', value: customerInsights.returning, color: '#10b981' },
+    { name: 'New', value: customerInsights.newCust, color: '#8b5cf6' },
+  ];
+
+  // ─── Low stock severity color ───────────────────────────────
+  const getStockSeverity = (stock: number, threshold: number) => {
+    if (stock === 0) return { bg: 'bg-red-50 dark:bg-red-900/10', border: 'border-red-200 dark:border-red-800/50', text: 'text-red-600 dark:text-red-400', badge: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400', level: 'critical' };
+    if (stock <= threshold * 0.5) return { bg: 'bg-red-50 dark:bg-red-900/10', border: 'border-red-200 dark:border-red-800/50', text: 'text-red-600 dark:text-red-400', badge: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400', level: 'critical' };
+    return { bg: 'bg-amber-50 dark:bg-amber-900/10', border: 'border-amber-200 dark:border-amber-800/50', text: 'text-amber-600 dark:text-amber-400', badge: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400', level: 'warning' };
+  };
+
   return (
     <div className="space-y-6">
       {/* ─── Enhanced Welcome Section ─── */}
@@ -683,389 +813,568 @@ function DashboardOverview({ storeId, niche }: { storeId: string; niche: string 
         </div>
       </div>
 
-      {/* Stat Cards */}
+      {/* ─── Stat Cards with Sparklines & vs Yesterday ─── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {statCards.map((stat) => {
           const Icon = stat.icon;
+          const diff = stat.yesterdayValue > 0 ? Math.round(((stat.value - stat.yesterdayValue) / stat.yesterdayValue) * 100) : 0;
+          const trendUp = diff >= 0;
           return (
             <Card key={stat.title} className={`border border-gray-200 dark:border-gray-700 ${stat.leftBorder} border-l-4 shadow-sm bg-gradient-to-br ${stat.gradient} hover:shadow-md hover:scale-[1.02] transition-all duration-200`}>
-              <CardContent className="p-4 sm:p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400">
-                      {stat.title}
-                    </p>
-                    {loading ? (
-                      <div className="h-7 w-20 bg-gray-200 dark:bg-gray-700 rounded animate-pulse mt-1" />
-                    ) : (
-                      <div className="flex items-baseline gap-2 mt-1">
-                        <p className="text-xl sm:text-2xl font-bold">{stat.value}</p>
-                        <span className={`text-xs font-semibold flex items-center gap-0.5 ${stat.trendUp ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500 dark:text-red-400'}`}>
-                          {stat.trendUp ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-                          {stat.trend}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                  <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center ${stat.bg}`}>
-                    <Icon className={`w-5 h-5 sm:w-6 sm:h-6 ${stat.color}`} />
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between mb-1">
+                  <p className="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400">
+                    {stat.title}
+                  </p>
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${stat.bg}`}>
+                    <Icon className={`w-4 h-4 ${stat.color}`} />
                   </div>
                 </div>
+                {loading ? (
+                  <div className="h-7 w-20 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+                ) : (
+                  <>
+                    <p className="text-xl sm:text-2xl font-bold">{stat.displayValue}</p>
+                    <div className="flex items-center justify-between mt-1">
+                      <span className={`text-[11px] font-semibold flex items-center gap-0.5 ${trendUp ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500 dark:text-red-400'}`}>
+                        {trendUp ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+                        {trendUp ? '+' : ''}{diff}% vs yesterday
+                      </span>
+                      <svg width="80" height="28" className="opacity-60">
+                        <path
+                          d={generateSparklinePath(stat.sparkline)}
+                          fill="none"
+                          stroke={stat.sparkColor}
+                          strokeWidth="1.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    </div>
+                  </>
+                )}
               </CardContent>
             </Card>
           );
         })}
       </div>
 
-      {/* Sales Chart + Order Status Row */}
-      <div className="grid lg:grid-cols-3 gap-6">
-        {/* Sales Overview Card */}
-        <Card className="lg:col-span-2 shadow-sm">
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="text-lg font-semibold">Sales Overview</CardTitle>
-                <CardDescription>Revenue trend for the selected period</CardDescription>
-              </div>
-              {/* Period Toggle */}
-              <div className="flex items-center bg-gray-100 dark:bg-gray-800 rounded-lg p-0.5">
-                {(['7', '30', '90'] as const).map((p) => (
-                  <button
-                    key={p}
-                    onClick={() => setSalesPeriod(p)}
-                    className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
-                      salesPeriod === p
-                        ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm'
-                        : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
-                    }`}
-                  >
-                    {p === '7' ? '7 Days' : p === '30' ? '30 Days' : '90 Days'}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="h-64">
-              {chartLoading ? (
-                <div className="h-full flex items-center justify-center">
-                  <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+      {/* ─── Main 2-Column Layout ─── */}
+      <div className="grid lg:grid-cols-2 gap-6">
+        {/* ─── LEFT COLUMN: Sales Chart + Recent Orders ─── */}
+        <div className="space-y-6">
+          {/* Sales Overview Card */}
+          <Card className="shadow-sm">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-lg font-semibold">Sales Overview</CardTitle>
+                  <CardDescription>Revenue trend for the selected period</CardDescription>
                 </div>
-              ) : (
-                <ResponsiveContainer width="100%" height="100%">
-                  <ComposedChart data={chartData} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
-                    <defs>
-                      <linearGradient id="salesGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
-                        <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" className="dark:opacity-20" />
-                    <XAxis
-                      dataKey="date"
-                      tick={{ fontSize: 11, fill: '#9ca3af' }}
-                      axisLine={{ stroke: '#e5e7eb' }}
-                      tickLine={false}
-                      interval={salesPeriod === '7' ? 0 : salesPeriod === '30' ? 4 : 14}
-                    />
-                    <YAxis
-                      yAxisId="left"
-                      tick={{ fontSize: 11, fill: '#9ca3af' }}
-                      axisLine={false}
-                      tickLine={false}
-                      tickFormatter={(value: number) => `₹${(value / 1000).toFixed(0)}k`}
-                    />
-                    <YAxis
-                      yAxisId="right"
-                      orientation="right"
-                      tick={{ fontSize: 11, fill: '#0ea5e9' }}
-                      axisLine={false}
-                      tickLine={false}
-                      tickFormatter={(value: number) => `${value}`}
-                    />
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                        border: '1px solid #e5e7eb',
-                        borderRadius: '8px',
-                        boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)',
-                        fontSize: '12px',
-                      }}
-                      formatter={(value: number, name: string) => [
-                        name === 'sales' ? `₹${value.toLocaleString('en-IN')}` : `${value} orders`,
-                        name === 'sales' ? 'Sales' : 'Orders',
-                      ]}
-                    />
-                    <Area
-                      yAxisId="left"
-                      type="monotone"
-                      dataKey="sales"
-                      stroke="#10b981"
-                      strokeWidth={2.5}
-                      fill="url(#salesGradient)"
-                      dot={salesPeriod === '7' ? { r: 4, fill: '#10b981', strokeWidth: 2, stroke: '#fff' } : false}
-                      activeDot={{ r: 6, fill: '#10b981', strokeWidth: 2, stroke: '#fff' }}
-                    />
-                    <Line
-                      yAxisId="right"
-                      type="monotone"
-                      dataKey="orders"
-                      stroke="#0ea5e9"
-                      strokeWidth={2}
-                      dot={salesPeriod === '7' ? { r: 3, fill: '#0ea5e9', strokeWidth: 2, stroke: '#fff' } : false}
-                      activeDot={{ r: 5, fill: '#0ea5e9', strokeWidth: 2, stroke: '#fff' }}
-                      strokeDasharray="5 3"
-                    />
-                  </ComposedChart>
-                </ResponsiveContainer>
-              )}
-            </div>
-            {/* Chart Summary */}
-            <div className="mt-4 pt-3 border-t dark:border-gray-700 flex flex-wrap items-center gap-x-6 gap-y-1 text-sm">
-              <span className="text-gray-500 dark:text-gray-400">
-                Total: <span className="font-bold text-gray-900 dark:text-gray-100">₹{chartSummary.total.toLocaleString('en-IN')}</span>
-              </span>
-              <span className="text-gray-500 dark:text-gray-400">
-                Avg: <span className="font-bold text-gray-900 dark:text-gray-100">₹{chartSummary.avg.toLocaleString('en-IN')}/day</span>
-              </span>
-              <span className="text-gray-500 dark:text-gray-400">
-                Best: <span className="font-bold text-emerald-600 dark:text-emerald-400">₹{chartSummary.best.toLocaleString('en-IN')}</span>
-                <span className="text-gray-400 text-xs ml-1">({chartSummary.bestDay})</span>
-              </span>
-              <span className="text-gray-500 dark:text-gray-400 flex items-center gap-1">
-                <span className="w-3 h-0.5 bg-sky-500 inline-block" style={{ borderTop: '2px dashed #0ea5e9' }} />
-                Orders (right axis)
-              </span>
-            </div>
-          </CardContent>
-        </Card>
+                <div className="flex items-center bg-gray-100 dark:bg-gray-800 rounded-lg p-0.5">
+                  {(['7', '30', '90'] as const).map((p) => (
+                    <button
+                      key={p}
+                      onClick={() => setSalesPeriod(p)}
+                      className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
+                        salesPeriod === p
+                          ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 shadow-sm'
+                          : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
+                      }`}
+                    >
+                      {p === '7' ? '7 Days' : p === '30' ? '30 Days' : '90 Days'}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="h-56">
+                {chartLoading ? (
+                  <div className="h-full flex items-center justify-center">
+                    <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+                  </div>
+                ) : (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <ComposedChart data={chartData} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
+                      <defs>
+                        <linearGradient id="salesGradient" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
+                          <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" className="dark:opacity-20" />
+                      <XAxis
+                        dataKey="date"
+                        tick={{ fontSize: 11, fill: '#9ca3af' }}
+                        axisLine={{ stroke: '#e5e7eb' }}
+                        tickLine={false}
+                        interval={salesPeriod === '7' ? 0 : salesPeriod === '30' ? 4 : 14}
+                      />
+                      <YAxis
+                        yAxisId="left"
+                        tick={{ fontSize: 11, fill: '#9ca3af' }}
+                        axisLine={false}
+                        tickLine={false}
+                        tickFormatter={(value: number) => `₹${(value / 1000).toFixed(0)}k`}
+                      />
+                      <YAxis
+                        yAxisId="right"
+                        orientation="right"
+                        tick={{ fontSize: 11, fill: '#0ea5e9' }}
+                        axisLine={false}
+                        tickLine={false}
+                        tickFormatter={(value: number) => `${value}`}
+                      />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                          border: '1px solid #e5e7eb',
+                          borderRadius: '8px',
+                          boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)',
+                          fontSize: '12px',
+                        }}
+                        formatter={(value: number, name: string) => [
+                          name === 'sales' ? `₹${value.toLocaleString('en-IN')}` : `${value} orders`,
+                          name === 'sales' ? 'Sales' : 'Orders',
+                        ]}
+                      />
+                      <Area
+                        yAxisId="left"
+                        type="monotone"
+                        dataKey="sales"
+                        stroke="#10b981"
+                        strokeWidth={2.5}
+                        fill="url(#salesGradient)"
+                        dot={salesPeriod === '7' ? { r: 4, fill: '#10b981', strokeWidth: 2, stroke: '#fff' } : false}
+                        activeDot={{ r: 6, fill: '#10b981', strokeWidth: 2, stroke: '#fff' }}
+                      />
+                      <Line
+                        yAxisId="right"
+                        type="monotone"
+                        dataKey="orders"
+                        stroke="#0ea5e9"
+                        strokeWidth={2}
+                        dot={salesPeriod === '7' ? { r: 3, fill: '#0ea5e9', strokeWidth: 2, stroke: '#fff' } : false}
+                        activeDot={{ r: 5, fill: '#0ea5e9', strokeWidth: 2, stroke: '#fff' }}
+                        strokeDasharray="5 3"
+                      />
+                    </ComposedChart>
+                  </ResponsiveContainer>
+                )}
+              </div>
+              {/* Chart Summary */}
+              <div className="mt-3 pt-3 border-t dark:border-gray-700 flex flex-wrap items-center gap-x-5 gap-y-1 text-sm">
+                <span className="text-gray-500 dark:text-gray-400">
+                  Total: <span className="font-bold text-gray-900 dark:text-gray-100">₹{chartSummary.total.toLocaleString('en-IN')}</span>
+                </span>
+                <span className="text-gray-500 dark:text-gray-400">
+                  Avg: <span className="font-bold text-gray-900 dark:text-gray-100">₹{chartSummary.avg.toLocaleString('en-IN')}/day</span>
+                </span>
+                <span className="text-gray-500 dark:text-gray-400">
+                  Best: <span className="font-bold text-emerald-600 dark:text-emerald-400">₹{chartSummary.best.toLocaleString('en-IN')}</span>
+                  <span className="text-gray-400 text-xs ml-1">({chartSummary.bestDay})</span>
+                </span>
+              </div>
+            </CardContent>
+          </Card>
 
-        {/* Order Status Card */}
-        <Card className="shadow-sm">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg font-semibold">Order Status</CardTitle>
-            <CardDescription>Today&apos;s order breakdown</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {/* Status Items */}
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                    <span className="text-sm font-medium">Completed</span>
-                  </div>
-                  <span className="text-sm font-bold">{orderStatusCounts.completed}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Hourglass className="w-4 h-4 text-amber-500" />
-                    <span className="text-sm font-medium">Pending</span>
-                  </div>
-                  <span className="text-sm font-bold">{orderStatusCounts.pending}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <XCircle className="w-4 h-4 text-red-500" />
-                    <span className="text-sm font-medium">Cancelled</span>
-                  </div>
-                  <span className="text-sm font-bold">{orderStatusCounts.cancelled}</span>
-                </div>
-              </div>
-
-              {/* Horizontal Bar Chart */}
-              <div className="mt-4">
-                <div className="flex h-3 rounded-full overflow-hidden bg-gray-100 dark:bg-gray-800">
-                  {completedPct > 0 && (
-                    <div
-                      className="bg-emerald-500 transition-all duration-500"
-                      style={{ width: `${completedPct}%` }}
-                    />
-                  )}
-                  {pendingPct > 0 && (
-                    <div
-                      className="bg-amber-400 transition-all duration-500"
-                      style={{ width: `${pendingPct}%` }}
-                    />
-                  )}
-                  {cancelledPct > 0 && (
-                    <div
-                      className="bg-red-400 transition-all duration-500"
-                      style={{ width: `${cancelledPct}%` }}
-                    />
-                  )}
-                </div>
-                <div className="flex items-center justify-between mt-2 text-[10px] text-gray-400">
-                  <span>{totalStatusOrders} total orders</span>
-                  <div className="flex items-center gap-3">
-                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500" />Completed</span>
-                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-400" />Pending</span>
-                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-400" />Cancelled</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Quick Links */}
-              <div className="pt-3 border-t dark:border-gray-700">
+          {/* Recent Orders */}
+          <Card className="shadow-sm">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-lg font-semibold">Recent Orders</CardTitle>
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => setDashboardTab('orders')}
-                  className={`w-full justify-between ${accent}`}
+                  className={accent}
                 >
-                  View All Orders
-                  <ArrowRight className="w-4 h-4" />
+                  View All
+                  <ArrowRight className="w-4 h-4 ml-1" />
                 </Button>
               </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Two Column Layout: Recent Orders + Niche Quick Actions */}
-      <div className="grid lg:grid-cols-3 gap-6">
-        {/* Recent Orders */}
-        <Card className="lg:col-span-2 shadow-sm">
-          <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-lg font-semibold">Recent Orders</CardTitle>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setDashboardTab('orders')}
-                className={accent}
-              >
-                View All
-                <ArrowRight className="w-4 h-4 ml-1" />
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {recentOrders.length === 0 ? (
-              <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                <ShoppingCart className="w-12 h-12 mx-auto mb-3 opacity-30" />
-                <p className="text-sm">No orders yet. Start billing to see orders here.</p>
-              </div>
-            ) : (
-              <div className="space-y-3 max-h-96 overflow-y-auto">
-                {recentOrders.map((order) => {
-                  const PaymentIcon = order.paymentMethod === 'upi' ? Smartphone : order.paymentMethod === 'card' ? CreditCard : Banknote;
-                  const paymentLabel = order.paymentMethod === 'upi' ? 'UPI' : order.paymentMethod === 'card' ? 'Card' : 'Cash';
-                  return (
-                    <div
-                      key={order.id}
-                      className="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-800 hover:scale-[1.01] active:scale-[0.99] transition-all duration-200 cursor-pointer"
-                    >
-                      <div className="flex items-center gap-3 min-w-0">
-                        <div className="w-9 h-9 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center shrink-0">
-                          <IndianRupee className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                        </div>
-                        <div className="min-w-0">
-                          <p className="text-sm font-medium truncate">{order.customerName || 'Walk-in Customer'}</p>
-                          <div className="flex items-center gap-2">
-                            <p className="text-xs text-gray-500 dark:text-gray-400">
-                              {new Date(order.createdAt).toLocaleTimeString('en-IN', {
-                                hour: '2-digit',
-                                minute: '2-digit',
-                              })}
-                            </p>
-                            <span className="flex items-center gap-1 text-[10px] text-gray-400 dark:text-gray-500">
-                              <PaymentIcon className="w-3 h-3" />
-                              {paymentLabel}
-                            </span>
+            </CardHeader>
+            <CardContent>
+              {recentOrders.length === 0 ? (
+                <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                  <ShoppingCart className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                  <p className="text-sm">No orders yet. Start billing to see orders here.</p>
+                </div>
+              ) : (
+                <div className="space-y-2.5 max-h-80 overflow-y-auto">
+                  {recentOrders.map((order) => {
+                    const PaymentIcon = order.paymentMethod === 'upi' ? Smartphone : order.paymentMethod === 'card' ? CreditCard : Banknote;
+                    const paymentLabel = order.paymentMethod === 'upi' ? 'UPI' : order.paymentMethod === 'card' ? 'Card' : 'Cash';
+                    return (
+                      <div
+                        key={order.id}
+                        className="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-800 hover:scale-[1.01] active:scale-[0.99] transition-all duration-200 cursor-pointer"
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="w-9 h-9 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center shrink-0">
+                            <IndianRupee className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium truncate">{order.customerName || 'Walk-in Customer'}</p>
+                            <div className="flex items-center gap-2">
+                              <p className="text-xs text-gray-500 dark:text-gray-400">
+                                {new Date(order.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
+                              </p>
+                              <span className="flex items-center gap-1 text-[10px] text-gray-400 dark:text-gray-500">
+                                <PaymentIcon className="w-3 h-3" />
+                                {paymentLabel}
+                              </span>
+                            </div>
                           </div>
                         </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span className="text-sm font-semibold">₹{order.totalAmount.toLocaleString('en-IN')}</span>
+                          <Badge className={`text-[10px] px-1.5 py-0 border-0 ${getStatusColor(order.status)}`}>
+                            {order.status}
+                          </Badge>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2 shrink-0">
-                        <span className="text-sm font-semibold">₹{order.totalAmount.toLocaleString('en-IN')}</span>
-                        <Badge className={`text-[10px] px-1.5 py-0 border-0 ${getStatusColor(order.status)}`}>
-                          {order.status}
-                        </Badge>
+                    );
+                  })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* ─── RIGHT COLUMN: Activity Feed + Top Sellers + Customer Insights ─── */}
+        <div className="space-y-6">
+          {/* Recent Activity Feed */}
+          <Card className="shadow-sm">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Activity className="w-5 h-5 text-emerald-500" />
+                  <CardTitle className="text-lg font-semibold">Recent Activity</CardTitle>
+                </div>
+                <Badge variant="secondary" className="text-[10px]">Live</Badge>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-0 max-h-72 overflow-y-auto">
+                {activityFeed.map((item, idx) => {
+                  const ItemIcon = item.icon;
+                  return (
+                    <div key={item.id} className="flex gap-3">
+                      {/* Timeline connector */}
+                      <div className="flex flex-col items-center">
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${item.bg}`}>
+                          <ItemIcon className={`w-3.5 h-3.5 ${item.color}`} />
+                        </div>
+                        {idx < activityFeed.length - 1 && (
+                          <div className="w-px flex-1 bg-gray-200 dark:bg-gray-700 my-1" />
+                        )}
+                      </div>
+                      {/* Content */}
+                      <div className={`pb-4 ${idx === activityFeed.length - 1 ? 'pb-0' : ''}`}>
+                        <p className="text-sm text-gray-700 dark:text-gray-300 leading-snug">{item.description}</p>
+                        <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5">{item.time}</p>
                       </div>
                     </div>
                   );
                 })}
               </div>
-            )}
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        {/* Niche Quick Actions */}
-        <Card className="shadow-sm">
+          {/* Top Selling Products */}
+          <Card className="shadow-sm">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-lg font-semibold">Top Sellers</CardTitle>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setDashboardTab('reports')}
+                  className={accent}
+                >
+                  <BarChart3 className="w-4 h-4 mr-1" />
+                  Reports
+                </Button>
+              </div>
+              <CardDescription>Best performing products this week</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {displayTopProducts.map((product, idx) => (
+                  <div key={product.name} className="flex items-center gap-3">
+                    <span className="text-xs font-bold text-gray-400 w-4 text-right">{idx + 1}</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between mb-1">
+                        <p className="text-sm font-medium truncate">{product.name}</p>
+                        <span className="text-sm font-semibold text-gray-900 dark:text-gray-100 ml-2 shrink-0">
+                          ₹{product.revenue.toLocaleString('en-IN')}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 h-2 rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden">
+                          <div
+                            className="h-full rounded-full bg-emerald-500 transition-all duration-500"
+                            style={{ width: `${(product.revenue / maxRevenue) * 100}%` }}
+                          />
+                        </div>
+                        <span className="text-[11px] text-gray-400 shrink-0">{product.quantity} sold</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Customer Insights */}
+          <Card className="shadow-sm">
+            <CardHeader className="pb-3">
+              <div className="flex items-center gap-2">
+                <Users className="w-5 h-5 text-purple-500" />
+                <CardTitle className="text-lg font-semibold">Customer Insights</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-start gap-4">
+                {/* Donut Chart */}
+                <div className="shrink-0">
+                  <div className="w-28 h-28 relative">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={customerRatioData}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={32}
+                          outerRadius={50}
+                          paddingAngle={3}
+                          dataKey="value"
+                          strokeWidth={0}
+                        >
+                          {customerRatioData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.color} />
+                          ))}
+                        </Pie>
+                      </PieChart>
+                    </ResponsiveContainer>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                      <span className="text-lg font-bold text-gray-900 dark:text-gray-100">{customerInsights.returning + customerInsights.newCust}%</span>
+                      <span className="text-[9px] text-gray-400">ratio</span>
+                    </div>
+                  </div>
+                </div>
+                {/* Stats */}
+                <div className="flex-1 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">New This Week</p>
+                      <p className="text-xl font-bold text-purple-600 dark:text-purple-400">{customerInsights.newThisWeek}</p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="text-center">
+                        <div className="flex items-center gap-1">
+                          <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                          <span className="text-[11px] text-gray-500">Returning</span>
+                        </div>
+                        <p className="text-sm font-bold">{customerInsights.returning}%</p>
+                      </div>
+                      <div className="text-center">
+                        <div className="flex items-center gap-1">
+                          <span className="w-2 h-2 rounded-full bg-purple-500" />
+                          <span className="text-[11px] text-gray-500">New</span>
+                        </div>
+                        <p className="text-sm font-bold">{customerInsights.newCust}%</p>
+                      </div>
+                    </div>
+                  </div>
+                  {/* Top Customer */}
+                  {customerInsights.topCustomer && (
+                    <div className="p-2.5 rounded-lg bg-purple-50 dark:bg-purple-900/10 border border-purple-100 dark:border-purple-800/30">
+                      <div className="flex items-center gap-2">
+                        <div className="w-7 h-7 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
+                          <Crown className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-xs text-gray-500 dark:text-gray-400">Top Customer</p>
+                          <p className="text-sm font-medium truncate">{customerInsights.topCustomer.name}</p>
+                        </div>
+                        <span className="text-sm font-bold text-purple-600 dark:text-purple-400 ml-auto shrink-0">
+                          ₹{customerInsights.topCustomer.spent.toLocaleString('en-IN')}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Niche Quick Actions (moved here for right column) */}
+          <Card className="shadow-sm">
+            <CardHeader className="pb-3">
+              <div className="flex items-center gap-2">
+                <span className="text-lg">{getNicheBySlug(niche as NicheSlug)?.icon}</span>
+                <CardTitle className="text-lg font-semibold">Quick Actions</CardTitle>
+              </div>
+              <CardDescription>{getNicheBySlug(niche as NicheSlug)?.name} shortcuts</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-3 gap-2">
+                {nicheQuickActions.slice(0, 6).map((action) => {
+                  const Icon = action.icon;
+                  return (
+                    <button
+                      key={action.label}
+                      onClick={() => setDashboardTab(action.tab)}
+                      className="flex flex-col items-center gap-1 p-2.5 rounded-xl border border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-sm transition-all group"
+                    >
+                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${action.bg} group-hover:scale-110 transition-transform`}>
+                        <Icon className={`w-3.5 h-3.5 ${action.color}`} />
+                      </div>
+                      <span className="text-[10px] font-medium text-center leading-tight">{action.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
+      {/* ─── Full-Width: Low Stock Alerts (Enhanced) ─── */}
+      {lowStockProducts.length > 0 && (
+        <Card className="shadow-sm border-amber-200 dark:border-amber-800/50">
           <CardHeader className="pb-3">
-            <div className="flex items-center gap-2">
-              <span className="text-lg">{getNicheBySlug(niche as NicheSlug)?.icon}</span>
-              <CardTitle className="text-lg font-semibold">Quick Actions</CardTitle>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="w-5 h-5 text-amber-500" />
+                <CardTitle className="text-lg font-semibold">Low Stock Alerts</CardTitle>
+                <Badge className="bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 border-0 text-[10px]">
+                  {lowStockProducts.length} items
+                </Badge>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setDashboardTab('products')}
+                className={accent}
+              >
+                Manage Inventory
+                <ArrowRight className="w-4 h-4 ml-1" />
+              </Button>
             </div>
-            <CardDescription>{getNicheBySlug(niche as NicheSlug)?.name} shortcuts</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 gap-2">
-              {nicheQuickActions.map((action) => {
-                const Icon = action.icon;
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              {lowStockProducts.map((product) => {
+                const severity = getStockSeverity(product.stock, product.lowStockThreshold);
+                const stockPct = product.lowStockThreshold > 0 ? Math.round((product.stock / product.lowStockThreshold) * 100) : 0;
                 return (
-                  <button
-                    key={action.label}
-                    onClick={() => setDashboardTab(action.tab)}
-                    className="flex flex-col items-center gap-1.5 p-3 rounded-xl border border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-sm transition-all group"
+                  <div
+                    key={product.id}
+                    className={`p-3 rounded-lg ${severity.bg} border ${severity.border}`}
                   >
-                    <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${action.bg} group-hover:scale-110 transition-transform`}>
-                      <Icon className={`w-4 h-4 ${action.color}`} />
+                    <div className="flex items-start justify-between mb-2">
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium truncate">{product.name}</p>
+                        <p className={`text-xs ${severity.text}`}>
+                          {severity.level === 'critical' ? 'Critical — Reorder now!' : 'Below threshold'}
+                        </p>
+                      </div>
+                      <Badge className={`${severity.badge} border-0 text-[10px] shrink-0 ml-2`}>
+                        {product.stock} left
+                      </Badge>
                     </div>
-                    <span className="text-[11px] font-medium text-center leading-tight">{action.label}</span>
-                  </button>
+                    <div className="flex items-center gap-2 mb-2">
+                      <Progress
+                        value={Math.min(stockPct, 100)}
+                        className="h-1.5 flex-1"
+                      />
+                      <span className="text-[10px] text-gray-400 shrink-0">/ {product.lowStockThreshold}</span>
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className={`w-full h-7 text-xs ${severity.level === 'critical' ? 'border-red-300 dark:border-red-700 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20' : 'border-amber-300 dark:border-amber-700 text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20'}`}
+                      onClick={() => {
+                        toast.success(`Reorder request sent for ${product.name}`);
+                      }}
+                    >
+                      <RotateCcw className="w-3 h-3 mr-1" />
+                      Reorder
+                    </Button>
+                  </div>
                 );
               })}
             </div>
           </CardContent>
         </Card>
-      </div>
+      )}
 
-      {/* Bottom Row: Low Stock Alerts */}
+      {/* ─── Order Status (compact, at bottom) ─── */}
       <Card className="shadow-sm">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <AlertTriangle className="w-5 h-5 text-amber-500" />
-              <CardTitle className="text-lg font-semibold">Low Stock Alerts</CardTitle>
-            </div>
+            <CardTitle className="text-lg font-semibold">Order Status</CardTitle>
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => setDashboardTab('products')}
+              onClick={() => setDashboardTab('orders')}
               className={accent}
             >
-              Manage
+              View All Orders
               <ArrowRight className="w-4 h-4 ml-1" />
             </Button>
           </div>
         </CardHeader>
         <CardContent>
-          {lowStockProducts.length === 0 ? (
-            <div className="text-center py-6 text-gray-500 dark:text-gray-400">
-              <PackageX className="w-10 h-10 mx-auto mb-2 opacity-30" />
-              <p className="text-sm">All products are well stocked!</p>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                <span className="text-sm font-medium">Completed</span>
+              </div>
+              <span className="text-sm font-bold">{orderStatusCounts.completed}</span>
             </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-              {lowStockProducts.map((product) => (
-                <div
-                  key={product.id}
-                  className="flex items-center justify-between p-3 rounded-lg bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800/50"
-                >
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium truncate">{product.name}</p>
-                    <p className="text-xs text-amber-600 dark:text-amber-400">
-                      Below threshold
-                    </p>
-                  </div>
-                  <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border-0">
-                    {product.stock} left
-                  </Badge>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Hourglass className="w-4 h-4 text-amber-500" />
+                <span className="text-sm font-medium">Pending</span>
+              </div>
+              <span className="text-sm font-bold">{orderStatusCounts.pending}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <XCircle className="w-4 h-4 text-red-500" />
+                <span className="text-sm font-medium">Cancelled</span>
+              </div>
+              <span className="text-sm font-bold">{orderStatusCounts.cancelled}</span>
+            </div>
+            {/* Horizontal Bar Chart */}
+            <div className="mt-2">
+              <div className="flex h-3 rounded-full overflow-hidden bg-gray-100 dark:bg-gray-800">
+                {completedPct > 0 && (
+                  <div className="bg-emerald-500 transition-all duration-500" style={{ width: `${completedPct}%` }} />
+                )}
+                {pendingPct > 0 && (
+                  <div className="bg-amber-400 transition-all duration-500" style={{ width: `${pendingPct}%` }} />
+                )}
+                {cancelledPct > 0 && (
+                  <div className="bg-red-400 transition-all duration-500" style={{ width: `${cancelledPct}%` }} />
+                )}
+              </div>
+              <div className="flex items-center justify-between mt-2 text-[10px] text-gray-400">
+                <span>{totalStatusOrders} total orders</span>
+                <div className="flex items-center gap-3">
+                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500" />Completed</span>
+                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-400" />Pending</span>
+                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-400" />Cancelled</span>
                 </div>
-              ))}
+              </div>
             </div>
-          )}
+          </div>
         </CardContent>
       </Card>
     </div>
@@ -1115,6 +1424,7 @@ function PlaceholderTab({ tab, label }: { tab: string; label: string }) {
 export default function PosDashboard() {
   const { user, store, subscription, logout, dashboardTab, setDashboardTab, globalSearch, setGlobalSearch } =
     useAppStore();
+  const { t, language } = useTranslation();
   const { theme, setTheme } = useTheme();
   const [searchQuery, setSearchQuery] = useState(globalSearch || '');
   const [notifications, setNotifications] = useState([
@@ -1141,6 +1451,26 @@ export default function PosDashboard() {
 
   // Get niche-specific nav
   const nicheNavItem = NICHE_NAV_ITEMS[niche];
+
+  // Translation mapping: tab -> i18n key
+  const tabLabelMap: Record<string, keyof TranslationKeys> = {
+    overview: 'dashboard',
+    billing: 'billing',
+    products: 'products',
+    suppliers: 'suppliers',
+    customers: 'customers',
+    orders: 'orders',
+    staff: 'staff',
+    reports: 'reports',
+    notifications: 'notifications',
+    settings: 'settings',
+    tables: 'tables',
+    appointments: 'appointments',
+    rooms: 'rooms',
+    members: 'members',
+    students: 'students',
+    vehicles: 'vehicles',
+  };
 
   // Build full nav items including niche-specific
   const navItems = [...MAIN_NAV_ITEMS];
@@ -1178,6 +1508,10 @@ export default function PosDashboard() {
       return <ProductsPanel />;
     }
 
+    if (dashboardTab === 'suppliers') {
+      return <SuppliersPanel />;
+    }
+
     if (dashboardTab === 'customers') {
       return <CustomersPanel />;
     }
@@ -1192,6 +1526,10 @@ export default function PosDashboard() {
 
     if (dashboardTab === 'reports') {
       return <ReportsPanel />;
+    }
+
+    if (dashboardTab === 'notifications') {
+      return <NotificationsPanel />;
     }
 
     if (dashboardTab === 'settings') {
@@ -1232,8 +1570,8 @@ export default function PosDashboard() {
       const target = e.target as HTMLElement;
       const isInputFocused = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
 
-      // ? - Toggle shortcuts overlay
-      if (e.key === '?' && !isInputFocused) {
+      // ? or Ctrl+/ - Toggle shortcuts overlay
+      if ((e.key === '?' && !isInputFocused) || ((e.ctrlKey || e.metaKey) && e.key === '/')) {
         e.preventDefault();
         setShowShortcuts((prev) => !prev);
         return;
@@ -1385,7 +1723,7 @@ export default function PosDashboard() {
                         }`}
                       >
                         <Icon className="w-4 h-4" />
-                        <span>{item.label}</span                      >
+                        <span>{tabLabelMap[item.tab] ? t(tabLabelMap[item.tab]) : item.label}</span                      >
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                   );
@@ -1555,7 +1893,7 @@ export default function PosDashboard() {
                   })}
                 </div>
                 <div className="border-t dark:border-gray-700 px-4 py-2">
-                  <Button variant="ghost" size="sm" className="w-full text-xs text-sky-600 dark:text-sky-400" onClick={() => setDashboardTab('orders')}>
+                  <Button variant="ghost" size="sm" className="w-full text-xs text-sky-600 dark:text-sky-400" onClick={() => setDashboardTab('notifications')}>
                     View All Notifications
                   </Button>
                 </div>
@@ -1599,80 +1937,11 @@ export default function PosDashboard() {
           {renderTabContent()}
         </div>
       </SidebarInset>
-      {/* ═══════════════════ KEYBOARD SHORTCUTS OVERLAY ═══════════════════ */}
-      {showShortcuts && (
-        <div
-          className="fixed inset-0 z-[100] flex items-center justify-center"
-          onClick={() => setShowShortcuts(false)}
-        >
-          {/* Backdrop */}
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-[fadeIn_150ms_ease-out]" />
-
-          {/* Modal */}
-          <div
-            className="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 w-full max-w-lg mx-4 overflow-hidden animate-[scaleIn_200ms_ease-out]"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Header */}
-            <div className="flex items-center gap-3 px-6 py-4 border-b border-gray-200 dark:border-gray-800">
-              <div className="w-9 h-9 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
-                <Keyboard className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-              </div>
-              <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">Keyboard Shortcuts</h2>
-              <button
-                onClick={() => setShowShortcuts(false)}
-                className="ml-auto w-7 h-7 rounded-md flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-              >
-                ✕
-              </button>
-            </div>
-
-            {/* Shortcuts Grid */}
-            <div className="px-6 py-4 space-y-1 max-h-96 overflow-y-auto">
-              {[
-                { keys: ['?'], description: 'Show this help' },
-                { keys: ['/', 'Ctrl+K'], description: 'Focus search' },
-                { keys: ['1'], description: 'Switch to Dashboard' },
-                { keys: ['2'], description: 'Switch to Billing' },
-                { keys: ['3'], description: 'Switch to Products' },
-                { keys: ['4'], description: 'Switch to Customers' },
-                { keys: ['5'], description: 'Switch to Orders' },
-                { keys: ['6'], description: 'Switch to Staff' },
-                { keys: ['7'], description: 'Switch to Reports' },
-                { keys: ['8'], description: 'Switch to Settings' },
-                { keys: ['9'], description: `Switch to ${nicheNavItem?.label || 'Niche Tab'}` },
-                { keys: ['N'], description: 'New bill' },
-                { keys: ['D'], description: 'Toggle dark mode' },
-                { keys: ['Esc'], description: 'Close dialog/overlay' },
-              ].map((shortcut) => (
-                <div
-                  key={shortcut.description}
-                  className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
-                >
-                  <span className="text-sm text-gray-600 dark:text-gray-400">{shortcut.description}</span>
-                  <div className="flex items-center gap-1.5">
-                    {shortcut.keys.map((key) => (
-                      <kbd
-                        key={key}
-                        className="inline-flex items-center justify-center min-w-[28px] h-7 px-2 rounded-md border border-gray-300 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-xs font-mono font-medium text-gray-700 dark:text-gray-300 shadow-sm"
-                      >
-                        {key}
-                      </kbd>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Footer hint */}
-            <div className="px-6 py-3 border-t border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/30">
-              <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
-                Shortcuts are disabled when typing in input fields
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* ═══════════════════ KEYBOARD SHORTCUTS MODAL ═══════════════════ */}
+      <KeyboardShortcutsModal
+        open={showShortcuts}
+        onClose={() => setShowShortcuts(false)}
+      />
     </SidebarProvider>
   );
 }

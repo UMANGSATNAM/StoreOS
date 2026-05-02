@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { motion, useInView } from 'framer-motion';
+import React, { useState, useEffect, useRef } from 'react';
+import { motion, useInView, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import { useAppStore } from '@/lib/store';
 import { useTheme } from 'next-themes';
 import { NICHES } from '@/lib/types';
@@ -37,6 +37,10 @@ import {
   Instagram,
   Youtube,
   Loader2,
+  Shield,
+  HeadphonesIcon,
+  Globe,
+  Building2,
 } from 'lucide-react';
 
 // ─── Animation Helpers ────────────────────────────────────────
@@ -115,6 +119,102 @@ function StaggerItem({
   );
 }
 
+// ─── Animated Counter ─────────────────────────────────────────
+
+function AnimatedCounter({ target, duration = 2 }: { target: number; duration?: number }) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const isInView = useInView(ref, { once: true });
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    if (!isInView) return;
+    let start = 0;
+    const step = target / (duration * 60);
+    const timer = setInterval(() => {
+      start += step;
+      if (start >= target) {
+        setCount(target);
+        clearInterval(timer);
+      } else {
+        setCount(Math.floor(start));
+      }
+    }, 1000 / 60);
+    return () => clearInterval(timer);
+  }, [isInView, target, duration]);
+
+  return <span ref={ref}>{count.toLocaleString()}</span>;
+}
+
+// ─── Tilt Card for Testimonials ───────────────────────────────
+
+function TiltCard({ children, className = '' }: { children: React.ReactNode; className?: string }) {
+  const x = useMotionValue(0);
+  const y = useMotionValue(0);
+  const rotateX = useSpring(useTransform(y, [-0.5, 0.5], [6, -6]), { stiffness: 300, damping: 30 });
+  const rotateY = useSpring(useTransform(x, [-0.5, 0.5], [-6, 6]), { stiffness: 300, damping: 30 });
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const px = (e.clientX - rect.left) / rect.width - 0.5;
+    const py = (e.clientY - rect.top) / rect.height - 0.5;
+    x.set(px);
+    y.set(py);
+  };
+
+  const handleMouseLeave = () => {
+    x.set(0);
+    y.set(0);
+  };
+
+  return (
+    <motion.div
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+      style={{ rotateX, rotateY, transformStyle: 'preserve-3d' }}
+      className={className}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
+// ─── Feature Card with InView Animation ───────────────────────
+
+function FeatureCard({ feature, index }: { feature: typeof FEATURES[number]; index: number }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const isInView = useInView(ref, { once: true, margin: '-80px' });
+  const Icon = feature.icon;
+
+  return (
+    <motion.div
+      ref={ref}
+      initial={{ opacity: 0, y: 50, scale: 0.95 }}
+      animate={isInView ? { opacity: 1, y: 0, scale: 1 } : {}}
+      transition={{ duration: 0.5, delay: index * 0.12, ease: 'easeOut' }}
+    >
+      <Card className="group hover:shadow-xl hover:-translate-y-2 transition-all duration-300 border-gray-200 dark:border-gray-800 h-full overflow-hidden relative">
+        {/* Subtle gradient background */}
+        <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 ${feature.bg}`} />
+        <CardContent className="p-6 relative z-10">
+          <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-4 transition-all duration-300 group-hover:shadow-lg ${feature.bg}`}
+            style={{
+              boxShadow: undefined,
+            }}
+          >
+            <div className="relative">
+              <Icon className={`w-6 h-6 ${feature.color} transition-all duration-300 group-hover:scale-110`} />
+              {/* Glow effect on hover */}
+              <div className={`absolute inset-0 ${feature.color} blur-lg opacity-0 group-hover:opacity-30 transition-opacity duration-300`} />
+            </div>
+          </div>
+          <h3 className="text-lg font-bold mb-2">{feature.title}</h3>
+          <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">{feature.description}</p>
+        </CardContent>
+      </Card>
+    </motion.div>
+  );
+}
+
 // ─── Niche Icon Mapping ───────────────────────────────────────
 
 function getNicheColorClass(color: string): string {
@@ -168,6 +268,8 @@ const TESTIMONIALS = [
     business: 'Grocery Store',
     city: 'Delhi',
     rating: 5,
+    initials: 'RK',
+    color: 'from-emerald-400 to-teal-500',
   },
   {
     quote: "As a restaurant owner, KOT printing and table management were game changers. My staff learned the system in just 30 minutes. Highly recommend!",
@@ -175,6 +277,8 @@ const TESTIMONIALS = [
     business: 'Restaurant',
     city: 'Mumbai',
     rating: 5,
+    initials: 'PS',
+    color: 'from-amber-400 to-orange-500',
   },
   {
     quote: "The pharmacy-specific features like batch tracking and expiry alerts saved me from huge losses. Best POS for medical stores in India.",
@@ -182,6 +286,8 @@ const TESTIMONIALS = [
     business: 'Medical Store',
     city: 'Hyderabad',
     rating: 5,
+    initials: 'AK',
+    color: 'from-violet-400 to-purple-500',
   },
 ];
 
@@ -232,19 +338,67 @@ const FEATURES = [
   },
 ];
 
-// ─── Pricing Features ─────────────────────────────────────────
+// ─── Pricing Data ─────────────────────────────────────────────
 
-const PRICING_FEATURES = [
-  'Unlimited products & categories',
-  'Full POS billing system',
-  'Customer management & loyalty',
-  'Staff management & roles',
-  'GST-ready invoices & reports',
-  'WhatsApp bill sharing',
-  'Multi-payment modes',
-  'Mobile & tablet ready',
-  '15 niche-specific templates',
-  'Priority support',
+const PRICING_TIERS = [
+  {
+    name: 'Starter',
+    price: 0,
+    period: 'forever',
+    description: 'Try it out',
+    popular: false,
+    features: [
+      { name: 'Up to 50 products', included: true },
+      { name: 'Basic POS billing', included: true },
+      { name: '5 staff accounts', included: true },
+      { name: 'Customer management', included: false },
+      { name: 'GST-ready invoices', included: false },
+      { name: 'WhatsApp sharing', included: false },
+    ],
+  },
+  {
+    name: 'Pro',
+    price: 99,
+    period: '/month',
+    description: 'Everything you need',
+    popular: true,
+    features: [
+      { name: 'Unlimited products', included: true },
+      { name: 'Full POS billing system', included: true },
+      { name: 'Unlimited staff', included: true },
+      { name: 'Customer CRM & loyalty', included: true },
+      { name: 'GST-ready invoices & reports', included: true },
+      { name: 'WhatsApp bill sharing', included: true },
+    ],
+  },
+  {
+    name: 'Enterprise',
+    price: 499,
+    period: '/month',
+    description: 'For growing chains',
+    popular: false,
+    features: [
+      { name: 'Everything in Pro', included: true },
+      { name: 'Multi-store management', included: true },
+      { name: 'Advanced analytics', included: true },
+      { name: 'API access', included: true },
+      { name: 'Priority phone support', included: true },
+      { name: 'Custom integrations', included: true },
+    ],
+  },
+];
+
+const COMPARISON_FEATURES = [
+  { name: 'Products', starter: 'Up to 50', pro: 'Unlimited', enterprise: 'Unlimited' },
+  { name: 'Staff accounts', starter: '5', pro: 'Unlimited', enterprise: 'Unlimited' },
+  { name: 'POS Billing', starter: '✓', pro: '✓', enterprise: '✓' },
+  { name: 'Customer CRM', starter: '—', pro: '✓', enterprise: '✓' },
+  { name: 'GST Invoices', starter: '—', pro: '✓', enterprise: '✓' },
+  { name: 'WhatsApp Sharing', starter: '—', pro: '✓', enterprise: '✓' },
+  { name: 'Multi-store', starter: '—', pro: '—', enterprise: '✓' },
+  { name: 'API Access', starter: '—', pro: '—', enterprise: '✓' },
+  { name: 'Priority Support', starter: '—', pro: 'Email', enterprise: 'Phone + Email' },
+  { name: 'Custom Integrations', starter: '—', pro: '—', enterprise: '✓' },
 ];
 
 // ─── Main Component ───────────────────────────────────────────
@@ -331,6 +485,23 @@ export default function LandingPage() {
           0%, 100% { transform: translateY(0px); }
           50% { transform: translateY(-12px); }
         }
+        @keyframes pulseOrb {
+          0%, 100% { opacity: 0.4; transform: scale(1); }
+          50% { opacity: 0.7; transform: scale(1.1); }
+        }
+        @keyframes shimmerBtn {
+          0% { background-position: -200% center; }
+          100% { background-position: 200% center; }
+        }
+        @keyframes ctaGradient {
+          0% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+          100% { background-position: 0% 50%; }
+        }
+        @keyframes pulseCtaGlow {
+          0%, 100% { box-shadow: 0 0 20px rgba(16, 185, 129, 0.3); }
+          50% { box-shadow: 0 0 40px rgba(16, 185, 129, 0.6), 0 0 80px rgba(16, 185, 129, 0.2); }
+        }
         .hero-gradient-animated {
           background-size: 200% 200%;
           animation: heroGradient 8s ease infinite;
@@ -350,6 +521,20 @@ export default function LandingPage() {
         .float-shape-4 {
           animation: floatShape4 14s ease-in-out infinite;
         }
+        .pulse-orb {
+          animation: pulseOrb 4s ease-in-out infinite;
+        }
+        .shimmer-btn {
+          background-size: 200% auto;
+          animation: shimmerBtn 3s linear infinite;
+        }
+        .cta-gradient-animated {
+          background-size: 200% 200%;
+          animation: ctaGradient 6s ease infinite;
+        }
+        .pulse-cta-glow {
+          animation: pulseCtaGlow 2.5s ease-in-out infinite;
+        }
         .niche-shimmer {
           position: relative;
           overflow: hidden;
@@ -368,6 +553,38 @@ export default function LandingPage() {
         .niche-shimmer:hover::after {
           animation: shimmerSweep 0.6s ease-out;
         }
+        .gradient-border {
+          position: relative;
+          background: white;
+          border-radius: 0.75rem;
+        }
+        .gradient-border::before {
+          content: '';
+          position: absolute;
+          inset: -2px;
+          border-radius: 0.75rem;
+          background: linear-gradient(135deg, #10b981, #14b8a6, #0ea5e9, #10b981);
+          background-size: 300% 300%;
+          opacity: 0;
+          z-index: -1;
+          transition: opacity 0.4s ease;
+        }
+        .gradient-border:hover::before {
+          opacity: 1;
+          animation: gradientBorderMove 3s ease infinite;
+        }
+        @keyframes gradientBorderMove {
+          0% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+          100% { background-position: 0% 50%; }
+        }
+        .dark .gradient-border {
+          background: #1f2937;
+        }
+        @keyframes iconBounce {
+          0%, 100% { transform: translateY(0) scale(1.1); }
+          50% { transform: translateY(-4px) scale(1.1); }
+        }
         .pricing-glow {
           animation: pulseGlow 3s ease-in-out infinite;
         }
@@ -381,6 +598,13 @@ export default function LandingPage() {
           border-radius: 9999px;
           animation: pulseRing 2s ease-out infinite;
         }
+        @keyframes stepFloat {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-6px); }
+        }
+        .step-float-1 { animation: stepFloat 3s ease-in-out infinite; }
+        .step-float-2 { animation: stepFloat 3s ease-in-out 0.5s infinite; }
+        .step-float-3 { animation: stepFloat 3s ease-in-out 1s infinite; }
       `}</style>
       {/* ═══════════════════ NAVBAR ═══════════════════ */}
       <nav
@@ -481,7 +705,7 @@ export default function LandingPage() {
                 size="sm"
                 onClick={() => { setMobileMenuOpen(false); handleTryDemo(); }}
                 disabled={demoLoading}
-                className="w-full rounded-full bg-amber-500 hover:bg-amber-600 text-white"
+                className="w-full rounded-full bg-amber-500 hover:bg-amber-600 text-white shimmer-btn"
               >
                 {demoLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Play className="w-4 h-4 mr-2" />}
                 {demoLoading ? 'Loading...' : 'Try Demo'}
@@ -495,8 +719,21 @@ export default function LandingPage() {
       <section className="relative pt-28 pb-20 sm:pt-36 sm:pb-28 overflow-hidden">
         {/* Background Gradient - Animated */}
         <div className="absolute inset-0 bg-gradient-to-br from-emerald-50 via-white to-teal-50 dark:from-gray-950 dark:via-gray-950 dark:to-emerald-950/30 hero-gradient-animated" />
+
+        {/* Glowing/Pulsing Gradient Orb behind hero text */}
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-br from-emerald-400/20 via-teal-400/15 to-cyan-400/10 dark:from-emerald-600/10 dark:via-teal-600/5 dark:to-cyan-600/5 rounded-full blur-3xl pulse-orb" />
+        <div className="absolute top-1/3 left-[30%] w-[400px] h-[400px] bg-gradient-to-tr from-emerald-300/15 to-teal-300/10 dark:from-emerald-700/5 dark:to-teal-700/5 rounded-full blur-3xl pulse-orb" style={{ animationDelay: '2s' }} />
+
+        {/* Dot Grid Pattern */}
+        <div className="absolute inset-0 opacity-[0.03] dark:opacity-[0.05]" style={{
+          backgroundImage: 'radial-gradient(circle, #10b981 1px, transparent 1px)',
+          backgroundSize: '30px 30px',
+        }} />
+
+        {/* Soft blobs */}
         <div className="absolute top-20 left-1/4 w-96 h-96 bg-emerald-200/30 dark:bg-emerald-800/10 rounded-full blur-3xl" />
         <div className="absolute bottom-10 right-1/4 w-80 h-80 bg-teal-200/30 dark:bg-teal-800/10 rounded-full blur-3xl" />
+
         {/* Floating shapes */}
         <div className="absolute top-32 left-[10%] w-20 h-20 bg-emerald-400/10 dark:bg-emerald-500/10 rounded-full float-shape-1" />
         <div className="absolute top-48 right-[15%] w-32 h-32 bg-emerald-300/10 dark:bg-emerald-400/10 rounded-full float-shape-2" />
@@ -508,10 +745,15 @@ export default function LandingPage() {
             {/* Left: Copy */}
             <div>
               <FadeIn>
-                <Badge className="mb-6 bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 border-0 rounded-full px-4 py-1.5 text-sm font-medium">
-                  <Sparkles className="w-3.5 h-3.5 mr-1" />
-                  Now just ₹99/month
-                </Badge>
+                <div className="flex flex-wrap gap-3 mb-6">
+                  <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 border-0 rounded-full px-4 py-1.5 text-sm font-medium">
+                    <Sparkles className="w-3.5 h-3.5 mr-1" />
+                    Now just ₹99/month
+                  </Badge>
+                  <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300 border-0 rounded-full px-4 py-1.5 text-sm font-medium">
+                    🇮🇳 Made for India
+                  </Badge>
+                </div>
               </FadeIn>
 
               <FadeIn delay={0.1}>
@@ -543,7 +785,7 @@ export default function LandingPage() {
                     size="lg"
                     onClick={handleTryDemo}
                     disabled={demoLoading}
-                    className="rounded-full bg-amber-500 hover:bg-amber-600 text-white shadow-lg shadow-amber-500/25 px-8 h-12 text-base"
+                    className="rounded-full bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-600 hover:via-amber-500 hover:to-amber-600 text-white shadow-lg shadow-amber-500/25 px-8 h-12 text-base shimmer-btn relative overflow-hidden"
                   >
                     {demoLoading ? (
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -558,16 +800,39 @@ export default function LandingPage() {
               <FadeIn delay={0.4}>
                 <div className="mt-10 flex flex-wrap gap-x-8 gap-y-3">
                   {[
-                    { value: '10,000+', label: 'Stores' },
-                    { value: '15', label: 'Business Types' },
-                    { value: '₹99', label: '/month' },
-                    { value: '14-Day', label: 'Free Trial' },
+                    { value: '10,000+', label: 'Stores', animated: true },
+                    { value: '15', label: 'Business Types', animated: false },
+                    { value: '₹99', label: '/month', animated: false },
+                    { value: '14-Day', label: 'Free Trial', animated: false },
                   ].map((stat) => (
                     <div key={stat.label} className="flex items-baseline gap-1.5">
-                      <span className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{stat.value}</span>
+                      <span className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
+                        {stat.animated ? <><AnimatedCounter target={10000} />+</> : stat.value}
+                      </span>
                       <span className="text-sm text-gray-500 dark:text-gray-400">{stat.label}</span>
                     </div>
                   ))}
+                </div>
+              </FadeIn>
+
+              {/* Trusted badge */}
+              <FadeIn delay={0.5}>
+                <div className="mt-6 inline-flex items-center gap-2 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-full px-4 py-2 border border-gray-200/50 dark:border-gray-700/50 shadow-sm">
+                  <div className="flex -space-x-2">
+                    {['bg-emerald-500', 'bg-amber-500', 'bg-sky-500', 'bg-violet-500'].map((bg, i) => (
+                      <div key={i} className={`w-6 h-6 rounded-full ${bg} border-2 border-white dark:border-gray-800 flex items-center justify-center text-white text-[8px] font-bold`}>
+                        {['R', 'P', 'A', 'S'][i]}
+                      </div>
+                    ))}
+                  </div>
+                  <span className="text-sm text-gray-600 dark:text-gray-300">
+                    Trusted by <span className="font-bold text-emerald-600 dark:text-emerald-400"><AnimatedCounter target={10000} />+</span> stores
+                  </span>
+                  <div className="flex gap-0.5">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <Star key={i} className="w-3 h-3 fill-amber-400 text-amber-400" />
+                    ))}
+                  </div>
                 </div>
               </FadeIn>
             </div>
@@ -669,19 +934,35 @@ export default function LandingPage() {
           </FadeIn>
 
           <StaggerContainer className="mt-14 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
-            {NICHES.map((niche) => (
-              <StaggerItem key={niche.slug}>
-                <Card className={`group hover:shadow-lg hover:-translate-y-1 transition-all duration-300 cursor-pointer border-gray-200 dark:border-gray-800 h-full border-t-4 ${getNicheBorderTop(niche.color)} niche-shimmer`}>
-                  <CardContent className="p-4 text-center flex flex-col items-center gap-2">
-                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-2xl transition-transform duration-300 group-hover:scale-110 ${getNicheColorClass(niche.color)}`}>
-                      {niche.icon}
-                    </div>
-                    <h3 className="font-semibold text-sm leading-tight">{niche.name}</h3>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 leading-snug">{niche.description}</p>
-                  </CardContent>
-                </Card>
-              </StaggerItem>
-            ))}
+            {NICHES.map((niche) => {
+              const isPopular = niche.slug === 'restaurant' || niche.slug === 'grocery';
+              return (
+                <StaggerItem key={niche.slug}>
+                  <Card className={`group hover:shadow-xl hover:-translate-y-2 hover:scale-[1.02] transition-all duration-300 cursor-pointer border-gray-200 dark:border-gray-800 h-full border-t-4 ${getNicheBorderTop(niche.color)} niche-shimmer gradient-border relative`}>
+                    {/* Popular Badge */}
+                    {isPopular && (
+                      <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-20">
+                        <Badge className="bg-gradient-to-r from-amber-500 to-orange-500 text-white border-0 rounded-full px-2.5 py-0.5 text-[10px] font-bold shadow-md shadow-amber-500/25">
+                          <Sparkles className="w-2.5 h-2.5 mr-0.5" />
+                          Popular
+                        </Badge>
+                      </div>
+                    )}
+                    <CardContent className="p-4 text-center flex flex-col items-center gap-2">
+                      <motion.div
+                        className={`w-12 h-12 rounded-xl flex items-center justify-center text-2xl ${getNicheColorClass(niche.color)}`}
+                        whileHover={{ y: -4, scale: 1.15 }}
+                        transition={{ type: 'spring', stiffness: 400, damping: 15 }}
+                      >
+                        {niche.icon}
+                      </motion.div>
+                      <h3 className="font-semibold text-sm leading-tight">{niche.name}</h3>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 leading-snug">{niche.description}</p>
+                    </CardContent>
+                  </Card>
+                </StaggerItem>
+              );
+            })}
           </StaggerContainer>
         </div>
       </section>
@@ -703,24 +984,11 @@ export default function LandingPage() {
             </div>
           </FadeIn>
 
-          <StaggerContainer className="mt-14 grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {FEATURES.map((feature) => {
-              const Icon = feature.icon;
-              return (
-                <StaggerItem key={feature.title}>
-                  <Card className="group hover:shadow-lg hover:-translate-y-1 transition-all duration-300 border-gray-200 dark:border-gray-800 h-full">
-                    <CardContent className="p-6">
-                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-4 ${feature.bg}`}>
-                        <Icon className={`w-6 h-6 ${feature.color}`} />
-                      </div>
-                      <h3 className="text-lg font-bold mb-2">{feature.title}</h3>
-                      <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">{feature.description}</p>
-                    </CardContent>
-                  </Card>
-                </StaggerItem>
-              );
-            })}
-          </StaggerContainer>
+          <div className="mt-14 grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {FEATURES.map((feature, index) => (
+              <FeatureCard key={feature.title} feature={feature} index={index} />
+            ))}
+          </div>
         </div>
       </section>
 
@@ -741,44 +1009,70 @@ export default function LandingPage() {
             </div>
           </FadeIn>
 
-          <div className="mt-14 grid md:grid-cols-3 gap-8">
+          <div className="mt-14 grid md:grid-cols-3 gap-8 relative">
+            {/* Connecting Lines (desktop only) */}
+            <div className="hidden md:block absolute top-20 left-[25%] right-[25%]">
+              <div className="relative h-0.5 bg-gradient-to-r from-emerald-300 via-teal-300 to-cyan-300 dark:from-emerald-700 dark:via-teal-700 dark:to-cyan-700">
+                {/* Arrow at 50% point */}
+                <div className="absolute top-1/2 left-1/2 -translate-y-1/2 -translate-x-1/2">
+                  <ChevronRight className="w-4 h-4 text-teal-500 dark:text-teal-400 -mt-0.5" />
+                </div>
+                {/* Arrow at end */}
+                <div className="absolute top-1/2 right-0 -translate-y-1/2 translate-x-1">
+                  <ChevronRight className="w-4 h-4 text-cyan-500 dark:text-cyan-400 -mt-0.5" />
+                </div>
+              </div>
+            </div>
+
             {[
               {
                 step: 1,
                 icon: CreditCard,
                 title: 'Sign Up & Pay ₹99',
                 description: 'Create your account and start your 14-day free trial. No credit card required upfront.',
-                color: 'emerald',
+                color: 'from-emerald-500 to-emerald-600',
+                ring: 'border-emerald-500',
+                text: 'text-emerald-600',
               },
               {
                 step: 2,
                 icon: ShoppingCart,
                 title: 'Choose Your Niche',
                 description: 'Pick your business type from 15 specialized templates. Each one tailored for your industry.',
-                color: 'teal',
+                color: 'from-teal-500 to-teal-600',
+                ring: 'border-teal-500',
+                text: 'text-teal-600',
               },
               {
                 step: 3,
                 icon: Rocket,
                 title: 'Launch Your POS',
                 description: 'Start billing immediately. Your custom POS is ready to go — no training needed.',
-                color: 'cyan',
+                color: 'from-cyan-500 to-cyan-600',
+                ring: 'border-cyan-500',
+                text: 'text-cyan-600',
               },
             ].map((item) => {
               const Icon = item.icon;
               return (
                 <FadeIn key={item.step} delay={item.step * 0.15}>
                   <div className="relative text-center">
-                    {/* Connector Line (desktop only) */}
-                    {item.step < 3 && (
-                      <div className="hidden md:block absolute top-10 left-[60%] w-[80%] h-0.5 bg-gradient-to-r from-emerald-300 to-teal-300 dark:from-emerald-700 dark:to-teal-700" />
-                    )}
-                    <div className="relative z-10 inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-emerald-500 to-teal-500 shadow-lg shadow-emerald-500/25 mb-6">
-                      <span className="absolute -top-1 -right-1 w-7 h-7 rounded-full bg-white dark:bg-gray-900 text-emerald-600 font-bold text-sm flex items-center justify-center border-2 border-emerald-500">
-                        {item.step}
-                      </span>
-                      <Icon className="w-8 h-8 text-white" />
-                    </div>
+                    <motion.div
+                      className={`step-float-${item.step} inline-block`}
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      whileInView={{ opacity: 1, scale: 1 }}
+                      viewport={{ once: true }}
+                      transition={{ duration: 0.5, delay: item.step * 0.15 }}
+                    >
+                      <div className={`relative z-10 inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br ${item.color} shadow-lg mb-6`}
+                      >
+                        {/* Step number badge */}
+                        <span className={`absolute -top-1 -right-1 w-7 h-7 rounded-full bg-white dark:bg-gray-900 ${item.text} font-bold text-sm flex items-center justify-center border-2 ${item.ring} shadow-sm`}>
+                          {item.step}
+                        </span>
+                        <Icon className="w-8 h-8 text-white" />
+                      </div>
+                    </motion.div>
                     <h3 className="text-xl font-bold mb-2">{item.title}</h3>
                     <p className="text-sm text-gray-600 dark:text-gray-400 max-w-xs mx-auto">{item.description}</p>
                   </div>
@@ -803,60 +1097,120 @@ export default function LandingPage() {
                   Transparent Pricing
                 </span>
               </h2>
-              <p className="mt-4 text-lg text-gray-600 dark:text-gray-400">No hidden fees. No surprises. Just one plan that has everything.</p>
+              <p className="mt-4 text-lg text-gray-600 dark:text-gray-400">No hidden fees. No surprises. Pick the plan that fits your business.</p>
             </div>
           </FadeIn>
 
           <FadeIn delay={0.2}>
-            <div className="mt-14 flex justify-center">
-              <Card className="relative max-w-md w-full border-2 border-emerald-500 dark:border-emerald-600 shadow-xl shadow-emerald-500/10 pricing-glow">
-                <div className="absolute -top-4 left-1/2 -translate-x-1/2 flex gap-2">
-                  <Badge className="bg-emerald-600 text-white border-0 rounded-full px-4 py-1 text-sm shadow-lg shadow-emerald-600/25">
-                    <Sparkles className="w-3 h-3 mr-1" />
-                    Most Popular
-                  </Badge>
-                  <Badge className="bg-amber-500 text-white border-0 rounded-full px-3 py-1 text-xs shadow-lg shadow-amber-500/25">
-                    🔥 Popular
-                  </Badge>
-                </div>
-                <CardHeader className="text-center pb-2 pt-8">
-                  <CardTitle className="text-xl font-bold">Starter</CardTitle>
-                  <CardDescription>Everything to run your store</CardDescription>
-                  <div className="mt-4">
-                    <div className="flex items-baseline justify-center gap-1">
-                      <IndianRupee className="w-7 h-7 text-emerald-600 dark:text-emerald-400" />
-                      <span className="text-5xl font-extrabold">99</span>
-                      <span className="text-gray-500 dark:text-gray-400 text-lg">/month</span>
-                    </div>
-                    <Badge className="mt-3 bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 border-0 rounded-full">
-                      14-day free trial
-                    </Badge>
-                  </div>
-                </CardHeader>
-                <CardContent className="pb-2">
-                  <div className="space-y-3">
-                    {PRICING_FEATURES.map((feature) => (
-                      <div key={feature} className="flex items-start gap-3">
-                        <div className="w-5 h-5 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center mt-0.5 shrink-0">
-                          <Check className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
-                        </div>
-                        <span className="text-sm text-gray-700 dark:text-gray-300">{feature}</span>
+            <div className="mt-14 grid md:grid-cols-3 gap-6 lg:gap-8 items-start">
+              {PRICING_TIERS.map((tier) => (
+                <Card
+                  key={tier.name}
+                  className={`relative transition-all duration-300 hover:shadow-xl ${
+                    tier.popular
+                      ? 'border-2 border-emerald-500 dark:border-emerald-600 shadow-xl shadow-emerald-500/10 pricing-glow md:scale-105 md:z-10'
+                      : 'border-gray-200 dark:border-gray-800 hover:-translate-y-1'
+                  }`}
+                >
+                  {/* Most Popular Ribbon */}
+                  {tier.popular && (
+                    <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-20">
+                      <div className="relative">
+                        <Badge className="bg-gradient-to-r from-emerald-600 to-teal-500 text-white border-0 rounded-full px-5 py-1.5 text-sm font-bold shadow-lg shadow-emerald-600/30 whitespace-nowrap">
+                          <Sparkles className="w-3.5 h-3.5 mr-1" />
+                          Most Popular
+                        </Badge>
                       </div>
+                    </div>
+                  )}
+
+                  <CardHeader className={`text-center pb-2 ${tier.popular ? 'pt-8' : 'pt-6'}`}>
+                    <CardTitle className="text-xl font-bold">{tier.name}</CardTitle>
+                    <CardDescription>{tier.description}</CardDescription>
+                    <div className="mt-4">
+                      <div className="flex items-baseline justify-center gap-1">
+                        {tier.price > 0 && <IndianRupee className={`w-6 h-6 ${tier.popular ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-600 dark:text-gray-400'}`} />}
+                        <span className={`${tier.popular ? 'text-5xl' : 'text-4xl'} font-extrabold`}>{tier.price > 0 ? tier.price : 'Free'}</span>
+                        {tier.price > 0 && <span className="text-gray-500 dark:text-gray-400 text-lg">{tier.period}</span>}
+                        {tier.price === 0 && <span className="text-gray-500 dark:text-gray-400 text-lg ml-1">{tier.period}</span>}
+                      </div>
+                      {tier.popular && (
+                        <Badge className="mt-3 bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 border-0 rounded-full">
+                          14-day free trial
+                        </Badge>
+                      )}
+                    </div>
+                  </CardHeader>
+
+                  <CardContent className="pb-2">
+                    <div className="space-y-3">
+                      {tier.features.map((feature) => (
+                        <div key={feature.name} className="flex items-start gap-3">
+                          <div className={`w-5 h-5 rounded-full flex items-center justify-center mt-0.5 shrink-0 ${
+                            feature.included
+                              ? 'bg-emerald-100 dark:bg-emerald-900/30'
+                              : 'bg-gray-100 dark:bg-gray-800'
+                          }`}>
+                            {feature.included ? (
+                              <Check className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+                            ) : (
+                              <X className="w-3 h-3 text-gray-400" />
+                            )}
+                          </div>
+                          <span className={`text-sm ${feature.included ? 'text-gray-700 dark:text-gray-300' : 'text-gray-400 dark:text-gray-500'}`}>{feature.name}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+
+                  <CardFooter className="flex flex-col gap-3 pt-4 pb-6">
+                    <Button
+                      size="lg"
+                      className={`w-full rounded-full h-12 text-base ${
+                        tier.popular
+                          ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-600/25 pricing-btn-pulse'
+                          : 'bg-gray-900 hover:bg-gray-800 dark:bg-gray-100 dark:hover:bg-gray-200 text-white dark:text-gray-900'
+                      }`}
+                      onClick={() => setCurrentView({ page: 'signup' })}
+                    >
+                      {tier.price === 0 ? 'Get Started' : 'Start Free Trial'}
+                      <ArrowRight className="w-4 h-4 ml-1" />
+                    </Button>
+                    {tier.popular && <p className="text-xs text-gray-500 dark:text-gray-400">No credit card required</p>}
+                  </CardFooter>
+                </Card>
+              ))}
+            </div>
+          </FadeIn>
+
+          {/* Comparison Table */}
+          <FadeIn delay={0.3}>
+            <div className="mt-16 max-w-4xl mx-auto">
+              <h3 className="text-xl font-bold text-center mb-6">Compare Plans</h3>
+              <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-800">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="bg-gray-50 dark:bg-gray-900/50">
+                      <th className="text-left py-3 px-4 font-semibold text-gray-600 dark:text-gray-400">Feature</th>
+                      <th className="text-center py-3 px-4 font-semibold text-gray-600 dark:text-gray-400">Starter</th>
+                      <th className="text-center py-3 px-4 font-semibold bg-emerald-50 dark:bg-emerald-900/20">
+                        <span className="text-emerald-600 dark:text-emerald-400">Pro</span>
+                      </th>
+                      <th className="text-center py-3 px-4 font-semibold text-gray-600 dark:text-gray-400">Enterprise</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {COMPARISON_FEATURES.map((row, i) => (
+                      <tr key={row.name} className={`border-t border-gray-100 dark:border-gray-800 ${i % 2 === 0 ? 'bg-white dark:bg-gray-950' : 'bg-gray-50/50 dark:bg-gray-900/30'}`}>
+                        <td className="py-3 px-4 text-gray-700 dark:text-gray-300 font-medium">{row.name}</td>
+                        <td className="py-3 px-4 text-center text-gray-500 dark:text-gray-400">{row.starter}</td>
+                        <td className="py-3 px-4 text-center bg-emerald-50/50 dark:bg-emerald-900/10 font-medium text-emerald-700 dark:text-emerald-300">{row.pro}</td>
+                        <td className="py-3 px-4 text-center text-gray-500 dark:text-gray-400">{row.enterprise}</td>
+                      </tr>
                     ))}
-                  </div>
-                </CardContent>
-                <CardFooter className="flex flex-col gap-3 pt-4">
-                  <Button
-                    size="lg"
-                    className="w-full rounded-full bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-600/25 h-12 text-base pricing-btn-pulse"
-                    onClick={() => setCurrentView({ page: 'signup' })}
-                  >
-                    Start Free Trial
-                    <ArrowRight className="w-4 h-4 ml-1" />
-                  </Button>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">No credit card required</p>
-                </CardFooter>
-              </Card>
+                  </tbody>
+                </table>
+              </div>
             </div>
           </FadeIn>
         </div>
@@ -879,43 +1233,59 @@ export default function LandingPage() {
             </div>
           </FadeIn>
 
-          <StaggerContainer className="mt-14 grid md:grid-cols-3 gap-6">
-            {TESTIMONIALS.map((t) => (
-              <StaggerItem key={t.name}>
-                <Card className="h-full border-gray-200 dark:border-gray-800 hover:shadow-lg transition-shadow duration-300">
-                  <CardContent className="p-6">
-                    {/* Stars */}
-                    <div className="flex gap-0.5 mb-3">
-                      {Array.from({ length: 5 }).map((_, i) => (
-                        <span key={i} className="text-amber-400 text-sm">★</span>
-                      ))}
-                    </div>
-                    <p className="text-gray-700 dark:text-gray-300 leading-relaxed text-sm mb-6">
-                      &ldquo;{t.quote}&rdquo;
-                    </p>
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white font-bold text-sm">
-                        {t.name.charAt(0)}
+          <div className="mt-14 grid md:grid-cols-3 gap-6">
+            {TESTIMONIALS.map((t, i) => (
+              <FadeIn key={t.name} delay={i * 0.1}>
+                <TiltCard className="h-full">
+                  <Card className="h-full border-gray-200 dark:border-gray-800 hover:shadow-xl transition-shadow duration-300 overflow-hidden relative">
+                    {/* Subtle gradient top border */}
+                    <div className={`h-1 bg-gradient-to-r ${t.color}`} />
+                    <CardContent className="p-6">
+                      {/* Star Ratings */}
+                      <div className="flex gap-0.5 mb-3">
+                        {Array.from({ length: t.rating }).map((_, i) => (
+                          <Star key={i} className="w-4 h-4 fill-amber-400 text-amber-400" />
+                        ))}
+                        {Array.from({ length: 5 - t.rating }).map((_, i) => (
+                          <Star key={`e-${i}`} className="w-4 h-4 text-gray-300 dark:text-gray-600" />
+                        ))}
                       </div>
-                      <div>
-                        <p className="font-semibold text-sm">{t.name}</p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">
-                          {t.business} · {t.city}
-                        </p>
+                      <p className="text-gray-700 dark:text-gray-300 leading-relaxed text-sm mb-6">
+                        &ldquo;{t.quote}&rdquo;
+                      </p>
+                      <div className="flex items-center gap-3">
+                        {/* Avatar with initials */}
+                        <div className={`w-11 h-11 rounded-full bg-gradient-to-br ${t.color} flex items-center justify-center text-white font-bold text-sm shadow-md`}>
+                          {t.initials}
+                        </div>
+                        <div>
+                          <p className="font-semibold text-sm">{t.name}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                            {t.business} · {t.city}
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </StaggerItem>
+                    </CardContent>
+                  </Card>
+                </TiltCard>
+              </FadeIn>
             ))}
-          </StaggerContainer>
+          </div>
         </div>
       </section>
 
       {/* ═══════════════════ CTA SECTION ═══════════════════ */}
       <section className="py-20 sm:py-28 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-emerald-600 to-teal-600" />
+        {/* Animated gradient background */}
+        <div className="absolute inset-0 bg-gradient-to-br from-emerald-600 via-teal-600 to-emerald-700 cta-gradient-animated" />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(255,255,255,0.1),transparent)]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,rgba(255,255,255,0.08),transparent)]" />
+
+        {/* Floating particles */}
+        <div className="absolute top-10 left-[10%] w-3 h-3 bg-white/20 rounded-full float-shape-1" />
+        <div className="absolute top-20 right-[20%] w-2 h-2 bg-white/15 rounded-full float-shape-2" />
+        <div className="absolute bottom-16 left-[30%] w-4 h-4 bg-white/10 rounded-full float-shape-3" />
+        <div className="absolute bottom-10 right-[15%] w-2 h-2 bg-white/20 rounded-full float-shape-4" />
 
         <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <FadeIn>
@@ -932,11 +1302,18 @@ export default function LandingPage() {
             <Button
               size="lg"
               onClick={() => setCurrentView({ page: 'signup' })}
-              className="mt-10 rounded-full bg-white text-emerald-700 hover:bg-emerald-50 shadow-xl h-14 px-10 text-lg font-bold"
+              className="mt-10 rounded-full bg-white text-emerald-700 hover:bg-emerald-50 shadow-xl h-14 px-10 text-lg font-bold pulse-cta-glow"
             >
               Start Free Trial
               <ArrowRight className="w-5 h-5 ml-2" />
             </Button>
+          </FadeIn>
+          <FadeIn delay={0.4}>
+            <div className="mt-6 flex flex-wrap justify-center gap-6 text-emerald-200 text-sm">
+              <span className="flex items-center gap-1.5"><Check className="w-4 h-4" /> 14-day free trial</span>
+              <span className="flex items-center gap-1.5"><Check className="w-4 h-4" /> No credit card</span>
+              <span className="flex items-center gap-1.5"><Check className="w-4 h-4" /> Cancel anytime</span>
+            </div>
           </FadeIn>
         </div>
       </section>
@@ -944,28 +1321,34 @@ export default function LandingPage() {
       {/* ═══════════════════ FOOTER ═══════════════════ */}
       <footer id="contact" className="bg-gray-900 dark:bg-gray-950 text-gray-400 pt-16 pb-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-10 pb-12 border-b border-gray-800">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-10 pb-12 border-b border-gray-800">
             {/* Brand */}
-            <div className="sm:col-span-2 lg:col-span-1">
+            <div className="sm:col-span-2 lg:col-span-2">
               <div className="flex items-center gap-2 mb-4">
                 <div className="w-8 h-8 rounded-lg bg-emerald-500 flex items-center justify-center">
                   <Package className="w-4 h-4 text-white" />
                 </div>
                 <span className="text-lg font-bold text-white">StoreOS</span>
               </div>
-              <p className="text-sm leading-relaxed">
-                India&apos;s first multi-niche POS platform. Run your store on autopilot for just ₹99/month.
+              <p className="text-sm leading-relaxed max-w-sm">
+                India&apos;s first multi-niche POS platform. Run your store on autopilot for just ₹99/month. Trusted by 10,000+ businesses across India.
               </p>
+              {/* Social Media Icons */}
               <div className="flex gap-3 mt-5">
                 {[
-                  { Icon: Twitter, label: 'Twitter' },
-                  { Icon: Linkedin, label: 'LinkedIn' },
-                  { Icon: Instagram, label: 'Instagram' },
-                  { Icon: Youtube, label: 'YouTube' },
-                ].map(({ Icon, label }) => (
-                  <button key={label} aria-label={label} className="w-9 h-9 rounded-full bg-gray-800 hover:bg-emerald-600 flex items-center justify-center transition-colors hover:scale-110 hover:shadow-lg hover:shadow-emerald-500/20">
+                  { Icon: Twitter, label: 'Twitter', href: '#' },
+                  { Icon: Linkedin, label: 'LinkedIn', href: '#' },
+                  { Icon: Instagram, label: 'Instagram', href: '#' },
+                  { Icon: Youtube, label: 'YouTube', href: '#' },
+                ].map(({ Icon, label, href }) => (
+                  <a
+                    key={label}
+                    href={href}
+                    aria-label={label}
+                    className="w-9 h-9 rounded-full bg-gray-800 hover:bg-emerald-600 flex items-center justify-center transition-all duration-200 hover:scale-110 hover:shadow-lg hover:shadow-emerald-500/20"
+                  >
                     <Icon className="w-4 h-4" />
-                  </button>
+                  </a>
                 ))}
               </div>
             </div>
@@ -974,13 +1357,19 @@ export default function LandingPage() {
             <div>
               <h4 className="text-white font-semibold text-sm mb-4">Product</h4>
               <ul className="space-y-2.5">
-                {['Features', 'Pricing', 'Templates', 'Integrations'].map((link) => (
-                  <li key={link}>
+                {[
+                  { name: 'Features', id: 'features' },
+                  { name: 'Pricing', id: 'pricing' },
+                  { name: 'Templates', id: 'niches' },
+                  { name: 'Integrations', id: 'features' },
+                  { name: 'API', id: 'features' },
+                ].map((link) => (
+                  <li key={link.name}>
                     <button
-                      onClick={() => scrollTo(link.toLowerCase() === 'features' ? 'features' : link.toLowerCase() === 'pricing' ? 'pricing' : 'niches')}
+                      onClick={() => scrollTo(link.id)}
                       className="text-sm hover:text-emerald-400 transition-colors"
                     >
-                      {link}
+                      {link.name}
                     </button>
                   </li>
                 ))}
@@ -991,7 +1380,7 @@ export default function LandingPage() {
             <div>
               <h4 className="text-white font-semibold text-sm mb-4">Company</h4>
               <ul className="space-y-2.5">
-                {['About', 'Careers', 'Blog', 'Contact'].map((link) => (
+                {['About Us', 'Careers', 'Blog', 'Press', 'Contact'].map((link) => (
                   <li key={link}>
                     <button className="text-sm hover:text-emerald-400 transition-colors">{link}</button>
                   </li>
@@ -999,11 +1388,11 @@ export default function LandingPage() {
               </ul>
             </div>
 
-            {/* Legal */}
+            {/* Support */}
             <div>
-              <h4 className="text-white font-semibold text-sm mb-4">Legal</h4>
+              <h4 className="text-white font-semibold text-sm mb-4">Support</h4>
               <ul className="space-y-2.5">
-                {['Terms of Service', 'Privacy Policy', 'Refund Policy', 'Support'].map((link) => (
+                {['Help Center', 'Terms of Service', 'Privacy Policy', 'Refund Policy', 'Status'].map((link) => (
                   <li key={link}>
                     <button className="text-sm hover:text-emerald-400 transition-colors">{link}</button>
                   </li>
@@ -1013,11 +1402,18 @@ export default function LandingPage() {
           </div>
 
           <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <p className="text-sm">&copy; 2025 StoreOS. Made in India 🇮🇳</p>
-            <div className="flex items-center gap-1.5 text-sm">
-              <span>Built with</span>
-              <span className="text-red-500">&hearts;</span>
-              <span>for Indian businesses</span>
+            <p className="text-sm">&copy; {new Date().getFullYear()} StoreOS. Made in India 🇮🇳</p>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-1.5 text-sm">
+                <span>Built with</span>
+                <span className="text-red-500">&hearts;</span>
+                <span>for Indian businesses</span>
+              </div>
+              <div className="h-4 w-px bg-gray-700" />
+              <div className="flex items-center gap-1.5 text-xs text-gray-500">
+                <Shield className="w-3.5 h-3.5" />
+                <span>SOC 2 Compliant</span>
+              </div>
             </div>
           </div>
         </div>

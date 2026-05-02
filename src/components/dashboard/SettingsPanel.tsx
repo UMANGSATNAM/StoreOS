@@ -43,8 +43,11 @@ import {
   Zap,
   RefreshCw,
   Shield,
+  Globe,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useTranslation } from '@/lib/i18n';
+import type { Language } from '@/lib/i18n';
 
 interface StoreSettings {
   id: string;
@@ -62,6 +65,129 @@ interface StoreSettings {
   receiptHeader?: string;
   receiptFooter?: string;
   niche: string;
+}
+
+// ─── Language Tab Component ──────────────────────────────────
+function LanguageTab() {
+  const { language, setLanguage, t } = useTranslation();
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Globe className="w-5 h-5 text-emerald-600" />
+          {t('language')}
+        </CardTitle>
+        <CardDescription>{t('languageDesc')}</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        {/* Language Selection */}
+        <div className="grid sm:grid-cols-2 gap-4">
+          <button
+            onClick={() => {
+              setLanguage('en');
+              toast.success('Language changed to English');
+            }}
+            className={`p-4 rounded-xl border-2 transition-all text-left ${
+              language === 'en'
+                ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20 shadow-sm'
+                : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+            }`}
+          >
+            <div className="flex items-center gap-3 mb-2">
+              <span className="text-2xl">🇬🇧</span>
+              <div>
+                <p className="font-bold text-lg">English</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Default language</p>
+              </div>
+              {language === 'en' && (
+                <Check className="w-5 h-5 text-emerald-600 ml-auto" />
+              )}
+            </div>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Dashboard, Products, Orders, Reports
+            </p>
+          </button>
+
+          <button
+            onClick={() => {
+              setLanguage('hi');
+              toast.success('भाषा हिंदी में बदली गई');
+            }}
+            className={`p-4 rounded-xl border-2 transition-all text-left ${
+              language === 'hi'
+                ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20 shadow-sm'
+                : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+            }`}
+          >
+            <div className="flex items-center gap-3 mb-2">
+              <span className="text-2xl">🇮🇳</span>
+              <div>
+                <p className="font-bold text-lg">हिंदी</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Hindi</p>
+              </div>
+              {language === 'hi' && (
+                <Check className="w-5 h-5 text-emerald-600 ml-auto" />
+              )}
+            </div>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              डैशबोर्ड, उत्पाद, ऑर्डर, रिपोर्ट
+            </p>
+          </button>
+        </div>
+
+        <Separator />
+
+        {/* Live Preview */}
+        <div>
+          <p className="font-medium mb-3 flex items-center gap-2">
+            <Globe className="w-4 h-4 text-gray-500" />
+            {t('languagePreview')}
+          </p>
+          <div className="grid sm:grid-cols-2 gap-4">
+            {/* English Preview */}
+            <div className="p-4 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
+              <p className="text-xs font-medium text-gray-400 mb-2">🇬🇧 English</p>
+              <div className="space-y-1.5 text-sm">
+                <p><span className="text-gray-500">Sidebar:</span> <span className="font-medium">Dashboard, Products, Orders</span></p>
+                <p><span className="text-gray-500">Greeting:</span> <span className="font-medium">Good Morning</span></p>
+                <p><span className="text-gray-500">Billing:</span> <span className="font-medium">Cash, UPI, Card, Total</span></p>
+                <p><span className="text-gray-500">Status:</span> <span className="font-medium">Completed, Pending, Cancelled</span></p>
+              </div>
+            </div>
+
+            {/* Hindi Preview */}
+            <div className="p-4 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
+              <p className="text-xs font-medium text-gray-400 mb-2">🇮🇳 हिंदी</p>
+              <div className="space-y-1.5 text-sm">
+                <p><span className="text-gray-500">Sidebar:</span> <span className="font-medium">डैशबोर्ड, उत्पाद, ऑर्डर</span></p>
+                <p><span className="text-gray-500">Greeting:</span> <span className="font-medium">सुप्रभात</span></p>
+                <p><span className="text-gray-500">Billing:</span> <span className="font-medium">नकद, UPI, कार्ड, कुल</span></p>
+                <p><span className="text-gray-500">Status:</span> <span className="font-medium">पूर्ण, लंबित, रद्द</span></p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <Separator />
+
+        {/* Current Selection Indicator */}
+        <div className="flex items-center gap-3 p-4 bg-emerald-50 dark:bg-emerald-900/10 border border-emerald-200 dark:border-emerald-800 rounded-lg">
+          <Globe className="w-5 h-5 text-emerald-600 shrink-0" />
+          <div>
+            <p className="font-medium text-emerald-700 dark:text-emerald-400">
+              {language === 'hi' ? 'हिंदी चयनित' : 'English selected'}
+            </p>
+            <p className="text-sm text-emerald-600 dark:text-emerald-500">
+              {language === 'hi'
+                ? 'डैशबोर्ड की भाषा हिंदी में बदल गई है। साइडबार और अभिवादन अपडेट हो जाएंगे।'
+                : 'Dashboard language is set to English. Sidebar and greeting will update accordingly.'}
+            </p>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
 }
 
 export default function SettingsPanel() {
@@ -317,6 +443,10 @@ export default function SettingsPanel() {
             <TabsTrigger value="data" className="flex-1 min-w-fit text-xs sm:text-sm">
               <Database className="w-3.5 h-3.5 mr-1.5" />
               Data
+            </TabsTrigger>
+            <TabsTrigger value="language" className="flex-1 min-w-fit text-xs sm:text-sm">
+              <Globe className="w-3.5 h-3.5 mr-1.5" />
+              Language
             </TabsTrigger>
           </TabsList>
         </div>
@@ -845,6 +975,11 @@ export default function SettingsPanel() {
               </Button>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* Language */}
+        <TabsContent value="language">
+          <LanguageTab />
         </TabsContent>
 
         {/* Data Management */}

@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { AppView, AppUser, AppStore, AppSubscription, CartItem } from '@/lib/types';
+import type { Language } from '@/lib/i18n';
 
 // ============================================================
 // StoreOS - Zustand Global Store
@@ -53,6 +54,10 @@ interface AppState {
   // --- Sidebar ---
   sidebarOpen: boolean;
   setSidebarOpen: (open: boolean) => void;
+
+  // --- Language ---
+  language: Language;
+  setLanguage: (lang: Language) => void;
 }
 
 export const useAppStore = create<AppState>()(
@@ -167,6 +172,10 @@ export const useAppStore = create<AppState>()(
       // --- Sidebar ---
       sidebarOpen: true,
       setSidebarOpen: (open) => set({ sidebarOpen: open }),
+
+      // --- Language ---
+      language: 'en' as Language,
+      setLanguage: (lang) => set({ language: lang }),
     }),
     {
       name: 'storeos-storage',
@@ -178,6 +187,7 @@ export const useAppStore = create<AppState>()(
         theme: state.theme,
         currentView: state.currentView,
         dashboardTab: state.dashboardTab,
+        language: state.language,
       }),
     }
   )
