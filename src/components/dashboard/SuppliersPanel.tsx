@@ -857,7 +857,7 @@ export default function SuppliersPanel() {
                     <SelectItem value="inactive">Inactive</SelectItem>
                   </SelectContent>
                 </Select>
-                <Button onClick={openAddSupplier} size="sm" className="bg-emerald-600 hover:bg-emerald-700">
+                <Button onClick={openAddSupplier} size="sm" className="bg-emerald-600 min-h-[44px] hover:bg-emerald-700">
                   <Plus className="h-4 w-4 mr-1" />
                   Add Supplier
                 </Button>
@@ -876,7 +876,7 @@ export default function SuppliersPanel() {
                     <SelectItem value="Cancelled">Cancelled</SelectItem>
                   </SelectContent>
                 </Select>
-                <Button onClick={openCreatePO} size="sm" className="bg-emerald-600 hover:bg-emerald-700">
+                <Button onClick={openCreatePO} size="sm" className="bg-emerald-600 min-h-[44px] hover:bg-emerald-700">
                   <Plus className="h-4 w-4 mr-1" />
                   Create PO
                 </Button>
@@ -906,7 +906,7 @@ export default function SuppliersPanel() {
                   <Truck className="h-16 w-16 mb-4 opacity-30" />
                   <p className="text-lg font-medium">No suppliers found</p>
                   <p className="text-sm">Add your first supplier to get started</p>
-                  <Button onClick={openAddSupplier} size="sm" className="mt-4 bg-emerald-600 hover:bg-emerald-700">
+                  <Button onClick={openAddSupplier} size="sm" className="mt-4 bg-emerald-600 min-h-[44px] hover:bg-emerald-700">
                     <Plus className="h-4 w-4 mr-1" />
                     Add Supplier
                   </Button>
@@ -1057,7 +1057,7 @@ export default function SuppliersPanel() {
               <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
                 <Truck className="h-16 w-16 mb-4 opacity-30" />
                 <p className="text-lg font-medium">No suppliers found</p>
-                <Button onClick={openAddSupplier} size="sm" className="mt-4 bg-emerald-600 hover:bg-emerald-700">
+                <Button onClick={openAddSupplier} size="sm" className="mt-4 bg-emerald-600 min-h-[44px] hover:bg-emerald-700">
                   <Plus className="h-4 w-4 mr-1" />Add Supplier
                 </Button>
               </div>
@@ -1143,7 +1143,7 @@ export default function SuppliersPanel() {
                   <ClipboardList className="h-16 w-16 mb-4 opacity-30" />
                   <p className="text-lg font-medium">No purchase orders found</p>
                   <p className="text-sm">Create your first purchase order</p>
-                  <Button onClick={openCreatePO} size="sm" className="mt-4 bg-emerald-600 hover:bg-emerald-700">
+                  <Button onClick={openCreatePO} size="sm" className="mt-4 bg-emerald-600 min-h-[44px] hover:bg-emerald-700">
                     <Plus className="h-4 w-4 mr-1" />Create PO
                   </Button>
                 </div>
@@ -1207,7 +1207,7 @@ export default function SuppliersPanel() {
               <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
                 <ClipboardList className="h-16 w-16 mb-4 opacity-30" />
                 <p className="text-lg font-medium">No purchase orders found</p>
-                <Button onClick={openCreatePO} size="sm" className="mt-4 bg-emerald-600 hover:bg-emerald-700">
+                <Button onClick={openCreatePO} size="sm" className="mt-4 bg-emerald-600 min-h-[44px] hover:bg-emerald-700">
                   <Plus className="h-4 w-4 mr-1" />Create PO
                 </Button>
               </div>
@@ -1341,7 +1341,7 @@ export default function SuppliersPanel() {
                 <Button variant="outline" onClick={() => openEditSupplier(detailSupplier)}>
                   <Edit className="h-4 w-4 mr-1" />Edit
                 </Button>
-                <Button className="bg-emerald-600 hover:bg-emerald-700 text-white" onClick={() => setDetailDialogOpen(false)}>
+                <Button className="bg-emerald-600 min-h-[44px] hover:bg-emerald-700 text-white" onClick={() => setDetailDialogOpen(false)}>
                   Close
                 </Button>
               </DialogFooter>
@@ -1462,7 +1462,7 @@ export default function SuppliersPanel() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setSupplierDialogOpen(false)}>Cancel</Button>
-            <Button className="bg-emerald-600 hover:bg-emerald-700 text-white" onClick={saveSupplier} disabled={saving}>
+            <Button className="bg-emerald-600 min-h-[44px] hover:bg-emerald-700 text-white" onClick={saveSupplier} disabled={saving}>
               {saving ? 'Saving...' : editingSupplier ? 'Update' : 'Add'} Supplier
             </Button>
           </DialogFooter>
@@ -1584,7 +1584,7 @@ export default function SuppliersPanel() {
             <Button variant="outline" onClick={() => savePO('Draft')} className="gap-1">
               <FileText className="h-4 w-4" />Save as Draft
             </Button>
-            <Button className="bg-emerald-600 hover:bg-emerald-700 text-white gap-1" onClick={() => savePO('Sent')}>
+            <Button className="bg-emerald-600 min-h-[44px] hover:bg-emerald-700 text-white gap-1" onClick={() => savePO('Sent')}>
               <Send className="h-4 w-4" />Mark as Sent
             </Button>
           </DialogFooter>
@@ -1663,7 +1663,7 @@ export default function SuppliersPanel() {
 
               <DialogFooter className="gap-2">
                 {detailPO.status === 'Sent' && (
-                  <Button className="bg-emerald-600 hover:bg-emerald-700 text-white gap-1" onClick={() => { markPOReceived(detailPO.id); setPoDetailOpen(false); }}>
+                  <Button className="bg-emerald-600 min-h-[44px] hover:bg-emerald-700 text-white gap-1" onClick={() => { markPOReceived(detailPO.id); setPoDetailOpen(false); }}>
                     <CheckCircle2 className="h-4 w-4" />Mark Received
                   </Button>
                 )}

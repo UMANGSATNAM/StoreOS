@@ -776,14 +776,14 @@ export default function OrdersPanel() {
   // ─── Render ───
 
   return (
-    <div className="space-y-4 p-4 md:p-6">
+    <div className="space-y-4 p-3 md:p-6">
       {/* Top Bar */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          <ClipboardList className="h-6 w-6 text-emerald-600" />
+          <ClipboardList className="h-5 w-5 sm:h-6 sm:w-6 text-emerald-600" />
           <div>
-            <h2 className="text-xl font-bold">Orders</h2>
-            <p className="text-sm text-muted-foreground">Manage and track all orders</p>
+            <h2 className="text-lg sm:text-xl font-bold">Orders</h2>
+            <p className="text-xs sm:text-sm text-muted-foreground">Manage and track all orders</p>
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
@@ -793,7 +793,7 @@ export default function OrdersPanel() {
               placeholder="Search orders..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-9 w-full sm:w-56"
+              className="pl-9 w-full sm:w-56 min-h-[44px]"
             />
           </div>
           {/* View Mode Toggle */}
@@ -801,20 +801,20 @@ export default function OrdersPanel() {
             <Button
               variant={viewMode === 'table' ? 'default' : 'ghost'}
               size="sm"
-              className={`rounded-none h-8 px-3 ${viewMode === 'table' ? 'bg-emerald-600 hover:bg-emerald-700' : ''}`}
+              className={`rounded-none h-8 px-3 min-w-[44px] ${viewMode === 'table' ? 'bg-emerald-600 hover:bg-emerald-700' : ''}`}
               onClick={() => setViewMode('table')}
             >
-              <LayoutGrid className="h-4 w-4 mr-1" />
-              Table
+              <LayoutGrid className="h-4 w-4 sm:mr-1" />
+              <span className="hidden sm:inline">Table</span>
             </Button>
             <Button
               variant={viewMode === 'timeline' ? 'default' : 'ghost'}
               size="sm"
-              className={`rounded-none h-8 px-3 ${viewMode === 'timeline' ? 'bg-emerald-600 hover:bg-emerald-700' : ''}`}
+              className={`rounded-none h-8 px-3 min-w-[44px] ${viewMode === 'timeline' ? 'bg-emerald-600 hover:bg-emerald-700' : ''}`}
               onClick={() => setViewMode('timeline')}
             >
-              <List className="h-4 w-4 mr-1" />
-              Timeline
+              <List className="h-4 w-4 sm:mr-1" />
+              <span className="hidden sm:inline">Timeline</span>
             </Button>
           </div>
           {/* Filter toggle */}
@@ -889,7 +889,7 @@ export default function OrdersPanel() {
       </Card>
 
       {/* ─── Stat Cards ─── */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
         <Card className="shadow-sm hover:shadow-md transition-shadow">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
@@ -986,7 +986,7 @@ export default function OrdersPanel() {
       <div className="space-y-3">
         <div className="flex flex-wrap items-center gap-3">
           <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as StatusFilter)}>
-            <SelectTrigger className="w-40">
+            <SelectTrigger className="w-full sm:w-40 min-h-[44px]">
               <Filter className="h-4 w-4 mr-1 text-muted-foreground" />
               <SelectValue placeholder="All Status" />
             </SelectTrigger>

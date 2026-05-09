@@ -217,7 +217,7 @@ export default function TablesPanel() {
   }
 
   return (
-    <div className="space-y-6 p-4 md:p-6">
+    <div className="space-y-4 sm:space-y-6 p-4 md:p-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -230,7 +230,7 @@ export default function TablesPanel() {
         </div>
         <Button
           onClick={() => setAddDialogOpen(true)}
-          className="bg-emerald-600 hover:bg-emerald-700 text-white shrink-0"
+          className="bg-emerald-600 min-h-[44px] hover:bg-emerald-700 text-white shrink-0"
         >
           <Plus className="w-4 h-4 mr-2" />
           Add Table
@@ -355,7 +355,7 @@ export default function TablesPanel() {
           <UtensilsCrossed className="w-16 h-16 mb-4 opacity-30" />
           <p className="text-lg font-medium">No tables found</p>
           <p className="text-sm mt-1">Add your first table to get started</p>
-          <Button onClick={() => setAddDialogOpen(true)} className="mt-4 bg-emerald-600 hover:bg-emerald-700">
+          <Button onClick={() => setAddDialogOpen(true)} className="mt-4 bg-emerald-600 min-h-[44px] hover:bg-emerald-700">
             <Plus className="w-4 h-4 mr-2" />
             Add Table
           </Button>
@@ -446,7 +446,7 @@ export default function TablesPanel() {
 
       {/* ─── Table Detail Dialog ─── */}
       <Dialog open={detailDialogOpen} onOpenChange={setDetailDialogOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md max-h-[90dvh] overflow-y-auto">
           {selectedTable && (() => {
             const style = getTableStyle(selectedTable.status);
             const orderData = selectedTable.status === 'occupied' ? mockTableOrders[selectedTable.number] : null;
@@ -586,7 +586,7 @@ export default function TablesPanel() {
 
       {/* ─── Add Table Dialog ─── */}
       <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-h-[90dvh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Add New Table</DialogTitle>
             <DialogDescription>
@@ -630,7 +630,7 @@ export default function TablesPanel() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setAddDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleAddTable} disabled={!newNumber} className="bg-emerald-600 hover:bg-emerald-700">
+            <Button onClick={handleAddTable} disabled={!newNumber} className="bg-emerald-600 min-h-[44px] hover:bg-emerald-700">
               <Plus className="w-4 h-4 mr-2" />
               Add Table
             </Button>

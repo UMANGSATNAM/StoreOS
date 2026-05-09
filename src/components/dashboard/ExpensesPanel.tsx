@@ -796,12 +796,12 @@ export default function ExpensesPanel() {
           {(!todayDay || todayDay.status !== 'opened') ? (
             <Dialog open={openDayDialogOpen} onOpenChange={setOpenDayDialogOpen}>
               <DialogTrigger asChild>
-                <Button className="bg-emerald-600 hover:bg-emerald-700 text-white gap-2">
+                <Button className="bg-emerald-600 min-h-[44px] hover:bg-emerald-700 text-white gap-2">
                   <CheckCircle2 className="w-4 h-4" />
                   Open Day
                 </Button>
               </DialogTrigger>
-              <DialogContent>
+              <DialogContent className="max-h-[90dvh] overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle className="flex items-center gap-2">
                     <CheckCircle2 className="w-5 h-5 text-emerald-600" />
@@ -831,7 +831,7 @@ export default function ExpensesPanel() {
                 </div>
                 <DialogFooter>
                   <Button variant="outline" onClick={() => setOpenDayDialogOpen(false)}>Cancel</Button>
-                  <Button className="bg-emerald-600 hover:bg-emerald-700 text-white" onClick={handleOpenDay}>
+                  <Button className="bg-emerald-600 min-h-[44px] hover:bg-emerald-700 text-white" onClick={handleOpenDay}>
                     Open Day
                   </Button>
                 </DialogFooter>
@@ -845,7 +845,7 @@ export default function ExpensesPanel() {
                   Close Day
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-lg">
+              <DialogContent className="max-w-lg max-h-[90dvh] overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle className="flex items-center gap-2">
                     <XCircle className="w-5 h-5 text-amber-600" />
@@ -937,7 +937,7 @@ export default function ExpensesPanel() {
                 Add Expense
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-lg">
+            <DialogContent className="sm:max-w-lg max-h-[90dvh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>{editExpenseId ? 'Edit Expense' : 'Add Expense'}</DialogTitle>
                 <DialogDescription>Record a new business expense.</DialogDescription>
@@ -1359,7 +1359,7 @@ export default function ExpensesPanel() {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
               <Input
-                className="pl-9"
+                className="text-base pl-9"
                 placeholder="Search expenses..."
                 value={searchQuery}
                 onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}

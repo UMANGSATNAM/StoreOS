@@ -179,7 +179,7 @@ export default function StudentsPanel() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6 p-4 md:p-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -203,7 +203,7 @@ export default function StudentsPanel() {
           </Button>
           <Button
             onClick={() => setAddDialogOpen(true)}
-            className="bg-emerald-600 hover:bg-emerald-700 text-white"
+            className="bg-emerald-600 min-h-[44px] hover:bg-emerald-700 text-white"
           >
             <Plus className="w-4 h-4 mr-2" />
             Add Student
@@ -290,7 +290,7 @@ export default function StudentsPanel() {
           <GraduationCap className="w-16 h-16 mb-4 opacity-30" />
           <p className="text-lg font-medium">No students found</p>
           <p className="text-sm mt-1">Enroll your first student</p>
-          <Button onClick={() => setAddDialogOpen(true)} className="mt-4 bg-emerald-600 hover:bg-emerald-700">
+          <Button onClick={() => setAddDialogOpen(true)} className="mt-4 bg-emerald-600 min-h-[44px] hover:bg-emerald-700">
             <Plus className="w-4 h-4 mr-2" />
             Add Student
           </Button>
@@ -434,7 +434,7 @@ export default function StudentsPanel() {
 
       {/* Add Student Dialog */}
       <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-h-[90dvh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Enroll New Student</DialogTitle>
             <DialogDescription>Add a new student to the coaching centre</DialogDescription>
@@ -477,7 +477,7 @@ export default function StudentsPanel() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setAddDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleAddStudent} disabled={!formName} className="bg-emerald-600 hover:bg-emerald-700">
+            <Button onClick={handleAddStudent} disabled={!formName} className="bg-emerald-600 min-h-[44px] hover:bg-emerald-700">
               <Plus className="w-4 h-4 mr-2" />
               Enroll Student
             </Button>
@@ -487,7 +487,7 @@ export default function StudentsPanel() {
 
       {/* Fee Collection Dialog */}
       <Dialog open={payFeeDialogOpen} onOpenChange={setPayFeeDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-h-[90dvh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Collect Fee</DialogTitle>
             <DialogDescription>
@@ -541,7 +541,7 @@ export default function StudentsPanel() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setPayFeeDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handlePayFee} disabled={!payAmount} className="bg-emerald-600 hover:bg-emerald-700">
+            <Button onClick={handlePayFee} disabled={!payAmount} className="bg-emerald-600 min-h-[44px] hover:bg-emerald-700">
               <IndianRupee className="w-4 h-4 mr-2" />
               Collect ₹{payAmount ? parseFloat(payAmount).toLocaleString('en-IN') : '0'}
             </Button>
@@ -551,7 +551,7 @@ export default function StudentsPanel() {
 
       {/* Attendance Dialog */}
       <Dialog open={attendanceDialogOpen} onOpenChange={setAttendanceDialogOpen}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-lg max-h-[90dvh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Mark Attendance</DialogTitle>
             <DialogDescription>
@@ -601,7 +601,7 @@ export default function StudentsPanel() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setAttendanceDialogOpen(false)}>Cancel</Button>
-            <Button onClick={() => { toast.success('Attendance saved'); setAttendanceDialogOpen(false); }} className="bg-emerald-600 hover:bg-emerald-700">
+            <Button onClick={() => { toast.success('Attendance saved'); setAttendanceDialogOpen(false); }} className="bg-emerald-600 min-h-[44px] hover:bg-emerald-700">
               <CheckCircle className="w-4 h-4 mr-2" />
               Save Attendance
             </Button>

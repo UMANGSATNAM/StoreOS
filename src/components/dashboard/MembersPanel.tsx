@@ -169,7 +169,7 @@ export default function MembersPanel() {
   const isExpired = (endDate: string) => new Date(endDate) < new Date();
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6 p-4 md:p-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -182,7 +182,7 @@ export default function MembersPanel() {
         </div>
         <Button
           onClick={() => setAddDialogOpen(true)}
-          className="bg-emerald-600 hover:bg-emerald-700 text-white shrink-0"
+          className="bg-emerald-600 min-h-[44px] hover:bg-emerald-700 text-white shrink-0"
         >
           <Plus className="w-4 h-4 mr-2" />
           Add Member
@@ -268,7 +268,7 @@ export default function MembersPanel() {
           <Dumbbell className="w-16 h-16 mb-4 opacity-30" />
           <p className="text-lg font-medium">No members found</p>
           <p className="text-sm mt-1">Add your first gym member</p>
-          <Button onClick={() => setAddDialogOpen(true)} className="mt-4 bg-emerald-600 hover:bg-emerald-700">
+          <Button onClick={() => setAddDialogOpen(true)} className="mt-4 bg-emerald-600 min-h-[44px] hover:bg-emerald-700">
             <Plus className="w-4 h-4 mr-2" />
             Add Member
           </Button>
@@ -390,7 +390,7 @@ export default function MembersPanel() {
 
       {/* Add Member Dialog */}
       <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-h-[90dvh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Add New Member</DialogTitle>
             <DialogDescription>Register a new gym member</DialogDescription>
@@ -434,7 +434,7 @@ export default function MembersPanel() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setAddDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleAddMember} disabled={!formName} className="bg-emerald-600 hover:bg-emerald-700">
+            <Button onClick={handleAddMember} disabled={!formName} className="bg-emerald-600 min-h-[44px] hover:bg-emerald-700">
               <Plus className="w-4 h-4 mr-2" />
               Add Member
             </Button>
@@ -444,7 +444,7 @@ export default function MembersPanel() {
 
       {/* Renew Dialog */}
       <Dialog open={renewDialogOpen} onOpenChange={setRenewDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-h-[90dvh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Renew Membership</DialogTitle>
             <DialogDescription>
@@ -471,7 +471,7 @@ export default function MembersPanel() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setRenewDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleRenew} className="bg-emerald-600 hover:bg-emerald-700">
+            <Button onClick={handleRenew} className="bg-emerald-600 min-h-[44px] hover:bg-emerald-700">
               <RefreshCw className="w-4 h-4 mr-2" />
               Renew — ₹{PLAN_PRICES[renewPlan]?.toLocaleString('en-IN')}
             </Button>

@@ -629,7 +629,7 @@ export default function LandingPage() {
   }, [theme]);
 
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100 overflow-x-hidden">
+    <div className="min-h-screen bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100 overflow-x-hidden" style={{ paddingLeft: 'env(safe-area-inset-left)', paddingRight: 'env(safe-area-inset-right)', paddingBottom: 'env(safe-area-inset-bottom)' }}>
       {/* Global styles for animations */}
       <style jsx global>{`
         @keyframes heroGradient {
@@ -987,6 +987,48 @@ export default function LandingPage() {
           font-size: 14px;
           font-weight: 600;
         }
+        /* ── Mobile Responsive Utilities ── */
+        @media (max-width: 640px) {
+          .hero-gradient-animated {
+            animation: none !important;
+          }
+          .mesh-gradient-1,
+          .mesh-gradient-2,
+          .mesh-gradient-3 {
+            animation: none !important;
+          }
+          .pulse-orb {
+            animation: none !important;
+          }
+          .float-animation {
+            animation: none !important;
+          }
+          .feature-icon-pulse {
+            animation: none !important;
+          }
+          .popular-badge-pulse {
+            animation: none !important;
+          }
+          .pricing-shimmer-border {
+            animation: none !important;
+          }
+          .step-float-1,
+          .step-float-2,
+          .step-float-3 {
+            animation: none !important;
+          }
+        }
+        /* ── Touch momentum scrolling ── */
+        .overflow-x-auto {
+          -webkit-overflow-scrolling: touch;
+          scroll-behavior: smooth;
+        }
+        /* ── Ensure no horizontal overflow on mobile ── */
+        @media (max-width: 480px) {
+          .niche-tooltip {
+            display: none !important;
+          }
+        }
       `}</style>
       {/* ═══════════════════ NAVBAR ═══════════════════ */}
       <nav
@@ -1052,11 +1094,11 @@ export default function LandingPage() {
             </div>
 
             {/* Mobile Menu Toggle */}
-            <div className="flex items-center gap-2 md:hidden">
-              <Button variant="ghost" size="icon" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} className="rounded-full">
+            <div className="flex items-center gap-1 md:hidden">
+              <Button variant="ghost" size="icon" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} className="rounded-full min-h-[44px] min-w-[44px]">
                 {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
               </Button>
-              <Button variant="ghost" size="icon" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+              <Button variant="ghost" size="icon" onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="rounded-full min-h-[44px] min-w-[44px]">
                 {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
               </Button>
             </div>
@@ -1070,16 +1112,16 @@ export default function LandingPage() {
             animate={{ opacity: 1, y: 0 }}
             className="md:hidden bg-white dark:bg-gray-950 border-b border-gray-200 dark:border-gray-800 px-4 pb-4"
           >
-            <div className="flex flex-col gap-3 pt-2">
-              <button onClick={() => scrollTo('features')} className="text-sm font-medium text-gray-600 dark:text-gray-300 py-2 text-left">Features</button>
-              <button onClick={() => scrollTo('niches')} className="text-sm font-medium text-gray-600 dark:text-gray-300 py-2 text-left">Niches</button>
-              <button onClick={() => scrollTo('pricing')} className="text-sm font-medium text-gray-600 dark:text-gray-300 py-2 text-left">Pricing</button>
-              <button onClick={() => scrollTo('contact')} className="text-sm font-medium text-gray-600 dark:text-gray-300 py-2 text-left">Contact</button>
+            <div className="flex flex-col gap-1 pt-2">
+              <button onClick={() => scrollTo('features')} className="text-sm font-medium text-gray-600 dark:text-gray-300 py-3 text-left min-h-[44px] flex items-center">Features</button>
+              <button onClick={() => scrollTo('niches')} className="text-sm font-medium text-gray-600 dark:text-gray-300 py-3 text-left min-h-[44px] flex items-center">Niches</button>
+              <button onClick={() => scrollTo('pricing')} className="text-sm font-medium text-gray-600 dark:text-gray-300 py-3 text-left min-h-[44px] flex items-center">Pricing</button>
+              <button onClick={() => scrollTo('contact')} className="text-sm font-medium text-gray-600 dark:text-gray-300 py-3 text-left min-h-[44px] flex items-center">Contact</button>
               <div className="flex gap-2 pt-2">
-                <Button variant="outline" size="sm" onClick={() => { setMobileMenuOpen(false); setCurrentView({ page: 'login' }); }} className="flex-1 rounded-full">
+                <Button variant="outline" size="sm" onClick={() => { setMobileMenuOpen(false); setCurrentView({ page: 'login' }); }} className="flex-1 rounded-full min-h-[44px]">
                   Login
                 </Button>
-                <Button size="sm" onClick={() => { setMobileMenuOpen(false); setCurrentView({ page: 'signup' }); }} className="flex-1 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white">
+                <Button size="sm" onClick={() => { setMobileMenuOpen(false); setCurrentView({ page: 'signup' }); }} className="flex-1 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white min-h-[44px]">
                   Get Started
                 </Button>
               </div>
@@ -1087,7 +1129,7 @@ export default function LandingPage() {
                 size="sm"
                 onClick={() => { setMobileMenuOpen(false); handleTryDemo(); }}
                 disabled={demoLoading}
-                className="w-full rounded-full bg-amber-500 hover:bg-amber-600 text-white shimmer-btn"
+                className="w-full rounded-full bg-amber-500 hover:bg-amber-600 text-white shimmer-btn min-h-[44px]"
               >
                 {demoLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Play className="w-4 h-4 mr-2" />}
                 {demoLoading ? 'Loading...' : 'Try Demo'}
@@ -1098,18 +1140,18 @@ export default function LandingPage() {
       </nav>
 
       {/* ═══════════════════ HERO SECTION ═══════════════════ */}
-      <section className="relative pt-28 pb-20 sm:pt-36 sm:pb-28 overflow-hidden">
+      <section className="relative pt-24 pb-16 sm:pt-28 sm:pb-20 md:pt-36 md:pb-28 overflow-hidden">
         {/* Background Gradient - Animated */}
         <div className="absolute inset-0 bg-gradient-to-br from-emerald-50 via-white to-teal-50 dark:from-gray-950 dark:via-gray-950 dark:to-emerald-950/30 hero-gradient-animated" />
 
         {/* Animated Gradient Mesh - multiple overlapping radial gradients */}
-        <div className="absolute top-[10%] left-[20%] w-[500px] h-[500px] bg-gradient-to-br from-emerald-400/20 via-teal-400/10 to-transparent rounded-full blur-3xl mesh-gradient-1" />
-        <div className="absolute top-[20%] right-[15%] w-[400px] h-[400px] bg-gradient-to-bl from-cyan-400/15 via-emerald-300/10 to-transparent rounded-full blur-3xl mesh-gradient-2" />
-        <div className="absolute bottom-[10%] left-[40%] w-[350px] h-[350px] bg-gradient-to-tr from-teal-400/15 via-emerald-300/10 to-transparent rounded-full blur-3xl mesh-gradient-3" />
+        <div className="absolute top-[10%] left-[20%] w-[300px] sm:w-[500px] h-[300px] sm:h-[500px] bg-gradient-to-br from-emerald-400/20 via-teal-400/10 to-transparent rounded-full blur-3xl mesh-gradient-1" />
+        <div className="absolute top-[20%] right-[15%] w-[250px] sm:w-[400px] h-[250px] sm:h-[400px] bg-gradient-to-bl from-cyan-400/15 via-emerald-300/10 to-transparent rounded-full blur-3xl mesh-gradient-2" />
+        <div className="absolute bottom-[10%] left-[40%] w-[200px] sm:w-[350px] h-[200px] sm:h-[350px] bg-gradient-to-tr from-teal-400/15 via-emerald-300/10 to-transparent rounded-full blur-3xl mesh-gradient-3" />
 
         {/* Glowing/Pulsing Gradient Orb behind hero text */}
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-br from-emerald-400/20 via-teal-400/15 to-cyan-400/10 dark:from-emerald-600/10 dark:via-teal-600/5 dark:to-cyan-600/5 rounded-full blur-3xl pulse-orb" />
-        <div className="absolute top-1/3 left-[30%] w-[400px] h-[400px] bg-gradient-to-tr from-emerald-300/15 to-teal-300/10 dark:from-emerald-700/5 dark:to-teal-700/5 rounded-full blur-3xl pulse-orb" style={{ animationDelay: '2s' }} />
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[350px] sm:w-[600px] h-[350px] sm:h-[600px] bg-gradient-to-br from-emerald-400/20 via-teal-400/15 to-cyan-400/10 dark:from-emerald-600/10 dark:via-teal-600/5 dark:to-cyan-600/5 rounded-full blur-3xl pulse-orb" />
+        <div className="absolute top-1/3 left-[30%] w-[250px] sm:w-[400px] h-[250px] sm:h-[400px] bg-gradient-to-tr from-emerald-300/15 to-teal-300/10 dark:from-emerald-700/5 dark:to-teal-700/5 rounded-full blur-3xl pulse-orb" style={{ animationDelay: '2s' }} />
 
         {/* Dot Grid Pattern */}
         <div className="absolute inset-0 opacity-[0.03] dark:opacity-[0.05]" style={{
@@ -1118,27 +1160,27 @@ export default function LandingPage() {
         }} />
 
         {/* Soft blobs */}
-        <div className="absolute top-20 left-1/4 w-96 h-96 bg-emerald-200/30 dark:bg-emerald-800/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-10 right-1/4 w-80 h-80 bg-teal-200/30 dark:bg-teal-800/10 rounded-full blur-3xl" />
+        <div className="absolute top-20 left-1/4 w-64 sm:w-96 h-64 sm:h-96 bg-emerald-200/30 dark:bg-emerald-800/10 rounded-full blur-3xl" />
+        <div className="absolute bottom-10 right-1/4 w-56 sm:w-80 h-56 sm:h-80 bg-teal-200/30 dark:bg-teal-800/10 rounded-full blur-3xl" />
 
-        {/* Floating shapes */}
-        <div className="absolute top-32 left-[10%] w-20 h-20 bg-emerald-400/10 dark:bg-emerald-500/10 rounded-full float-shape-1" />
-        <div className="absolute top-48 right-[15%] w-32 h-32 bg-emerald-300/10 dark:bg-emerald-400/10 rounded-full float-shape-2" />
-        <div className="absolute bottom-32 left-[20%] w-16 h-16 bg-teal-400/10 dark:bg-teal-500/10 rounded-full float-shape-3" />
-        <div className="absolute bottom-48 right-[25%] w-24 h-24 bg-emerald-200/15 dark:bg-emerald-300/10 rounded-full float-shape-4" />
+        {/* Floating shapes - hidden on very small screens to reduce clutter */}
+        <div className="hidden sm:block absolute top-32 left-[10%] w-20 h-20 bg-emerald-400/10 dark:bg-emerald-500/10 rounded-full float-shape-1" />
+        <div className="hidden sm:block absolute top-48 right-[15%] w-32 h-32 bg-emerald-300/10 dark:bg-emerald-400/10 rounded-full float-shape-2" />
+        <div className="hidden sm:block absolute bottom-32 left-[20%] w-16 h-16 bg-teal-400/10 dark:bg-teal-500/10 rounded-full float-shape-3" />
+        <div className="hidden sm:block absolute bottom-48 right-[25%] w-24 h-24 bg-emerald-200/15 dark:bg-emerald-300/10 rounded-full float-shape-4" />
 
-        {/* Floating decorative dots around hero text */}
-        <div className="absolute top-[30%] left-[5%] w-2.5 h-2.5 bg-emerald-400/60 dark:bg-emerald-400/40 rounded-full dot-float-1" />
-        <div className="absolute top-[25%] right-[8%] w-2 h-2 bg-teal-400/50 dark:bg-teal-400/30 rounded-full dot-float-2" />
-        <div className="absolute top-[55%] left-[12%] w-3 h-3 bg-emerald-300/40 dark:bg-emerald-300/20 rounded-full dot-float-3" />
-        <div className="absolute top-[45%] right-[5%] w-2 h-2 bg-cyan-400/40 dark:bg-cyan-400/20 rounded-full dot-float-4" />
-        <div className="absolute top-[65%] left-[25%] w-1.5 h-1.5 bg-emerald-500/50 dark:bg-emerald-500/30 rounded-full dot-float-5" />
-        <div className="absolute top-[20%] left-[40%] w-2 h-2 bg-teal-300/30 dark:bg-teal-300/15 rounded-full dot-float-6" />
-        <div className="absolute bottom-[25%] right-[18%] w-2.5 h-2.5 bg-emerald-400/35 dark:bg-emerald-400/20 rounded-full dot-float-1" style={{ animationDelay: '2s' }} />
-        <div className="absolute bottom-[35%] left-[8%] w-1.5 h-1.5 bg-cyan-300/40 dark:bg-cyan-300/20 rounded-full dot-float-3" style={{ animationDelay: '1.2s' }} />
+        {/* Floating decorative dots around hero text - hidden on very small screens */}
+        <div className="hidden sm:block absolute top-[30%] left-[5%] w-2.5 h-2.5 bg-emerald-400/60 dark:bg-emerald-400/40 rounded-full dot-float-1" />
+        <div className="hidden sm:block absolute top-[25%] right-[8%] w-2 h-2 bg-teal-400/50 dark:bg-teal-400/30 rounded-full dot-float-2" />
+        <div className="hidden sm:block absolute top-[55%] left-[12%] w-3 h-3 bg-emerald-300/40 dark:bg-emerald-300/20 rounded-full dot-float-3" />
+        <div className="hidden sm:block absolute top-[45%] right-[5%] w-2 h-2 bg-cyan-400/40 dark:bg-cyan-400/20 rounded-full dot-float-4" />
+        <div className="hidden sm:block absolute top-[65%] left-[25%] w-1.5 h-1.5 bg-emerald-500/50 dark:bg-emerald-500/30 rounded-full dot-float-5" />
+        <div className="hidden sm:block absolute top-[20%] left-[40%] w-2 h-2 bg-teal-300/30 dark:bg-teal-300/15 rounded-full dot-float-6" />
+        <div className="hidden sm:block absolute bottom-[25%] right-[18%] w-2.5 h-2.5 bg-emerald-400/35 dark:bg-emerald-400/20 rounded-full dot-float-1" style={{ animationDelay: '2s' }} />
+        <div className="hidden sm:block absolute bottom-[35%] left-[8%] w-1.5 h-1.5 bg-cyan-300/40 dark:bg-cyan-300/20 rounded-full dot-float-3" style={{ animationDelay: '1.2s' }} />
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+          <div className="grid lg:grid-cols-2 gap-8 lg:gap-16 items-center">
             {/* Left: Copy */}
             <div>
               <FadeIn>
@@ -1154,7 +1196,7 @@ export default function LandingPage() {
               </FadeIn>
 
               <FadeIn delay={0.1}>
-                <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-tight tracking-tight">
+                <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight tracking-tight">
                   <span className="bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 dark:from-white dark:via-gray-100 dark:to-white bg-clip-text text-transparent">
                     Run Your Store on{' '}
                   </span>
@@ -1165,17 +1207,17 @@ export default function LandingPage() {
               </FadeIn>
 
               <FadeIn delay={0.2}>
-                <p className="mt-6 text-lg sm:text-xl text-gray-600 dark:text-gray-400 leading-relaxed max-w-xl">
+                <p className="mt-4 sm:mt-6 text-base sm:text-lg md:text-xl text-gray-600 dark:text-gray-400 leading-relaxed max-w-xl">
                   India&apos;s first multi-niche POS platform. From restaurants to retail, get a custom POS system tailored to your business — for just ₹99/month.
                 </p>
               </FadeIn>
 
               <FadeIn delay={0.3}>
-                <div className="mt-8 flex flex-wrap gap-4">
+                <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row gap-3 sm:gap-4">
                   <Button
                     size="lg"
                     onClick={() => setCurrentView({ page: 'signup' })}
-                    className="rounded-full bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-600/25 px-8 h-12 text-base"
+                    className="rounded-full bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-600/25 px-8 h-12 text-base min-h-[44px]"
                   >
                     Start Free Trial
                     <ArrowRight className="w-4 h-4 ml-1" />
@@ -1186,7 +1228,7 @@ export default function LandingPage() {
                       size="lg"
                       onClick={handleTryDemo}
                       disabled={demoLoading}
-                      className="rounded-full bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-600 hover:via-amber-500 hover:to-amber-600 text-white shadow-lg shadow-amber-500/25 px-8 h-12 text-base shimmer-btn relative overflow-hidden"
+                      className="rounded-full bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-600 hover:via-amber-500 hover:to-amber-600 text-white shadow-lg shadow-amber-500/25 px-8 h-12 text-base shimmer-btn relative overflow-hidden min-h-[44px]"
                     >
                       {demoLoading ? (
                         <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -1200,8 +1242,8 @@ export default function LandingPage() {
               </FadeIn>
 
               <FadeIn delay={0.4}>
-                <div className="mt-10 glass-card rounded-2xl px-6 py-5 shadow-lg">
-                  <div className="flex flex-wrap gap-x-8 gap-y-3 justify-center sm:justify-start">
+                <div className="mt-8 sm:mt-10 glass-card rounded-2xl px-4 sm:px-6 py-4 sm:py-5 shadow-lg">
+                  <div className="flex flex-wrap gap-x-6 sm:gap-x-8 gap-y-3 justify-center sm:justify-start">
                     {[
                       { value: '10,000+', label: 'Stores', animated: true },
                       { value: '15', label: 'Business Types', animated: false },
@@ -1209,7 +1251,7 @@ export default function LandingPage() {
                       { value: '14-Day', label: 'Free Trial', animated: false },
                     ].map((stat) => (
                       <div key={stat.label} className="flex items-baseline gap-1.5">
-                        <span className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
+                        <span className="text-xl sm:text-2xl font-bold text-emerald-600 dark:text-emerald-400">
                           {stat.animated ? <><AnimatedCounter target={10000} />+</> : stat.value}
                         </span>
                         <span className="text-sm text-gray-500 dark:text-gray-400">{stat.label}</span>
@@ -1221,8 +1263,8 @@ export default function LandingPage() {
 
               {/* Trusted badge */}
               <FadeIn delay={0.5}>
-                <div className="mt-6 flex flex-wrap items-center gap-3">
-                  <div className="inline-flex items-center gap-2 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-full px-4 py-2 border border-gray-200/50 dark:border-gray-700/50 shadow-sm">
+                <div className="mt-5 sm:mt-6 flex flex-wrap items-center gap-2 sm:gap-3">
+                  <div className="inline-flex items-center gap-2 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-full px-3 sm:px-4 py-2 border border-gray-200/50 dark:border-gray-700/50 shadow-sm">
                     <div className="flex -space-x-2">
                       {['bg-emerald-500', 'bg-amber-500', 'bg-sky-500', 'bg-violet-500'].map((bg, i) => (
                         <div key={i} className={`w-6 h-6 rounded-full ${bg} border-2 border-white dark:border-gray-800 flex items-center justify-center text-white text-[8px] font-bold`}>
@@ -1253,7 +1295,7 @@ export default function LandingPage() {
 
             {/* Right: POS Mockup */}
             <FadeIn direction="left" delay={0.3}>
-              <div className="relative float-animation">
+              <div className="relative float-animation mt-8 lg:mt-0">
                 <div className="absolute -inset-4 bg-gradient-to-r from-emerald-500/20 to-teal-500/20 rounded-3xl blur-2xl" />
                 <TiltCard>
                 <div className="relative bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 overflow-hidden">
@@ -1365,21 +1407,21 @@ export default function LandingPage() {
                 </div>
                 </TiltCard>
 
-                {/* Floating Live Badges around mockup */}
-                <div className="absolute -top-4 -left-4 float-badge-1 z-20">
+                {/* Floating Live Badges around mockup - hidden on mobile to prevent overflow */}
+                <div className="hidden sm:block absolute -top-4 -left-4 float-badge-1 z-20">
                   <div className="glass-card rounded-xl px-3 py-2 shadow-lg flex items-center gap-2">
                     <div className="w-2 h-2 rounded-full bg-emerald-500 live-dot" />
                     <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-300 whitespace-nowrap">Live Sales ₹24,580</span>
                     <TrendingUp className="w-3 h-3 text-emerald-500" />
                   </div>
                 </div>
-                <div className="absolute -top-2 -right-6 float-badge-2 z-20">
+                <div className="hidden sm:block absolute -top-2 -right-6 float-badge-2 z-20">
                   <div className="glass-card rounded-xl px-3 py-2 shadow-lg flex items-center gap-2">
                     <Activity className="w-3 h-3 text-sky-500" />
                     <span className="text-xs font-semibold text-sky-700 dark:text-sky-300 whitespace-nowrap">142 Orders Today</span>
                   </div>
                 </div>
-                <div className="absolute -bottom-3 -right-4 float-badge-3 z-20">
+                <div className="hidden sm:block absolute -bottom-3 -right-4 float-badge-3 z-20">
                   <div className="glass-card rounded-xl px-3 py-2 shadow-lg flex items-center gap-2">
                     <BadgeCheck className="w-3 h-3 text-amber-500" />
                     <span className="text-xs font-semibold text-amber-700 dark:text-amber-300 whitespace-nowrap">₹99/mo · No Lock-in</span>
@@ -1422,7 +1464,7 @@ export default function LandingPage() {
             </div>
           </FadeIn>
 
-          <StaggerContainer className="mt-14 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+          <StaggerContainer className="mt-14 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
             {NICHES.map((niche) => {
               const isPopular = niche.slug === 'restaurant' || niche.slug === 'grocery';
               return (
@@ -1432,26 +1474,26 @@ export default function LandingPage() {
                       {/* Popular Badge */}
                       {isPopular && (
                         <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-20 popular-badge-pulse">
-                          <Badge className="bg-gradient-to-r from-amber-500 to-orange-500 text-white border-0 rounded-full px-2.5 py-0.5 text-[10px] font-bold shadow-md shadow-amber-500/25">
+                          <Badge className="bg-gradient-to-r from-amber-500 to-orange-500 text-white border-0 rounded-full px-2 sm:px-2.5 py-0.5 text-[9px] sm:text-[10px] font-bold shadow-md shadow-amber-500/25">
                             <Sparkles className="w-2.5 h-2.5 mr-0.5" />
                             Most Popular
                           </Badge>
                         </div>
                       )}
-                      <CardContent className="p-4 text-center flex flex-col items-center gap-2">
+                      <CardContent className="p-3 sm:p-4 text-center flex flex-col items-center gap-1.5 sm:gap-2">
                         <motion.div
-                          className={`w-12 h-12 rounded-xl flex items-center justify-center text-2xl ${getNicheColorClass(niche.color)}`}
+                          className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center text-xl sm:text-2xl ${getNicheColorClass(niche.color)}`}
                           whileHover={{ y: -4, scale: 1.15 }}
                           transition={{ type: 'spring', stiffness: 400, damping: 15 }}
                         >
                           {niche.icon}
                         </motion.div>
-                        <h3 className="font-semibold text-sm leading-tight">{niche.name}</h3>
-                        <p className="text-[13px] text-gray-500 dark:text-gray-400 leading-snug">{niche.description}</p>
+                        <h3 className="font-semibold text-xs sm:text-sm leading-tight">{niche.name}</h3>
+                        <p className="text-[11px] sm:text-[13px] text-gray-500 dark:text-gray-400 leading-snug line-clamp-2">{niche.description}</p>
                       </CardContent>
                     </Card>
-                    {/* Quick Preview Tooltip */}
-                    <div className="niche-tooltip absolute -bottom-2 left-1/2 -translate-x-1/2 translate-y-full z-30 w-52">
+                    {/* Quick Preview Tooltip - hidden on touch devices */}
+                    <div className="niche-tooltip hidden sm:block absolute -bottom-2 left-1/2 -translate-x-1/2 translate-y-full z-30 w-52">
                       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 p-3 text-left">
                         <p className="text-xs font-semibold text-gray-700 dark:text-gray-200 mb-2">Key Features</p>
                         <div className="space-y-1.5">
@@ -1542,7 +1584,7 @@ export default function LandingPage() {
             </div>
           </FadeIn>
 
-          <div className="mt-14 grid md:grid-cols-3 gap-8 relative">
+          <div className="mt-14 grid grid-cols-1 md:grid-cols-3 gap-8 relative">
             {/* Connecting Lines (desktop only) */}
             <div className="hidden md:block absolute top-20 left-[25%] right-[25%]">
               <div className="relative h-0.5 bg-gradient-to-r from-emerald-300 via-teal-300 to-cyan-300 dark:from-emerald-700 dark:via-teal-700 dark:to-cyan-700">
@@ -1752,8 +1794,8 @@ export default function LandingPage() {
           <FadeIn delay={0.3}>
             <div className="mt-16 max-w-4xl mx-auto">
               <h3 className="text-xl font-bold text-center mb-6">Compare Plans</h3>
-              <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-800">
-                <table className="w-full text-sm">
+              <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-800 -mx-4 sm:mx-0">
+                <table className="w-full text-sm min-w-[480px]">
                   <thead>
                     <tr className="bg-gray-50 dark:bg-gray-900/50">
                       <th className="text-left py-3 px-4 font-semibold text-gray-600 dark:text-gray-400">Feature</th>
@@ -1923,7 +1965,7 @@ export default function LandingPage() {
             <div className="flex items-center justify-center gap-4 mt-6">
               <button
                 onClick={() => { setCarouselDirection(-1); setTestimonialIndex((prev) => (prev - 1 + TESTIMONIALS.length) % TESTIMONIALS.length); }}
-                className="w-10 h-10 rounded-full border border-gray-300 dark:border-gray-600 flex items-center justify-center hover:bg-emerald-50 dark:hover:bg-emerald-900/20 hover:border-emerald-400 transition-colors"
+                className="w-11 h-11 rounded-full border border-gray-300 dark:border-gray-600 flex items-center justify-center hover:bg-emerald-50 dark:hover:bg-emerald-900/20 hover:border-emerald-400 transition-colors min-h-[44px] min-w-[44px]"
                 aria-label="Previous testimonial"
               >
                 <ChevronLeft className="w-5 h-5" />
@@ -1933,16 +1975,20 @@ export default function LandingPage() {
                   <button
                     key={i}
                     onClick={() => { setCarouselDirection(i > testimonialIndex ? 1 : -1); setTestimonialIndex(i); }}
-                    className={`h-2.5 rounded-full transition-all duration-300 ${
-                      i === testimonialIndex ? 'bg-emerald-500 w-6' : 'bg-gray-300 dark:bg-gray-600 w-2.5'
+                    className={`h-3 rounded-full transition-all duration-300 min-h-[44px] min-w-[44px] flex items-center justify-center ${
+                      i === testimonialIndex ? 'bg-emerald-500 w-8' : 'bg-gray-300 dark:bg-gray-600 w-3'
                     }`}
                     aria-label={`Go to testimonial ${i + 1}`}
-                  />
+                  >
+                    <span className={`rounded-full transition-all duration-300 inline-block ${
+                      i === testimonialIndex ? 'bg-emerald-500 w-6 h-2.5' : 'bg-gray-300 dark:bg-gray-600 w-2.5 h-2.5'
+                    }`} />
+                  </button>
                 ))}
               </div>
               <button
                 onClick={() => { setCarouselDirection(1); setTestimonialIndex((prev) => (prev + 1) % TESTIMONIALS.length); }}
-                className="w-10 h-10 rounded-full border border-gray-300 dark:border-gray-600 flex items-center justify-center hover:bg-emerald-50 dark:hover:bg-emerald-900/20 hover:border-emerald-400 transition-colors"
+                className="w-11 h-11 rounded-full border border-gray-300 dark:border-gray-600 flex items-center justify-center hover:bg-emerald-50 dark:hover:bg-emerald-900/20 hover:border-emerald-400 transition-colors min-h-[44px] min-w-[44px]"
                 aria-label="Next testimonial"
               >
                 <ChevronRight className="w-5 h-5" />
@@ -1983,14 +2029,14 @@ export default function LandingPage() {
             <Button
               size="lg"
               onClick={() => setCurrentView({ page: 'signup' })}
-              className="mt-10 rounded-full bg-white text-emerald-700 hover:bg-emerald-50 shadow-xl h-14 px-10 text-lg font-bold pulse-cta-glow"
+              className="mt-10 rounded-full bg-white text-emerald-700 hover:bg-emerald-50 shadow-xl h-14 px-8 sm:px-10 text-base sm:text-lg font-bold pulse-cta-glow min-h-[44px]"
             >
               Start Free Trial
               <ArrowRight className="w-5 h-5 ml-2" />
             </Button>
           </FadeIn>
           <FadeIn delay={0.4}>
-            <div className="mt-6 flex flex-wrap justify-center gap-6 text-emerald-200 text-sm">
+            <div className="mt-6 flex flex-wrap justify-center gap-4 sm:gap-6 text-emerald-200 text-sm">
               <span className="flex items-center gap-1.5"><Check className="w-4 h-4" /> 14-day free trial</span>
               <span className="flex items-center gap-1.5"><Check className="w-4 h-4" /> No credit card</span>
               <span className="flex items-center gap-1.5"><Check className="w-4 h-4" /> Cancel anytime</span>
@@ -2026,9 +2072,9 @@ export default function LandingPage() {
             </div>
           </div>
 
-          <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-12 pb-14 border-b border-gray-800">
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-5 gap-8 sm:gap-12 pb-14 border-b border-gray-800">
             {/* Brand + Newsletter */}
-            <div className="sm:col-span-2 lg:col-span-2">
+            <div className="col-span-2 lg:col-span-2">
               <div className="flex items-center gap-2 mb-4">
                 <div className="w-8 h-8 rounded-lg bg-emerald-500 flex items-center justify-center">
                   <Package className="w-4 h-4 text-white" />
@@ -2051,7 +2097,7 @@ export default function LandingPage() {
                     key={label}
                     href={href}
                     aria-label={label}
-                    className="w-9 h-9 rounded-full bg-gray-800 hover:bg-emerald-600 flex items-center justify-center transition-all duration-200 hover:scale-110 hover:shadow-lg hover:shadow-emerald-500/20"
+                    className="w-11 h-11 rounded-full bg-gray-800 hover:bg-emerald-600 flex items-center justify-center transition-all duration-200 hover:scale-110 hover:shadow-lg hover:shadow-emerald-500/20 min-h-[44px] min-w-[44px]"
                   >
                     <Icon className="w-4 h-4" />
                   </a>
@@ -2093,7 +2139,7 @@ export default function LandingPage() {
                 <p className="text-[11px] text-gray-600 mt-1.5">No spam. Unsubscribe anytime.</p>
               </div>
               {/* App Store Badges */}
-              <div className="mt-6 flex gap-3">
+              <div className="mt-6 flex flex-wrap gap-3">
                 <a href="#" className="app-store-badge" aria-label="Download on the App Store">
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
                     <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>

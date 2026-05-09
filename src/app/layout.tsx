@@ -1,9 +1,10 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "next-themes";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as SonnerToaster } from "@/components/ui/sonner";
+import { ServiceWorkerRegistration } from "@/components/ServiceWorkerRegistration";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -15,13 +16,29 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: "cover",
+  themeColor: "#059669",
+};
+
 export const metadata: Metadata = {
   title: "StoreOS — Multi-Niche POS Platform | ₹99/mo",
   description: "India's first multi-niche POS platform. Run your restaurant, retail, salon, or any business with a custom POS system — for just ₹99/month. 14-day free trial.",
   keywords: ["StoreOS", "POS", "Point of Sale", "Restaurant POS", "Retail POS", "Billing Software", "GST Billing", "India", "SaaS"],
   authors: [{ name: "StoreOS Team" }],
+  manifest: "/manifest.json",
   icons: {
-    icon: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏪</text></svg>",
+    icon: "/icons/icon.svg",
+    apple: "/icons/icon-192x192.png",
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "StoreOS",
   },
   openGraph: {
     title: "StoreOS — Run Your Store on Autopilot",
@@ -49,6 +66,7 @@ export default function RootLayout({
           {children}
           <Toaster />
           <SonnerToaster position="top-right" richColors />
+          <ServiceWorkerRegistration />
         </ThemeProvider>
       </body>
     </html>

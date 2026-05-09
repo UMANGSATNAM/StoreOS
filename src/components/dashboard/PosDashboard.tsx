@@ -41,6 +41,13 @@ import {
   SidebarTrigger,
 } from '@/components/ui/sidebar';
 import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from '@/components/ui/sheet';
+import {
   LayoutDashboard,
   Receipt,
   Package,
@@ -115,8 +122,11 @@ import {
   CircleDot,
   Wallet,
   Globe,
+  Home,
+  ShoppingBag,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { useTranslation, t as translate } from '@/lib/i18n';
 import type { Language, TranslationKeys } from '@/lib/i18n';
 import BillingPos from '@/components/dashboard/BillingPos';
@@ -853,7 +863,7 @@ function DashboardOverview({ storeId, niche }: { storeId: string; niche: string 
   const nicheIcon = getNicheBySlug(niche as NicheSlug)?.icon || '🏪';
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* ─── Enhanced Welcome Section ─── */}
       <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 overflow-hidden rounded-xl px-5 py-4 -mx-1">
         {/* Animated background gradient pattern */}
@@ -926,7 +936,7 @@ function DashboardOverview({ storeId, niche }: { storeId: string; niche: string 
       </div>
 
       {/* ─── Stat Cards with Sparklines & vs Yesterday ─── */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {statCards.map((stat, idx) => {
           const Icon = stat.icon;
           const bothZero = stat.value === 0 && stat.yesterdayValue === 0;
@@ -945,7 +955,7 @@ function DashboardOverview({ storeId, niche }: { storeId: string; niche: string 
               <div className="absolute inset-0 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" style={{
                 background: `linear-gradient(135deg, ${stat.sparkColor}33 0%, transparent 50%, ${stat.sparkColor}22 100%)`,
               }} />
-              <CardContent className="p-4">
+              <CardContent className="p-3 sm:p-4">
                 <div className="flex items-center justify-between mb-1">
                   <p className="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400">
                     {stat.title}
@@ -958,7 +968,7 @@ function DashboardOverview({ storeId, niche }: { storeId: string; niche: string 
                   <div className="h-7 w-20 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
                 ) : (
                   <>
-                    <p className="text-xl sm:text-2xl font-bold">{stat.displayValue}</p>
+                    <p className="text-lg sm:text-2xl font-bold">{stat.displayValue}</p>
                     <div className="flex items-center justify-between mt-1">
                       <span className={`text-[11px] font-semibold flex items-center gap-0.5 ${
                         bothZero
@@ -992,7 +1002,7 @@ function DashboardOverview({ storeId, niche }: { storeId: string; niche: string 
       </div>
 
       {/* ─── Main 2-Column Layout ─── */}
-      <div className="grid lg:grid-cols-2 gap-6">
+      <div className="grid lg:grid-cols-2 gap-4 sm:gap-6">
         {/* ─── LEFT COLUMN: Sales Chart + Recent Orders ─── */}
         <div className="space-y-6">
           {/* Sales Overview Card */}
@@ -1628,7 +1638,7 @@ function DashboardOverview({ storeId, niche }: { storeId: string; niche: string 
               <CardDescription>{getNicheBySlug(niche as NicheSlug)?.name} shortcuts</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-3 sm:grid-cols-3 gap-2">
                 {nicheQuickActions.slice(0, 6).map((action) => {
                   const Icon = action.icon;
                   return (
@@ -1636,7 +1646,7 @@ function DashboardOverview({ storeId, niche }: { storeId: string; niche: string 
                       key={action.label}
                       onClick={() => setDashboardTab(action.tab)}
                       title={`${action.label} — Go to ${action.tab} tab`}
-                      className="flex flex-col items-center gap-1 p-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-gray-800/50 hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-md transition-all group"
+                      className="flex flex-col items-center gap-1 p-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-gray-800/50 hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-md transition-all group min-h-[60px]"
                     >
                       <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${action.bg} group-hover:scale-110 transition-transform`}>
                         <Icon className={`w-3.5 h-3.5 ${action.color}`} />
@@ -1927,12 +1937,26 @@ function PlaceholderTab({ tab, label }: { tab: string; label: string }) {
 
 // ─── Main Dashboard Component ────────────────────────────────
 
+// ─── Mobile Bottom Nav Config ────────────────────────────────
+
+const MOBILE_NAV_ITEMS = [
+  { label: 'Home', icon: Home, tab: 'overview' },
+  { label: 'Billing', icon: Receipt, tab: 'billing' },
+  { label: 'Products', icon: Package, tab: 'products' },
+  { label: 'Orders', icon: ClipboardList, tab: 'orders' },
+  { label: 'More', icon: MoreHorizontal, tab: '__more' },
+];
+
+// ─── Main Dashboard Component ────────────────────────────────
+
 export default function PosDashboard() {
-  const { user, store, subscription, logout, dashboardTab, setDashboardTab, globalSearch, setGlobalSearch, cashRegister, language, setLanguage } =
+  const { user, store, subscription, logout, dashboardTab, setDashboardTab, globalSearch, setGlobalSearch, cashRegister, language, setLanguage, cart } =
     useAppStore();
   const { t } = useTranslation();
   const { theme, setTheme } = useTheme();
+  const isMobile = useIsMobile();
   const [searchQuery, setSearchQuery] = useState(globalSearch || '');
+  const [mobileMoreOpen, setMobileMoreOpen] = useState(false);
   const [notifications, setNotifications] = useState([
     { id: 1, icon: ShoppingCart, iconColor: 'text-emerald-600 dark:text-emerald-400', iconBg: 'bg-emerald-100 dark:bg-emerald-900/30', title: 'New Order Received', description: 'Order #1042 from Priya Sharma — ₹1,280', time: '2 min ago', unread: true },
     { id: 2, icon: AlertTriangle, iconColor: 'text-amber-600 dark:text-amber-400', iconBg: 'bg-amber-100 dark:bg-amber-900/30', title: 'Low Stock Alert', description: 'Paneer Tikka stock is below threshold (3 left)', time: '15 min ago', unread: true },
@@ -2511,9 +2535,9 @@ export default function PosDashboard() {
       {/* ═══════════════════ MAIN CONTENT AREA ═══════════════════ */}
       <SidebarInset>
         {/* Top Bar */}
-        <header className="sticky top-0 z-30 flex h-14 sm:h-16 items-center gap-2 sm:gap-4 border-b border-gray-200 dark:border-gray-800 bg-white/80 dark:bg-gray-950/80 backdrop-blur-xl px-3 sm:px-6">
+        <header className="sticky top-0 z-30 flex h-12 sm:h-14 md:h-16 items-center gap-2 sm:gap-4 border-b border-gray-200 dark:border-gray-800 bg-white/80 dark:bg-gray-950/80 backdrop-blur-xl px-3 sm:px-6">
           {/* Sidebar Trigger */}
-          <SidebarTrigger className="-ml-1 shrink-0" />
+          <SidebarTrigger className="-ml-1 shrink-0 min-w-[44px] min-h-[44px] md:min-w-0 md:min-h-0" />
 
           {/* Store Name + Niche Icon (visible on md+) */}
           <div className="hidden md:flex items-center gap-2 shrink-0">
@@ -2534,7 +2558,7 @@ export default function PosDashboard() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter') handleGlobalSearch(); }}
-              className="pl-9 h-9 bg-gray-100 dark:bg-gray-800 border-0 focus-visible:ring-1 focus-visible:ring-gray-300 dark:focus-visible:ring-gray-600 text-sm"
+              className="pl-9 h-9 bg-gray-100 dark:bg-gray-800 border-0 focus-visible:ring-1 focus-visible:ring-gray-300 dark:focus-visible:ring-gray-600 text-sm min-h-[44px]"
             />
           </div>
 
@@ -2543,7 +2567,7 @@ export default function PosDashboard() {
             {/* Quick Actions Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="hidden sm:flex h-9 w-9">
+                <Button variant="ghost" size="icon" className="hidden md:flex h-9 w-9">
                   <Zap className="w-4 h-4" />
                   <span className="sr-only">Quick Actions</span>
                 </Button>
@@ -2573,7 +2597,7 @@ export default function PosDashboard() {
             <Button
               variant="ghost"
               size="icon"
-              className="h-9 w-9 relative"
+              className="h-9 w-9 relative hidden sm:flex"
               onClick={() => setDashboardTab('cash-register')}
               title={cashRegister?.isOpen ? 'Register: Open' : 'Register: Closed'}
             >
@@ -2585,7 +2609,7 @@ export default function PosDashboard() {
             {/* Notification Bell */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-9 w-9 relative">
+                <Button variant="ghost" size="icon" className="h-9 w-9 relative min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0">
                   <Bell className="w-4 h-4" />
                   {unreadCount > 0 && (
                     <span className="absolute top-1 right-1 w-4 h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">
@@ -2637,7 +2661,7 @@ export default function PosDashboard() {
             {/* Language Toggle */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-9 w-9 relative" title={t('language')}>
+                <Button variant="ghost" size="icon" className="h-9 w-9 relative hidden sm:flex" title={t('language')}>
                   <Globe className="w-4 h-4" />
                   <span className="absolute -bottom-0.5 -right-0.5 text-[8px] font-bold text-emerald-600 dark:text-emerald-400 leading-none">
                     {language === 'hi' ? 'हि' : 'EN'}
@@ -2666,7 +2690,7 @@ export default function PosDashboard() {
             </DropdownMenu>
 
             {/* Dark Mode Toggle */}
-            <Button variant="ghost" size="icon" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} className="h-9 w-9">
+            <Button variant="ghost" size="icon" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} className="h-9 w-9 hidden sm:flex">
               {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
               <span className="sr-only">Toggle theme</span>
             </Button>
@@ -2702,7 +2726,7 @@ export default function PosDashboard() {
         </header>
 
         {/* Tab Content */}
-        <div className="flex-1 p-4 sm:p-6 lg:p-8 bg-gray-50 dark:bg-gray-950">
+        <div className={`flex-1 bg-gray-50 dark:bg-gray-950 ${isMobile ? 'p-3 pb-20' : 'p-4 sm:p-6 lg:p-8'}`}>
           <AnimatePresence mode="wait">
             <motion.div
               key={dashboardTab}
@@ -2716,6 +2740,108 @@ export default function PosDashboard() {
           </AnimatePresence>
         </div>
       </SidebarInset>
+
+      {/* ═══════════════════ MOBILE BOTTOM NAV ═══════════════════ */}
+      {isMobile && (
+        <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 safe-area-bottom">
+          <div className="flex items-center justify-around h-16 max-w-lg mx-auto">
+            {MOBILE_NAV_ITEMS.map((item) => {
+              const Icon = item.icon;
+              const isActive = item.tab === '__more'
+                ? false
+                : dashboardTab === item.tab;
+              const cartCount = cart.reduce((sum, c) => sum + c.quantity, 0);
+              return (
+                <button
+                  key={item.tab}
+                  onClick={() => {
+                    if (item.tab === '__more') {
+                      setMobileMoreOpen(true);
+                    } else {
+                      setDashboardTab(item.tab);
+                    }
+                  }}
+                  className={`flex flex-col items-center justify-center w-16 h-full relative transition-colors ${
+                    isActive
+                      ? 'text-emerald-600 dark:text-emerald-400'
+                      : 'text-gray-500 dark:text-gray-400 active:text-gray-900 dark:active:text-gray-200'
+                  }`}
+                >
+                  <div className="relative">
+                    <Icon className="w-5 h-5" />
+                    {item.tab === 'billing' && cartCount > 0 && (
+                      <span className="absolute -top-1.5 -right-2 w-4 h-4 bg-emerald-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">
+                        {cartCount}
+                      </span>
+                    )}
+                  </div>
+                  <span className="text-[10px] mt-1 font-medium">{item.label}</span>
+                  {isActive && (
+                    <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-emerald-500 rounded-full" />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </nav>
+      )}
+
+      {/* ═══════════════════ MOBILE MORE MENU (Sheet) ═══════════════════ */}
+      <Sheet open={mobileMoreOpen} onOpenChange={setMobileMoreOpen}>
+        <SheetContent side="bottom" className="h-[70vh] rounded-t-2xl">
+          <SheetHeader>
+            <SheetTitle>More Options</SheetTitle>
+            <SheetDescription>Navigate to other sections</SheetDescription>
+          </SheetHeader>
+          <div className="grid grid-cols-3 gap-3 p-4 overflow-y-auto">
+            {navItems.filter(item => !MOBILE_NAV_ITEMS.some(mn => mn.tab === item.tab)).map((item) => {
+              const Icon = item.icon;
+              const isActive = dashboardTab === item.tab;
+              return (
+                <button
+                  key={item.tab}
+                  onClick={() => {
+                    setDashboardTab(item.tab);
+                    setMobileMoreOpen(false);
+                  }}
+                  className={`flex flex-col items-center justify-center gap-2 p-4 rounded-xl transition-colors min-h-[80px] ${
+                    isActive
+                      ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400'
+                      : 'bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 active:bg-gray-100 dark:active:bg-gray-700'
+                  }`}
+                >
+                  <Icon className="w-5 h-5" />
+                  <span className="text-xs font-medium text-center leading-tight">
+                    {tabLabelMap[item.tab] ? t(tabLabelMap[item.tab]) : item.label}
+                  </span>
+                </button>
+              );
+            })}
+            {/* Extra actions */}
+            <button
+              onClick={() => {
+                setTheme(theme === 'dark' ? 'light' : 'dark');
+                setMobileMoreOpen(false);
+              }}
+              className="flex flex-col items-center justify-center gap-2 p-4 rounded-xl bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 min-h-[80px]"
+            >
+              {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+              <span className="text-xs font-medium text-center leading-tight">Theme</span>
+            </button>
+            <button
+              onClick={() => {
+                handleLogout();
+                setMobileMoreOpen(false);
+              }}
+              className="flex flex-col items-center justify-center gap-2 p-4 rounded-xl bg-red-50 dark:bg-red-900/10 text-red-600 dark:text-red-400 min-h-[80px]"
+            >
+              <LogOut className="w-5 h-5" />
+              <span className="text-xs font-medium text-center leading-tight">Logout</span>
+            </button>
+          </div>
+        </SheetContent>
+      </Sheet>
+
       {/* ═══════════════════ KEYBOARD SHORTCUTS MODAL ═══════════════════ */}
       <KeyboardShortcutsModal
         open={showShortcuts}

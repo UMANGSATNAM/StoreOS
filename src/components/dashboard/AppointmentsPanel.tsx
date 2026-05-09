@@ -173,7 +173,7 @@ export default function AppointmentsPanel() {
   const staffList = [...new Set(appointments.map((a) => a.staffName).filter(Boolean))];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6 p-4 md:p-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -205,7 +205,7 @@ export default function AppointmentsPanel() {
           </Button>
           <Button
             onClick={() => setAddDialogOpen(true)}
-            className="bg-emerald-600 hover:bg-emerald-700 text-white"
+            className="bg-emerald-600 min-h-[44px] hover:bg-emerald-700 text-white"
           >
             <Plus className="w-4 h-4 mr-2" />
             Add Appointment
@@ -294,7 +294,7 @@ export default function AppointmentsPanel() {
             <CalendarDays className="w-16 h-16 mb-4 opacity-30" />
             <p className="text-lg font-medium">No appointments for this date</p>
             <p className="text-sm mt-1">Schedule your first appointment</p>
-            <Button onClick={() => setAddDialogOpen(true)} className="mt-4 bg-emerald-600 hover:bg-emerald-700">
+            <Button onClick={() => setAddDialogOpen(true)} className="mt-4 bg-emerald-600 min-h-[44px] hover:bg-emerald-700">
               <Plus className="w-4 h-4 mr-2" />
               Add Appointment
             </Button>
@@ -419,7 +419,7 @@ export default function AppointmentsPanel() {
 
       {/* Add Appointment Dialog */}
       <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md max-h-[90dvh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>New Appointment</DialogTitle>
             <DialogDescription>
@@ -466,7 +466,7 @@ export default function AppointmentsPanel() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setAddDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleAddAppointment} disabled={!formName || !formService || !formDate || !formTime} className="bg-emerald-600 hover:bg-emerald-700">
+            <Button onClick={handleAddAppointment} disabled={!formName || !formService || !formDate || !formTime} className="bg-emerald-600 min-h-[44px] hover:bg-emerald-700">
               <CalendarDays className="w-4 h-4 mr-2" />
               Schedule
             </Button>

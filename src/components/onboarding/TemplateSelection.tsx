@@ -372,17 +372,17 @@ export default function TemplateSelection() {
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-teal-50 flex flex-col">
       {/* Progress Section */}
       <div className="w-full bg-white/80 backdrop-blur-sm border-b sticky top-0 z-10">
-        <div className="max-w-6xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-emerald-700">Step 2 of 3</span>
-            <span className="text-sm text-muted-foreground">Select Template</span>
+        <div className="max-w-6xl mx-auto px-4 py-3 sm:py-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between mb-1.5 sm:mb-2">
+            <span className="text-xs sm:text-sm font-medium text-emerald-700">Step 2 of 3</span>
+            <span className="text-xs sm:text-sm text-muted-foreground">Select Template</span>
           </div>
-          <Progress value={66} className="h-2 bg-emerald-100" />
-          <div className="flex items-center justify-between mt-3">
+          <Progress value={66} className="h-1.5 sm:h-2 bg-emerald-100" />
+          <div className="flex items-center justify-between mt-2 sm:mt-3">
             {STEPS.map((step, i) => (
               <div key={step} className="flex items-center gap-1">
                 <div
-                  className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-colors ${
+                  className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center text-[10px] sm:text-xs font-bold transition-colors ${
                     i < 1
                       ? 'bg-emerald-200 text-emerald-700'
                       : i === 1
@@ -390,10 +390,10 @@ export default function TemplateSelection() {
                         : 'bg-gray-200 text-gray-500'
                   }`}
                 >
-                  {i < 1 ? <Check className="w-3 h-3" /> : i + 1}
+                  {i < 1 ? <Check className="w-2.5 h-2.5 sm:w-3 sm:h-3" /> : i + 1}
                 </div>
                 <span
-                  className={`text-xs hidden sm:inline ${
+                  className={`text-[10px] hidden sm:inline sm:text-xs ${
                     i === 1
                       ? 'text-emerald-700 font-semibold'
                       : i < 1
@@ -413,21 +413,21 @@ export default function TemplateSelection() {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col items-center px-4 py-8 sm:px-6 lg:px-8">
+      <div className="flex-1 flex flex-col items-center px-4 py-4 sm:py-8 sm:px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="text-center mb-8"
+          className="text-center mb-4 sm:mb-8"
         >
           <div className="flex items-center justify-center gap-2 mb-2">
-            <span className="text-2xl">{nicheData?.icon}</span>
+            <span className="text-xl sm:text-2xl">{nicheData?.icon}</span>
             <Badge variant="secondary" className="text-xs">{nicheData?.name}</Badge>
           </div>
-          <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-3">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-2 sm:mb-3">
             Choose your POS template
           </h1>
-          <p className="text-lg text-gray-500 max-w-2xl mx-auto">
+          <p className="text-sm sm:text-lg text-gray-500 max-w-2xl mx-auto">
             Select a template that matches your store&apos;s style
           </p>
         </motion.div>
@@ -436,7 +436,9 @@ export default function TemplateSelection() {
         <div className="w-full max-w-6xl flex gap-6">
           {/* Template Grid */}
           <div className={`flex-1 ${!livePreviewTemplate || isMobile ? 'max-w-4xl mx-auto' : ''}`}>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Mobile: Horizontal scrollable list, Desktop: Grid */}
+            <div className="lg:grid lg:grid-cols-2 lg:gap-4 flex lg:flex-col gap-4 overflow-x-auto snap-x snap-mandatory pb-4 lg:pb-0 scrollbar-hide -mx-4 px-4 lg:mx-0 lg:px-0">
+              {/* Mobile horizontal scroll wrapper per card */}
               <AnimatePresence>
                 {templates.map((template, index) => {
                   const isSelected = selectedTemplate === template.id;
@@ -449,6 +451,7 @@ export default function TemplateSelection() {
                       transition={{ duration: 0.3, delay: index * 0.1 }}
                       onMouseEnter={() => setHoveredTemplate(template)}
                       onMouseLeave={() => setHoveredTemplate(null)}
+                      className="shrink-0 w-[280px] sm:w-auto lg:w-full snap-start"
                     >
                       <Card
                         className={`relative overflow-hidden transition-all duration-200 border-2 ${
@@ -477,15 +480,15 @@ export default function TemplateSelection() {
                         </div>
 
                         {/* Mini POS Preview */}
-                        <div className="p-3">
+                        <div className="p-2 sm:p-3">
                           <MiniPosMockup template={template} nicheSlug={nicheSlug} />
                         </div>
 
-                        <div className="px-4 pb-4">
+                        <div className="px-3 sm:px-4 pb-3 sm:pb-4">
                           {/* Template Header */}
-                          <div className="flex items-center justify-between mb-2">
-                            <h3 className="font-bold text-gray-900 text-base">{template.name}</h3>
-                            <Badge variant="outline" className="text-xs gap-1 capitalize">
+                          <div className="flex items-center justify-between mb-1.5 sm:mb-2">
+                            <h3 className="font-bold text-gray-900 text-sm sm:text-base">{template.name}</h3>
+                            <Badge variant="outline" className="text-[10px] sm:text-xs gap-1 capitalize">
                               {layoutIcons[template.layoutStyle]}
                               {template.layoutStyle}
                             </Badge>
@@ -501,14 +504,45 @@ export default function TemplateSelection() {
                             </div>
                           </div>
 
-                          <p className="text-sm text-gray-500 mb-3">{template.description}</p>
+                          <p className="text-xs sm:text-sm text-gray-500 mb-2 sm:mb-3 line-clamp-2">{template.description}</p>
 
                           {/* Action Buttons */}
                           <div className="flex gap-2">
+                            {/* Mobile: combined select+preview button */}
+                            <div className="flex lg:hidden gap-2 flex-1">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="gap-1.5 flex-1 min-h-[40px]"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setActivePreviewTemplate(isActivePreview ? null : template);
+                                }}
+                              >
+                                <Eye className="w-3.5 h-3.5" />
+                                Preview
+                              </Button>
+                              <Button
+                                size="sm"
+                                className={`gap-1.5 flex-1 min-h-[40px] ${
+                                  isSelected
+                                    ? 'bg-emerald-600 hover:bg-emerald-700'
+                                    : 'bg-gray-900 hover:bg-gray-800'
+                                }`}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedTemplate(template.id);
+                                }}
+                              >
+                                <Check className="w-3.5 h-3.5" />
+                                {isSelected ? 'Selected' : 'Select'}
+                              </Button>
+                            </div>
+                            {/* Desktop: standard buttons */}
                             <Button
                               variant="outline"
                               size="sm"
-                              className="gap-1.5"
+                              className="hidden lg:flex gap-1.5"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setActivePreviewTemplate(isActivePreview ? null : template);
@@ -519,7 +553,7 @@ export default function TemplateSelection() {
                             </Button>
                             <Button
                               size="sm"
-                              className={`gap-1.5 ${
+                              className={`hidden lg:flex gap-1.5 ${
                                 isSelected
                                   ? 'bg-emerald-600 hover:bg-emerald-700'
                                   : 'bg-gray-900 hover:bg-gray-800'
@@ -581,20 +615,20 @@ export default function TemplateSelection() {
       </div>
 
       {/* Footer Actions */}
-      <div className="w-full bg-white/80 backdrop-blur-sm border-t">
-        <div className="max-w-6xl mx-auto px-4 py-4 sm:px-6 lg:px-8 flex items-center justify-between">
+      <div className="w-full bg-white/80 backdrop-blur-sm border-t sticky bottom-0 sm:relative z-20 pb-[env(safe-area-inset-bottom)]">
+        <div className="max-w-6xl mx-auto px-4 py-3 sm:py-4 sm:px-6 lg:px-8 flex items-center justify-between gap-3">
           <Button
             variant="ghost"
             onClick={handleBack}
-            className="gap-2 text-gray-500 hover:text-gray-700"
+            className="gap-2 text-gray-500 hover:text-gray-700 min-h-[44px]"
           >
             <ArrowLeft className="w-4 h-4" />
-            Back
+            <span className="hidden sm:inline">Back</span>
           </Button>
           <Button
             onClick={handleUseTemplate}
             disabled={!selectedTemplate}
-            className="bg-emerald-600 hover:bg-emerald-700 text-white px-8 gap-2"
+            className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 sm:px-8 min-h-[44px] gap-2"
           >
             Continue
             <ArrowRight className="w-4 h-4" />
@@ -602,28 +636,29 @@ export default function TemplateSelection() {
         </div>
       </div>
 
-      {/* Mobile Preview Dialog */}
+      {/* Mobile Preview Dialog - Full screen on mobile */}
       <Dialog
         open={!!activePreviewTemplate && isMobile}
         onOpenChange={(open) => !open && setActivePreviewTemplate(null)}
       >
-        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-          <DialogTitle className="flex items-center gap-2">
+        <DialogContent className="sm:max-w-lg w-[95vw] max-h-[95vh] overflow-y-auto p-4 sm:p-6">
+          <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
             <Eye className="w-5 h-5 text-emerald-600" />
             Template Preview — {activePreviewTemplate?.name}
           </DialogTitle>
           {activePreviewTemplate && (
             <div className="space-y-4">
               <LivePreviewPanel template={activePreviewTemplate} nicheSlug={nicheSlug} />
-              <div className="flex gap-2 justify-end">
+              <div className="flex gap-2">
                 <Button
                   variant="outline"
                   onClick={() => setActivePreviewTemplate(null)}
+                  className="flex-1 min-h-[44px]"
                 >
                   Close
                 </Button>
                 <Button
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white gap-1.5"
+                  className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white gap-1.5 min-h-[44px]"
                   onClick={() => {
                     setSelectedTemplate(activePreviewTemplate.id);
                     setActivePreviewTemplate(null);

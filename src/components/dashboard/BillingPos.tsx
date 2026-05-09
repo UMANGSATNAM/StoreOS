@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAppStore } from '@/lib/store';
 import type { CartItem } from '@/lib/types';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,6 +14,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from '@/components/ui/sheet';
 import {
   Search,
   Plus,
@@ -88,6 +96,7 @@ export default function BillingPos() {
   const { store, cart, addToCart, removeFromCart, updateCartItemQuantity, clearCart, cartTotal } = useAppStore();
 
   const storeId = store?.id || '';
+  const isMobile = useIsMobile();
 
   // ─── Local State ───────────────────────────────────────────────
   const [searchQuery, setSearchQuery] = useState('');
@@ -139,6 +148,7 @@ export default function BillingPos() {
   const [showCustomAmount, setShowCustomAmount] = useState(false);
   const [customAmountValue, setCustomAmountValue] = useState('');
   const [showConfetti, setShowConfetti] = useState(false);
+  const [mobileCartOpen, setMobileCartOpen] = useState(false);
 
   const searchInputRef = useRef<HTMLInputElement>(null);
   const searchDropdownRef = useRef<HTMLDivElement>(null);
@@ -631,7 +641,7 @@ export default function BillingPos() {
 
   // ─── Render ─────────────────────────────────────────────────────
   return (
-    <div className="h-[calc(100vh-8rem)] flex flex-col bg-gray-50 dark:bg-gray-950 overflow-hidden rounded-lg border border-gray-200 dark:border-gray-800">
+    <div className={`flex flex-col bg-gray-50 dark:bg-gray-950 overflow-hidden rounded-lg border border-gray-200 dark:border-gray-800 ${isMobile ? 'h-[calc(100vh-10rem)]' : 'h-[calc(100vh-8rem)]'}`}>
       {/* Success Animation Overlay */}
       {showSuccess && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-emerald-500/20 backdrop-blur-sm animate-in fade-in duration-300">
@@ -683,7 +693,7 @@ export default function BillingPos() {
 
       <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
         {/* ═══ LEFT COLUMN — Product Selection ═══ */}
-        <div className="w-full lg:w-[60%] flex flex-col border-r border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950">
+        <div className="w-full lg:w-[60%] flex flex-col lg:border-r border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950">
           {/* Search Bar */}
           <div className="p-3 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950 z-20">
             <div className="relative" ref={searchDropdownRef}>
@@ -698,8 +708,8 @@ export default function BillingPos() {
                 onFocus={() => {
                   if (searchResults.length > 0) setShowSearchDropdown(true);
                 }}
-                placeholder="Search products by name, SKU, barcode... (Ctrl+K or /)"
-                className="pl-10 pr-20 h-11 bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700 focus:border-emerald-500 focus:ring-emerald-500"
+                placeholder="Search products... (Ctrl+K)"
+                className="pl-10 pr-10 h-11 bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700 focus:border-emerald-500 focus:ring-emerald-500"
               />
               <kbd className="absolute right-3 top-1/2 -translate-y-1/2 hidden sm:inline-flex items-center gap-1 rounded border border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 text-[10px] font-mono text-gray-500">
                 Ctrl+K
@@ -783,9 +793,9 @@ export default function BillingPos() {
           </div>
 
           {/* Product Grid */}
-          <div className="flex-1 overflow-y-auto p-3">
+          <div className="flex-1 overflow-y-auto p-2 sm:p-3">
             {loadingProducts ? (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3">
                 {Array.from({ length: 8 }).map((_, i) => (
                   <div key={i} className="h-28 bg-gray-100 dark:bg-gray-800 rounded-lg animate-pulse" />
                 ))}
@@ -797,7 +807,7 @@ export default function BillingPos() {
                 <p className="text-sm">Try a different category or search</p>
               </div>
             ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3">
                 {products.map(product => {
                   const isOutOfStock = product.stock <= 0;
                   const isLowStock = product.stock > 0 && product.stock <= product.lowStockAlert;
@@ -808,7 +818,7 @@ export default function BillingPos() {
                       disabled={isOutOfStock}
                       whileHover={!isOutOfStock ? { y: -2, boxShadow: '0 8px 25px -5px rgba(16, 185, 129, 0.15)' } : {}}
                       whileTap={!isOutOfStock ? { scale: 0.97 } : {}}
-                      className={`relative flex flex-col items-start p-3 rounded-xl border-2 transition-all duration-200 text-left group
+                      className={`relative flex flex-col items-start p-2 sm:p-3 rounded-xl border-2 transition-all duration-200 text-left group min-h-[80px] sm:min-h-0
                         ${isOutOfStock
                           ? 'bg-gray-100 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700 opacity-60 cursor-not-allowed'
                           : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 hover:border-emerald-400 cursor-pointer'
@@ -917,7 +927,7 @@ export default function BillingPos() {
         </div>
 
         {/* ═══ RIGHT COLUMN — Cart & Checkout ═══ */}
-        <div className="w-full lg:w-[40%] flex flex-col bg-white dark:bg-gray-950">
+        <div className="hidden lg:flex w-full lg:w-[40%] flex-col bg-white dark:bg-gray-950">
           {/* Cart Header */}
           <div className="p-3 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-950">
             <div className="flex items-center justify-between mb-2">
@@ -1386,6 +1396,252 @@ export default function BillingPos() {
           </div>
         </div>
       </div>
+
+      {/* ═══ MOBILE FLOATING CART BUTTON ═══ */}
+      {isMobile && cart.length > 0 && (
+        <button
+          onClick={() => setMobileCartOpen(true)}
+          className="fixed bottom-20 right-4 z-40 flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-3 rounded-full shadow-lg shadow-emerald-500/30 transition-all active:scale-95 min-h-[48px]"
+        >
+          <ShoppingBag className="w-5 h-5" />
+          <span className="font-semibold text-sm">₹{totalAmount}</span>
+          <span className="w-5 h-5 rounded-full bg-white text-emerald-600 text-[10px] font-bold flex items-center justify-center">
+            {cart.reduce((sum, item) => sum + item.quantity, 0)}
+          </span>
+        </button>
+      )}
+
+      {/* ═══ MOBILE CART BOTTOM SHEET ═══ */}
+      <Sheet open={mobileCartOpen} onOpenChange={setMobileCartOpen}>
+        <SheetContent side="bottom" className="h-[85vh] rounded-t-2xl p-0">
+          <SheetHeader className="px-4 pt-4 pb-2 border-b">
+            <div className="flex items-center justify-between">
+              <div>
+                <SheetTitle className="text-left">Current Bill</SheetTitle>
+                <SheetDescription>
+                  {cart.reduce((sum, item) => sum + item.quantity, 0)} item{cart.reduce((sum, item) => sum + item.quantity, 0) !== 1 ? 's' : ''} in cart
+                </SheetDescription>
+              </div>
+              <div className="flex items-center gap-2">
+                {heldBills.length > 0 && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => { setShowHeldBills(true); setMobileCartOpen(false); }}
+                    className="text-amber-600 border-amber-300"
+                  >
+                    <Pause className="w-3.5 h-3.5 mr-1" />
+                    Held ({heldBills.length})
+                  </Button>
+                )}
+              </div>
+            </div>
+          </SheetHeader>
+
+          <div className="flex flex-col h-[calc(85vh-8rem)]">
+            {/* Order Type Tabs */}
+            <div className="px-4 pt-3 pb-2">
+              <Tabs value={orderType} onValueChange={setOrderType}>
+                <TabsList className="w-full h-9">
+                  {getOrderTypes().map(type => (
+                    <TabsTrigger key={type.value} value={type.value} className="flex-1 text-xs">
+                      <span className="mr-1">{type.icon}</span>
+                      {type.label}
+                    </TabsTrigger>
+                  ))}
+                </TabsList>
+              </Tabs>
+              {/* Customer */}
+              <div className="mt-2 relative" ref={customerDropdownRef}>
+                <User className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+                <Input
+                  value={customerName}
+                  onChange={(e) => {
+                    setCustomerName(e.target.value);
+                    if (!e.target.value) setSelectedCustomerId('');
+                  }}
+                  placeholder="Customer name (optional)"
+                  className="pl-8 h-9 text-sm bg-gray-50 dark:bg-gray-900"
+                />
+              </div>
+            </div>
+
+            {/* Cart Items */}
+            <ScrollArea className="flex-1">
+              <div className="p-4 space-y-2">
+                {cart.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-10 text-gray-400">
+                    <ShoppingBag className="w-10 h-10 mb-2 opacity-30" />
+                    <p className="text-sm font-medium">Cart is empty</p>
+                  </div>
+                ) : (
+                  <AnimatePresence mode="popLayout">
+                    {cart.map(item => (
+                      <motion.div
+                        key={item.productId}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                      >
+                        <Card className="border shadow-none">
+                          <CardContent className="p-3">
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="flex-1 min-w-0">
+                                <p className="font-medium text-sm truncate">{item.name}</p>
+                                <p className="text-xs text-gray-500">₹{item.price} × {item.quantity}</p>
+                              </div>
+                              <span className="font-bold text-sm text-emerald-600">₹{item.total}</span>
+                            </div>
+                            <div className="flex items-center justify-between mt-2">
+                              <div className="flex items-center gap-1">
+                                <Button
+                                  variant="outline"
+                                  size="icon"
+                                  className="h-8 w-8 min-w-[32px]"
+                                  onClick={() => handleUpdateQuantity(item.productId, item.quantity - 1)}
+                                >
+                                  <Minus className="w-3 h-3" />
+                                </Button>
+                                <span className="w-8 text-center font-semibold text-sm">{item.quantity}</span>
+                                <Button
+                                  variant="outline"
+                                  size="icon"
+                                  className="h-8 w-8 min-w-[32px]"
+                                  onClick={() => handleUpdateQuantity(item.productId, item.quantity + 1)}
+                                >
+                                  <Plus className="w-3 h-3" />
+                                </Button>
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-50"
+                                onClick={() => removeFromCart(item.productId)}
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </Button>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </motion.div>
+                    ))}
+                  </AnimatePresence>
+                )}
+              </div>
+            </ScrollArea>
+
+            {/* Cart Summary & Payment */}
+            <div className="border-t bg-gray-50 dark:bg-gray-900/50">
+              <div className="p-4 space-y-2">
+                <div className="flex justify-between text-sm text-gray-600">
+                  <span>Subtotal</span>
+                  <span>₹{subtotal}</span>
+                </div>
+                <div className="flex justify-between text-xs text-gray-500">
+                  <span>Tax ({storeTaxRate}%)</span>
+                  <span>₹{taxAmount}</span>
+                </div>
+                {totalDiscount > 0 && (
+                  <div className="flex justify-between text-xs text-red-500">
+                    <span>Discount</span>
+                    <span>-₹{totalDiscount}</span>
+                  </div>
+                )}
+                <Separator />
+                <div className="flex justify-between items-center">
+                  <span className="font-bold text-lg">Total</span>
+                  <span className="font-extrabold text-2xl text-emerald-600">₹{totalAmount}</span>
+                </div>
+
+                {/* Payment Method */}
+                <div className="grid grid-cols-4 gap-2">
+                  {[
+                    { method: 'cash', icon: Banknote, label: 'Cash' },
+                    { method: 'upi', icon: Smartphone, label: 'UPI' },
+                    { method: 'card', icon: CreditCard, label: 'Card' },
+                    { method: 'split', icon: SplitSquareHorizontal, label: 'Split' },
+                  ].map(({ method, icon: PayIcon, label }) => (
+                    <button
+                      key={method}
+                      onClick={() => setPaymentMethod(method)}
+                      className={`flex flex-col items-center justify-center h-14 rounded-lg border-2 transition-all ${
+                        paymentMethod === method
+                          ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20'
+                          : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900'
+                      }`}
+                    >
+                      <PayIcon className={`w-4 h-4 mb-0.5 ${paymentMethod === method ? 'text-emerald-600' : 'text-gray-400'}`} />
+                      <span className={`text-[10px] font-semibold ${paymentMethod === method ? 'text-emerald-600' : 'text-gray-500'}`}>{label}</span>
+                    </button>
+                  ))}
+                </div>
+
+                {/* Cash payment details on mobile */}
+                {paymentMethod === 'cash' && (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Input
+                        value={cashReceived}
+                        onChange={(e) => setCashReceived(e.target.value)}
+                        placeholder="Cash received"
+                        type="number"
+                        className="h-10 text-sm flex-1"
+                      />
+                      <div className="h-10 px-3 rounded-md border bg-gray-50 flex items-center">
+                        <span className="font-semibold text-sm text-emerald-600">₹{changeAmount || 0}</span>
+                      </div>
+                    </div>
+                    <div className="flex gap-1.5">
+                      {[200, 500, 1000, 2000].map(amt => (
+                        <button
+                          key={amt}
+                          onClick={() => setCashReceived(String(amt))}
+                          className="flex-1 text-[10px] font-semibold py-1.5 rounded border border-gray-200 bg-white hover:border-emerald-400 text-gray-600 hover:text-emerald-600 transition-colors"
+                        >
+                          ₹{amt}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Action Buttons */}
+                <Button
+                  onClick={async () => {
+                    await handlePayment();
+                    setMobileCartOpen(false);
+                  }}
+                  disabled={cart.length === 0 || isProcessing}
+                  className="w-full bg-emerald-600 hover:bg-emerald-700 text-white h-12 font-semibold text-base min-h-[48px]"
+                >
+                  <CheckCircle2 className="w-5 h-5 mr-2" />
+                  {isProcessing ? 'Processing...' : `Pay ₹${totalAmount}`}
+                </Button>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => { handleHoldBill(); setMobileCartOpen(false); }}
+                    disabled={cart.length === 0}
+                    className="border-amber-400 text-amber-600 h-10 min-h-[44px]"
+                  >
+                    <Pause className="w-3.5 h-3.5 mr-1" />
+                    Hold
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => { handleClearCart(); setMobileCartOpen(false); }}
+                    disabled={cart.length === 0}
+                    className="border-red-300 text-red-600 h-10 min-h-[44px]"
+                  >
+                    <Trash2 className="w-3.5 h-3.5 mr-1" />
+                    Clear
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </SheetContent>
+      </Sheet>
 
       {/* ═══ Receipt Modal ═══ */}
       <Dialog open={showReceipt} onOpenChange={setShowReceipt}>

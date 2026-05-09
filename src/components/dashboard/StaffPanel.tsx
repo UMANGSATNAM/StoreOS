@@ -449,7 +449,7 @@ export default function StaffPanel() {
           <Button
             onClick={openAddStaff}
             size="sm"
-            className="bg-emerald-600 hover:bg-emerald-700"
+            className="bg-emerald-600 min-h-[44px] hover:bg-emerald-700"
           >
             <Plus className="h-4 w-4 mr-1" />
             Add Staff
@@ -558,7 +558,7 @@ export default function StaffPanel() {
               <Button
                 onClick={openAddStaff}
                 size="sm"
-                className="mt-4 bg-emerald-600 hover:bg-emerald-700"
+                className="mt-4 bg-emerald-600 min-h-[44px] hover:bg-emerald-700"
               >
                 <Plus className="h-4 w-4 mr-1" />
                 Add Staff
@@ -706,7 +706,7 @@ export default function StaffPanel() {
             <Button
               onClick={openAddStaff}
               size="sm"
-              className="mt-4 bg-emerald-600 hover:bg-emerald-700"
+              className="mt-4 bg-emerald-600 min-h-[44px] hover:bg-emerald-700"
             >
               <Plus className="h-4 w-4 mr-1" />
               Add Staff
@@ -942,7 +942,7 @@ export default function StaffPanel() {
             <Button
               onClick={saveStaff}
               disabled={saving}
-              className="bg-emerald-600 hover:bg-emerald-700"
+              className="bg-emerald-600 min-h-[44px] hover:bg-emerald-700"
             >
               {saving ? 'Saving...' : editingStaff ? 'Update' : 'Add Staff'}
             </Button>

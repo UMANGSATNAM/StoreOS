@@ -346,7 +346,7 @@ function OrderCard({
             {column === 'in_progress' && (
               <Button
                 size="sm"
-                className="flex-1 h-7 text-xs bg-emerald-600 hover:bg-emerald-700 text-white"
+                className="flex-1 h-7 text-xs bg-emerald-600 min-h-[44px] hover:bg-emerald-700 text-white"
                 onClick={() => onStatusChange(order.id, 'ready')}
               >
                 <CircleCheck className="w-3 h-3 mr-1" />

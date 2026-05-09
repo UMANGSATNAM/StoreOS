@@ -143,10 +143,10 @@ function NichePreviewPanel({
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="flex items-start justify-between p-6 pb-4">
-        <div className="flex items-start gap-4">
+      <div className="flex items-start justify-between p-4 sm:p-6 pb-3 sm:pb-4">
+        <div className="flex items-start gap-3 sm:gap-4">
           <motion.span
-            className="text-5xl"
+            className="text-4xl sm:text-5xl"
             initial={{ scale: 0, rotate: -180 }}
             animate={{ scale: 1, rotate: 0 }}
             transition={{ type: 'spring', stiffness: 200, damping: 15 }}
@@ -154,10 +154,10 @@ function NichePreviewPanel({
             {niche.icon}
           </motion.span>
           <div>
-            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">
+            <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-gray-100">
               {niche.name}
             </h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+            <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-0.5 sm:mt-1">
               {niche.description}
             </p>
           </div>
@@ -166,26 +166,26 @@ function NichePreviewPanel({
           variant="ghost"
           size="icon"
           onClick={onClose}
-          className="shrink-0 -mt-1 -mr-2"
+          className="shrink-0 -mt-1 -mr-2 min-w-[44px] min-h-[44px]"
         >
           <X className="w-5 h-5" />
         </Button>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-6 pb-6 space-y-6">
+      <div className="flex-1 overflow-y-auto px-4 sm:px-6 pb-4 sm:pb-6 space-y-4 sm:space-y-6">
         {/* Features List */}
         <div>
-          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-3">
+          <h3 className="text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2 sm:mb-3">
             This niche includes:
           </h3>
-          <div className="grid grid-cols-1 gap-2">
+          <div className="grid grid-cols-1 gap-1.5 sm:gap-2">
             {niche.features.map((feature, i) => (
               <motion.div
                 key={feature}
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: i * 0.05 }}
-                className="flex items-center gap-3 p-2.5 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800/50"
+                className="flex items-center gap-2 sm:gap-3 p-2 sm:p-2.5 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800/50"
               >
                 <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
                 <span className="text-sm font-medium text-gray-800 dark:text-gray-200">
@@ -198,10 +198,10 @@ function NichePreviewPanel({
 
         {/* Sample Products Preview */}
         <div>
-          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-3">
+          <h3 className="text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2 sm:mb-3">
             Sample Product View
           </h3>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 gap-1.5 sm:gap-2">
             {sampleProducts.map((product, i) => (
               <motion.div
                 key={product.name}
@@ -226,10 +226,10 @@ function NichePreviewPanel({
       </div>
 
       {/* CTA Button */}
-      <div className="p-6 pt-4 border-t bg-white dark:bg-gray-950">
+      <div className="p-4 sm:p-6 pt-3 sm:pt-4 border-t bg-white dark:bg-gray-950 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:pb-6">
         <Button
           onClick={onSelect}
-          className="w-full bg-emerald-600 hover:bg-emerald-700 text-white h-12 text-base gap-2"
+          className="w-full bg-emerald-600 hover:bg-emerald-700 text-white min-h-[48px] text-base gap-2"
         >
           <Check className="w-5 h-5" />
           Select This Niche
@@ -379,17 +379,17 @@ export default function NicheSelection() {
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-teal-50 flex flex-col">
       {/* Progress Section */}
       <div className="w-full bg-white/80 backdrop-blur-sm border-b sticky top-0 z-10">
-        <div className="max-w-6xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-emerald-700">Step 1 of 3</span>
-            <span className="text-sm text-muted-foreground">Choose Business Type</span>
+        <div className="max-w-6xl mx-auto px-4 py-3 sm:py-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between mb-1.5 sm:mb-2">
+            <span className="text-xs sm:text-sm font-medium text-emerald-700">Step 1 of 3</span>
+            <span className="text-xs sm:text-sm text-muted-foreground">Choose Business Type</span>
           </div>
-          <Progress value={33} className="h-2 bg-emerald-100" />
-          <div className="flex items-center justify-between mt-3">
+          <Progress value={33} className="h-1.5 sm:h-2 bg-emerald-100" />
+          <div className="flex items-center justify-between mt-2 sm:mt-3">
             {STEPS.map((step, i) => (
               <div key={step} className="flex items-center gap-1">
                 <div
-                  className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-colors ${
+                  className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center text-[10px] sm:text-xs font-bold transition-colors ${
                     i === 0
                       ? 'bg-emerald-600 text-white'
                       : i < 0
@@ -397,10 +397,10 @@ export default function NicheSelection() {
                         : 'bg-gray-200 text-gray-500'
                   }`}
                 >
-                  {i < 0 ? <Check className="w-3 h-3" /> : i + 1}
+                  {i < 0 ? <Check className="w-2.5 h-2.5 sm:w-3 sm:h-3" /> : i + 1}
                 </div>
                 <span
-                  className={`text-xs hidden sm:inline ${
+                  className={`text-[10px] hidden sm:inline sm:text-xs ${
                     i === 0 ? 'text-emerald-700 font-semibold' : 'text-gray-400'
                   }`}
                 >
@@ -416,17 +416,17 @@ export default function NicheSelection() {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col items-center px-4 py-8 sm:px-6 lg:px-8">
+      <div className="flex-1 flex flex-col items-center px-4 py-4 sm:py-8 sm:px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="text-center mb-8"
+          className="text-center mb-4 sm:mb-8"
         >
-          <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-3">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-2 sm:mb-3">
             What type of business do you run?
           </h1>
-          <p className="text-lg text-gray-500 max-w-2xl mx-auto">
+          <p className="text-sm sm:text-lg text-gray-500 max-w-2xl mx-auto">
             We&apos;ll customize your POS experience based on your business type
           </p>
         </motion.div>
@@ -435,7 +435,7 @@ export default function NicheSelection() {
         <div className="w-full max-w-6xl flex gap-6">
           {/* Grid */}
           <div className={`flex-1 transition-all duration-300 ${showDesktopPreview ? '' : 'max-w-5xl mx-auto'}`}>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3">
               <AnimatePresence>
                 {NICHES.map((niche, index) => {
                   const isSelected = selectedNiche === niche.slug;
@@ -483,25 +483,25 @@ export default function NicheSelection() {
                           </div>
                         )}
 
-                        <div className="p-4">
-                          <div className="flex items-start gap-3">
+                        <div className="p-2.5 sm:p-4">
+                          <div className="flex items-start gap-2 sm:gap-3">
                             <motion.span
-                              className="text-3xl"
+                              className="text-2xl sm:text-3xl"
                               whileHover={{ scale: 1.15, rotate: 5 }}
                               transition={{ type: 'spring', stiffness: 400 }}
                             >
                               {niche.icon}
                             </motion.span>
                             <div className="flex-1 min-w-0">
-                              <h3 className="font-semibold text-gray-900 text-sm leading-tight">
+                              <h3 className="font-semibold text-gray-900 text-xs sm:text-sm leading-tight">
                                 {niche.name}
                               </h3>
-                              <p className="text-xs text-gray-500 mt-1 line-clamp-2">
+                              <p className="text-[10px] sm:text-xs text-gray-500 mt-0.5 sm:mt-1 line-clamp-2">
                                 {niche.description}
                               </p>
                             </div>
                           </div>
-                          <div className="mt-3 flex flex-wrap gap-1">
+                          <div className="mt-2 sm:mt-3 hidden sm:flex flex-wrap gap-1">
                             {niche.features.slice(0, 3).map((feature) => (
                               <span
                                 key={feature}
@@ -521,14 +521,14 @@ export default function NicheSelection() {
                             )}
                           </div>
 
-                          {/* Compare toggle button */}
-                          <div className="mt-3 flex items-center gap-2">
+                          {/* Compare toggle button - hidden on mobile to save space */}
+                          <div className="mt-2 sm:mt-3 hidden sm:flex items-center gap-2">
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
                                 toggleCompare(niche.slug);
                               }}
-                              className={`text-[10px] px-2 py-1 rounded-md border transition-colors ${
+                              className={`text-[10px] px-2 py-1 rounded-md border transition-colors min-h-[28px] ${
                                 isComparing
                                   ? 'border-sky-400 bg-sky-50 text-sky-600'
                                   : 'border-gray-200 text-gray-400 hover:border-gray-300 hover:text-gray-500'
@@ -571,15 +571,15 @@ export default function NicheSelection() {
       </div>
 
       {/* Footer Actions */}
-      <div className="w-full bg-white/80 backdrop-blur-sm border-t">
-        <div className="max-w-6xl mx-auto px-4 py-4 sm:px-6 lg:px-8 flex items-center justify-between">
+      <div className="w-full bg-white/80 backdrop-blur-sm border-t sticky bottom-0 sm:relative z-20 pb-[env(safe-area-inset-bottom)]">
+        <div className="max-w-6xl mx-auto px-4 py-3 sm:py-4 sm:px-6 lg:px-8 flex items-center justify-between gap-3">
           <button
             onClick={handleSkip}
-            className="text-sm text-gray-400 hover:text-gray-600 transition-colors"
+            className="text-xs sm:text-sm text-gray-400 hover:text-gray-600 transition-colors min-h-[44px] flex items-center shrink-0"
           >
             Skip for now
           </button>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             {/* Compare Button */}
             {compareNiches.length === 2 && (
               <motion.div
@@ -590,10 +590,10 @@ export default function NicheSelection() {
                 <Button
                   variant="outline"
                   onClick={() => setShowComparison(true)}
-                  className="gap-2 border-sky-400 text-sky-600 hover:bg-sky-50"
+                  className="gap-2 border-sky-400 text-sky-600 hover:bg-sky-50 min-h-[44px]"
                 >
                   <GitCompare className="w-4 h-4" />
-                  Compare ({compareNiches.length})
+                  <span className="hidden sm:inline">Compare</span> ({compareNiches.length})
                 </Button>
               </motion.div>
             )}
@@ -614,7 +614,7 @@ export default function NicheSelection() {
               <Button
                 onClick={handleContinue}
                 disabled={!selectedNiche}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white px-8 gap-2"
+                className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 sm:px-8 min-h-[44px] gap-2"
               >
                 Continue
                 <ArrowRight className="w-4 h-4" />

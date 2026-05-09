@@ -628,7 +628,7 @@ export default function SettingsPanel() {
                   </div>
 
                   <div className="pt-2">
-                    <Button onClick={handleSave} disabled={saving} className="bg-emerald-600 hover:bg-emerald-700 text-white">
+                    <Button onClick={handleSave} disabled={saving} className="bg-emerald-600 min-h-[44px] hover:bg-emerald-700 text-white">
                       {saving ? <RefreshCw className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
                       Save Changes
                     </Button>
@@ -646,7 +646,7 @@ export default function SettingsPanel() {
                   {Object.entries(operatingHours).map(([day, hours]) => (
                     <div key={day} className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 p-3 rounded-lg bg-gray-50 dark:bg-gray-900">
                       <div className="flex items-center gap-3 sm:w-36 shrink-0">
-                        <Switch checked={!hours.closed} onCheckedChange={(checked) => setOperatingHours((prev) => ({ ...prev, [day]: { ...prev[day], closed: !checked } }))} className="data-[state=checked]:bg-emerald-600" />
+                        <Switch checked={!hours.closed} onCheckedChange={(checked) => setOperatingHours((prev) => ({ ...prev, [day]: { ...prev[day], closed: !checked } }))} className="data-[state=checked]:bg-emerald-600 min-h-[44px]" />
                         <span className={`text-sm font-medium ${hours.closed ? 'text-gray-400 line-through' : 'dark:text-gray-200'}`}>{day}</span>
                       </div>
                       {!hours.closed ? (
@@ -1124,7 +1124,7 @@ export default function SettingsPanel() {
                 </CardHeader>
                 <CardContent className="space-y-4 relative z-10">
                   <div className="flex items-center gap-4 p-4 bg-white/80 dark:bg-gray-800/80 rounded-xl border border-emerald-200 dark:border-emerald-800">
-                    <div className="w-14 h-14 bg-emerald-600 rounded-xl flex items-center justify-center shrink-0">
+                    <div className="w-14 h-14 bg-emerald-600 min-h-[44px] rounded-xl flex items-center justify-center shrink-0">
                       <Crown className="w-7 h-7 text-white" />
                     </div>
                     <div className="flex-1 min-w-0">
@@ -1226,7 +1226,7 @@ export default function SettingsPanel() {
 
               {/* Action Buttons */}
               <div className="flex flex-col sm:flex-row gap-3">
-                <Button onClick={() => setUpgradeDialogOpen(true)} className="bg-emerald-600 hover:bg-emerald-700 text-white flex-1">
+                <Button onClick={() => setUpgradeDialogOpen(true)} className="bg-emerald-600 min-h-[44px] hover:bg-emerald-700 text-white flex-1">
                   <Crown className="w-4 h-4 mr-2" />Upgrade Plan
                 </Button>
                 <Button variant="outline" className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 dark:border-gray-700">Cancel Subscription</Button>
@@ -1353,7 +1353,7 @@ export default function SettingsPanel() {
                     </div>
                   </div>
 
-                  <Button onClick={async () => { setBackingUp(true); await new Promise((r) => setTimeout(r, 1500)); setLastBackupDate(new Date().toISOString()); setBackingUp(false); toast.success('Backup completed successfully'); }} disabled={backingUp} className="bg-emerald-600 hover:bg-emerald-700 text-white w-full sm:w-auto">
+                  <Button onClick={async () => { setBackingUp(true); await new Promise((r) => setTimeout(r, 1500)); setLastBackupDate(new Date().toISOString()); setBackingUp(false); toast.success('Backup completed successfully'); }} disabled={backingUp} className="bg-emerald-600 min-h-[44px] hover:bg-emerald-700 text-white w-full sm:w-auto">
                     {backingUp ? <RefreshCw className="w-4 h-4 mr-2 animate-spin" /> : <Archive className="w-4 h-4 mr-2" />}
                     {backingUp ? 'Backing up...' : 'Backup Now'}
                   </Button>
@@ -1368,7 +1368,7 @@ export default function SettingsPanel() {
 
       {/* Reset Confirmation Dialog with DELETE typing */}
       <Dialog open={resetDialogOpen} onOpenChange={(open) => { setResetDialogOpen(open); if (!open) setDeleteConfirmText(''); }}>
-        <DialogContent className="dark:bg-gray-800 dark:border-gray-700">
+        <DialogContent className="dark:bg-gray-800 dark:border-gray-700 max-h-[90dvh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-red-600"><AlertTriangle className="w-5 h-5" />Clear All Data</DialogTitle>
             <DialogDescription className="dark:text-gray-400">This will delete all your data. Type <strong>DELETE</strong> to confirm.</DialogDescription>
@@ -1390,7 +1390,7 @@ export default function SettingsPanel() {
 
       {/* Import Dialog */}
       <Dialog open={importDialogOpen} onOpenChange={setImportDialogOpen}>
-        <DialogContent className="dark:bg-gray-800 dark:border-gray-700">
+        <DialogContent className="dark:bg-gray-800 dark:border-gray-700 max-h-[90dvh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="dark:text-gray-100">Import Data</DialogTitle>
             <DialogDescription className="dark:text-gray-400">Upload a JSON file exported from StoreOS to restore your data.</DialogDescription>
@@ -1409,7 +1409,7 @@ export default function SettingsPanel() {
 
       {/* Upgrade Plan Dialog */}
       <Dialog open={upgradeDialogOpen} onOpenChange={setUpgradeDialogOpen}>
-        <DialogContent className="dark:bg-gray-800 dark:border-gray-700 max-w-lg">
+        <DialogContent className="dark:bg-gray-800 dark:border-gray-700 max-w-lg max-h-[90dvh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 dark:text-gray-100"><Crown className="w-5 h-5 text-emerald-600" />Upgrade Plan</DialogTitle>
             <DialogDescription className="dark:text-gray-400">Choose the plan that fits your business</DialogDescription>
@@ -1432,7 +1432,7 @@ export default function SettingsPanel() {
               {subscription?.plan === 'pro' ? (
                 <Badge className="mt-2 bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border-0">Current</Badge>
               ) : (
-                <Button size="sm" className="mt-2 bg-emerald-600 hover:bg-emerald-700 text-white" onClick={() => { toast.success('Upgrade request submitted! 🚀'); setUpgradeDialogOpen(false); }}>Upgrade to Pro</Button>
+                <Button size="sm" className="mt-2 bg-emerald-600 min-h-[44px] hover:bg-emerald-700 text-white" onClick={() => { toast.success('Upgrade request submitted! 🚀'); setUpgradeDialogOpen(false); }}>Upgrade to Pro</Button>
               )}
             </div>
             {/* Enterprise */}

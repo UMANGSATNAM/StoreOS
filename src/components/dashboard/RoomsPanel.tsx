@@ -206,7 +206,7 @@ export default function RoomsPanel() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6 p-4 md:p-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -219,7 +219,7 @@ export default function RoomsPanel() {
         </div>
         <Button
           onClick={() => setAddDialogOpen(true)}
-          className="bg-emerald-600 hover:bg-emerald-700 text-white shrink-0"
+          className="bg-emerald-600 min-h-[44px] hover:bg-emerald-700 text-white shrink-0"
         >
           <Plus className="w-4 h-4 mr-2" />
           Add Room
@@ -310,7 +310,7 @@ export default function RoomsPanel() {
           <BedDouble className="w-16 h-16 mb-4 opacity-30" />
           <p className="text-lg font-medium">No rooms found</p>
           <p className="text-sm mt-1">Add your first room to get started</p>
-          <Button onClick={() => setAddDialogOpen(true)} className="mt-4 bg-emerald-600 hover:bg-emerald-700">
+          <Button onClick={() => setAddDialogOpen(true)} className="mt-4 bg-emerald-600 min-h-[44px] hover:bg-emerald-700">
             <Plus className="w-4 h-4 mr-2" />
             Add Room
           </Button>
@@ -340,7 +340,7 @@ export default function RoomsPanel() {
                 <div className="mt-3 space-y-2">
                   {getStatusBadge(room.status)}
                   {room.status === 'available' && (
-                    <Button size="sm" className="w-full bg-emerald-600 hover:bg-emerald-700 text-white h-7 text-xs" onClick={() => { setSelectedRoom(room); setCheckInDialogOpen(true); }}>
+                    <Button size="sm" className="w-full bg-emerald-600 min-h-[44px] hover:bg-emerald-700 text-white h-7 text-xs" onClick={() => { setSelectedRoom(room); setCheckInDialogOpen(true); }}>
                       <LogIn className="w-3 h-3 mr-1" />
                       Check In
                     </Button>
@@ -369,7 +369,7 @@ export default function RoomsPanel() {
 
       {/* Add Room Dialog */}
       <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-h-[90dvh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Add New Room</DialogTitle>
             <DialogDescription>Add a new room to your hotel</DialogDescription>
@@ -409,7 +409,7 @@ export default function RoomsPanel() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setAddDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleAddRoom} disabled={!formNumber || !formPrice} className="bg-emerald-600 hover:bg-emerald-700">
+            <Button onClick={handleAddRoom} disabled={!formNumber || !formPrice} className="bg-emerald-600 min-h-[44px] hover:bg-emerald-700">
               <Plus className="w-4 h-4 mr-2" />
               Add Room
             </Button>
@@ -419,7 +419,7 @@ export default function RoomsPanel() {
 
       {/* Check-in Dialog */}
       <Dialog open={checkInDialogOpen} onOpenChange={setCheckInDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-h-[90dvh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Check-In Guest</DialogTitle>
             <DialogDescription>
@@ -464,7 +464,7 @@ export default function RoomsPanel() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setCheckInDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleCheckIn} disabled={!guestName} className="bg-emerald-600 hover:bg-emerald-700">
+            <Button onClick={handleCheckIn} disabled={!guestName} className="bg-emerald-600 min-h-[44px] hover:bg-emerald-700">
               <LogIn className="w-4 h-4 mr-2" />
               Check In
             </Button>
@@ -474,7 +474,7 @@ export default function RoomsPanel() {
 
       {/* Check-out Dialog */}
       <Dialog open={checkOutDialogOpen} onOpenChange={setCheckOutDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-h-[90dvh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Check-Out</DialogTitle>
             <DialogDescription>
@@ -495,7 +495,7 @@ export default function RoomsPanel() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setCheckOutDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleCheckOut} className="bg-emerald-600 hover:bg-emerald-700">
+            <Button onClick={handleCheckOut} className="bg-emerald-600 min-h-[44px] hover:bg-emerald-700">
               <LogOut className="w-4 h-4 mr-2" />
               Check Out & Generate Bill
             </Button>

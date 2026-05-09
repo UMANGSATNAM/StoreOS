@@ -193,7 +193,7 @@ export default function VehiclesPanel() {
     : [];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6 p-4 md:p-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -206,7 +206,7 @@ export default function VehiclesPanel() {
         </div>
         <Button
           onClick={() => setAddDialogOpen(true)}
-          className="bg-emerald-600 hover:bg-emerald-700 text-white shrink-0"
+          className="bg-emerald-600 min-h-[44px] hover:bg-emerald-700 text-white shrink-0"
         >
           <Plus className="w-4 h-4 mr-2" />
           Add Vehicle
@@ -315,7 +315,7 @@ export default function VehiclesPanel() {
           <Car className="w-16 h-16 mb-4 opacity-30" />
           <p className="text-lg font-medium">No vehicles found</p>
           <p className="text-sm mt-1">Register your first vehicle</p>
-          <Button onClick={() => setAddDialogOpen(true)} className="mt-4 bg-emerald-600 hover:bg-emerald-700">
+          <Button onClick={() => setAddDialogOpen(true)} className="mt-4 bg-emerald-600 min-h-[44px] hover:bg-emerald-700">
             <Plus className="w-4 h-4 mr-2" />
             Add Vehicle
           </Button>
@@ -475,7 +475,7 @@ export default function VehiclesPanel() {
 
       {/* Add Vehicle Dialog */}
       <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-h-[90dvh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Register Vehicle</DialogTitle>
             <DialogDescription>Add a new vehicle to the garage</DialogDescription>
@@ -514,7 +514,7 @@ export default function VehiclesPanel() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setAddDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleAddVehicle} disabled={!formReg} className="bg-emerald-600 hover:bg-emerald-700">
+            <Button onClick={handleAddVehicle} disabled={!formReg} className="bg-emerald-600 min-h-[44px] hover:bg-emerald-700">
               <Plus className="w-4 h-4 mr-2" />
               Register
             </Button>
@@ -524,7 +524,7 @@ export default function VehiclesPanel() {
 
       {/* Job Card Dialog */}
       <Dialog open={jobCardDialogOpen} onOpenChange={setJobCardDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-h-[90dvh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Create Job Card</DialogTitle>
             <DialogDescription>
@@ -570,7 +570,7 @@ export default function VehiclesPanel() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setJobCardDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleCreateJobCard} disabled={!jcServices} className="bg-emerald-600 hover:bg-emerald-700">
+            <Button onClick={handleCreateJobCard} disabled={!jcServices} className="bg-emerald-600 min-h-[44px] hover:bg-emerald-700">
               <ClipboardList className="w-4 h-4 mr-2" />
               Create Job Card
             </Button>
@@ -580,7 +580,7 @@ export default function VehiclesPanel() {
 
       {/* Service History Dialog */}
       <Dialog open={historyDialogOpen} onOpenChange={setHistoryDialogOpen}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-lg max-h-[90dvh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Service History</DialogTitle>
             <DialogDescription>

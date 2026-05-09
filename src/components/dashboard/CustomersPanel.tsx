@@ -970,7 +970,7 @@ export default function CustomersPanel() {
               className="pl-9 w-full sm:w-56"
             />
           </div>
-          <Button onClick={openAddCustomer} size="sm" className="bg-emerald-600 hover:bg-emerald-700">
+          <Button onClick={openAddCustomer} size="sm" className="bg-emerald-600 min-h-[44px] hover:bg-emerald-700">
             <Plus className="h-4 w-4 mr-1" />
             Add Customer
           </Button>
@@ -995,7 +995,7 @@ export default function CustomersPanel() {
               <Button
                 onClick={openAddCustomer}
                 size="sm"
-                className="mt-4 bg-emerald-600 hover:bg-emerald-700"
+                className="mt-4 bg-emerald-600 min-h-[44px] hover:bg-emerald-700"
               >
                 <Plus className="h-4 w-4 mr-1" />
                 Add Customer
@@ -1154,7 +1154,7 @@ export default function CustomersPanel() {
             <Button
               onClick={openAddCustomer}
               size="sm"
-              className="mt-4 bg-emerald-600 hover:bg-emerald-700"
+              className="mt-4 bg-emerald-600 min-h-[44px] hover:bg-emerald-700"
             >
               <Plus className="h-4 w-4 mr-1" />
               Add Customer
@@ -1747,7 +1747,7 @@ export default function CustomersPanel() {
 
       {/* ─── Loyalty Add/Redeem Modal ─── */}
       <Dialog open={loyaltyModalOpen} onOpenChange={setLoyaltyModalOpen}>
-        <DialogContent className="sm:max-w-sm">
+        <DialogContent className="sm:max-w-sm max-h-[90dvh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {loyaltyModalType === 'add' ? 'Add Loyalty Points' : 'Redeem Loyalty Points'}
@@ -1878,7 +1878,7 @@ export default function CustomersPanel() {
             <Button
               onClick={saveCustomer}
               disabled={saving}
-              className="bg-emerald-600 hover:bg-emerald-700"
+              className="bg-emerald-600 min-h-[44px] hover:bg-emerald-700"
             >
               {saving ? 'Saving...' : editingCustomer ? 'Update' : 'Create'}
             </Button>

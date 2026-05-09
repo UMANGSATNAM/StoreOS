@@ -507,7 +507,7 @@ export default function ReportsPanel() {
           <CardDescription>{getPeriodLabel()}'s financial overview</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
             <div className="p-4 rounded-lg bg-emerald-50 dark:bg-emerald-900/10 border border-emerald-200 dark:border-emerald-800">
               <p className="text-xs font-medium text-emerald-600 dark:text-emerald-400">Total Revenue</p>
               <p className="text-xl sm:text-2xl font-bold mt-1">{formatCurrency(totalRevenue)}</p>
@@ -554,7 +554,7 @@ export default function ReportsPanel() {
         <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">
           Revenue
         </h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-4">
           <StatCard
             title={`${getPeriodLabel()}'s Revenue`}
             value={loading ? '...' : formatCurrency(totalRevenue)}
@@ -600,7 +600,7 @@ export default function ReportsPanel() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="h-64 sm:h-80">
+            <div className="h-48 sm:h-64 md:h-80">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={revenueChartData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
                   <defs>
@@ -633,7 +633,7 @@ export default function ReportsPanel() {
             <CardTitle className="text-base font-semibold">Revenue by Day of Week</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="h-48 sm:h-56">
+            <div className="h-40 sm:h-48 md:h-56">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={dayOfWeekData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" className="dark:stroke-gray-700" />
@@ -653,14 +653,14 @@ export default function ReportsPanel() {
         <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">
           Orders
         </h3>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Orders by Payment Method */}
           <Card className="shadow-sm">
             <CardHeader className="pb-2">
               <CardTitle className="text-base font-semibold">Orders by Payment Method</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="h-64">
+              <div className="h-48 sm:h-64">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
@@ -741,7 +741,7 @@ export default function ReportsPanel() {
         <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">
           Products
         </h3>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Top 5 Selling Products */}
           <Card className="shadow-sm">
             <CardHeader className="pb-2">
@@ -751,7 +751,7 @@ export default function ReportsPanel() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="h-64">
+              <div className="h-48 sm:h-64">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart
                     data={topProducts.map((p) => ({ name: p.name.slice(0, 15), revenue: p.revenue }))}
@@ -793,7 +793,7 @@ export default function ReportsPanel() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="h-64">
+              <div className="h-48 sm:h-64">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
@@ -863,7 +863,7 @@ export default function ReportsPanel() {
         <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">
           Tax
         </h3>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
           <Card className="shadow-sm">
             <CardContent className="p-6 text-center">
               <Receipt className="h-6 w-6 mx-auto text-purple-600 mb-2" />
@@ -979,7 +979,7 @@ export default function ReportsPanel() {
         <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">
           Inventory Value
         </h3>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Card className="shadow-sm border-l-4 border-l-amber-500">
             <CardHeader className="pb-2">
               <CardTitle className="text-base font-semibold flex items-center gap-2">
@@ -988,7 +988,7 @@ export default function ReportsPanel() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-3 gap-3 mb-4">
+              <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-4">
                 <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800 text-center">
                   <p className="text-xs text-amber-600 dark:text-amber-400 font-medium">Total Value</p>
                   <p className="text-lg font-bold mt-1">{formatCurrency(inventoryData.totalValue)}</p>

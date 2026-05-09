@@ -247,7 +247,7 @@ export default function CashRegisterPanel() {
   // ═══════════════════════════════════════════════════════════
   if (!cashRegister) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6 p-4 md:p-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
@@ -380,7 +380,7 @@ export default function CashRegisterPanel() {
 
                 {/* Open Button */}
                 <Button
-                  className="w-full h-12 text-base font-semibold bg-emerald-600 hover:bg-emerald-700 text-white"
+                  className="w-full h-12 text-base font-semibold bg-emerald-600 min-h-[44px] hover:bg-emerald-700 text-white"
                   onClick={handleOpenRegister}
                   disabled={!openBalance || parseFloat(openBalance) < 0}
                 >
@@ -444,7 +444,7 @@ export default function CashRegisterPanel() {
 
         {/* Day Summary Detail Dialog */}
         <Dialog open={summaryDialogOpen} onOpenChange={setSummaryDialogOpen}>
-          <DialogContent className="sm:max-w-md">
+          <DialogContent className="sm:max-w-md max-h-[90dvh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Day Summary</DialogTitle>
               <DialogDescription>
@@ -512,7 +512,7 @@ export default function CashRegisterPanel() {
   const netCashInOut = cashRegister.totalCashIn - cashRegister.totalCashOut;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6 p-4 md:p-6">
       {/* ─── Header Bar ─── */}
       <motion.div
         initial={{ opacity: 0, y: -10 }}
@@ -639,7 +639,7 @@ export default function CashRegisterPanel() {
               Cash In
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-sm">
+          <DialogContent className="sm:max-w-sm max-h-[90dvh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <Plus className="w-5 h-5 text-sky-600" /> Cash In
@@ -689,7 +689,7 @@ export default function CashRegisterPanel() {
               Cash Out
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-sm">
+          <DialogContent className="sm:max-w-sm max-h-[90dvh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <Minus className="w-5 h-5 text-red-600" /> Cash Out
@@ -742,7 +742,7 @@ export default function CashRegisterPanel() {
               Record Tip
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-sm">
+          <DialogContent className="sm:max-w-sm max-h-[90dvh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <HandCoins className="w-5 h-5 text-amber-600" /> Record Tip

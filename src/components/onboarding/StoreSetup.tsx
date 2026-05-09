@@ -209,26 +209,26 @@ export default function StoreSetup() {
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-teal-50 flex flex-col">
       {/* Progress Section */}
       <div className="w-full bg-white/80 backdrop-blur-sm border-b sticky top-0 z-10">
-        <div className="max-w-2xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-emerald-700">Step 3 of 3</span>
-            <span className="text-sm text-muted-foreground">Setup Store</span>
+        <div className="max-w-2xl mx-auto px-4 py-3 sm:py-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between mb-1.5 sm:mb-2">
+            <span className="text-xs sm:text-sm font-medium text-emerald-700">Step 3 of 3</span>
+            <span className="text-xs sm:text-sm text-muted-foreground">Setup Store</span>
           </div>
-          <Progress value={100} className="h-2 bg-emerald-100" />
-          <div className="flex items-center justify-between mt-3">
+          <Progress value={100} className="h-1.5 sm:h-2 bg-emerald-100" />
+          <div className="flex items-center justify-between mt-2 sm:mt-3">
             {STEPS.map((step, i) => (
               <div key={step} className="flex items-center gap-1">
                 <div
-                  className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-colors ${
+                  className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center text-[10px] sm:text-xs font-bold transition-colors ${
                     i < 2
                       ? 'bg-emerald-200 text-emerald-700'
                       : 'bg-emerald-600 text-white'
                   }`}
                 >
-                  {i < 2 ? <Check className="w-3 h-3" /> : i + 1}
+                  {i < 2 ? <Check className="w-2.5 h-2.5 sm:w-3 sm:h-3" /> : i + 1}
                 </div>
                 <span
-                  className={`text-xs hidden sm:inline ${
+                  className={`text-[10px] hidden sm:inline sm:text-xs ${
                     i === 2
                       ? 'text-emerald-700 font-semibold'
                       : 'text-emerald-600'
@@ -246,24 +246,24 @@ export default function StoreSetup() {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col items-center px-4 py-8 sm:px-6 lg:px-8">
+      <div className="flex-1 flex flex-col items-center px-4 py-4 sm:py-8 sm:px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="text-center mb-6"
+          className="text-center mb-4 sm:mb-6"
         >
           <div className="flex items-center justify-center gap-2 mb-2">
-            <span className="text-2xl">{nicheData?.icon}</span>
+            <span className="text-xl sm:text-2xl">{nicheData?.icon}</span>
             <Badge variant="secondary" className="text-xs">{nicheData?.name}</Badge>
             {templateData && (
               <Badge variant="outline" className="text-xs">{templateData.name}</Badge>
             )}
           </div>
-          <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-3">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-2 sm:mb-3">
             Set up your store
           </h1>
-          <p className="text-lg text-gray-500 max-w-2xl mx-auto">
+          <p className="text-sm sm:text-lg text-gray-500 max-w-2xl mx-auto">
             Almost there! Just a few details to personalize your POS.
           </p>
         </motion.div>
@@ -275,11 +275,11 @@ export default function StoreSetup() {
           transition={{ duration: 0.5, delay: 0.1 }}
           className="w-full max-w-lg"
         >
-          <Card className="p-6 border-2 border-gray-200">
-            <div className="space-y-5">
+          <Card className="p-4 sm:p-6 border-2 border-gray-200">
+            <div className="space-y-4 sm:space-y-5">
               {/* Store Name */}
               <div className="space-y-2">
-                <Label htmlFor="storeName" className="flex items-center gap-2">
+                <Label htmlFor="storeName" className="flex items-center gap-2 text-sm sm:text-base">
                   <Store className="w-4 h-4 text-emerald-600" />
                   Store Name <span className="text-red-500">*</span>
                 </Label>
@@ -288,7 +288,7 @@ export default function StoreSetup() {
                   placeholder="e.g. Sharma's Kitchen"
                   value={formData.storeName}
                   onChange={(e) => updateField('storeName', e.target.value)}
-                  className={errors.storeName ? 'border-red-400 focus-visible:ring-red-400' : ''}
+                  className={`text-base ${errors.storeName ? 'border-red-400 focus-visible:ring-red-400' : ''}`}
                 />
                 {errors.storeName && (
                   <p className="text-xs text-red-500">{errors.storeName}</p>
@@ -297,7 +297,7 @@ export default function StoreSetup() {
 
               {/* Owner Name */}
               <div className="space-y-2">
-                <Label htmlFor="ownerName" className="flex items-center gap-2">
+                <Label htmlFor="ownerName" className="flex items-center gap-2 text-sm sm:text-base">
                   <User className="w-4 h-4 text-emerald-600" />
                   Owner Name <span className="text-red-500">*</span>
                 </Label>
@@ -306,7 +306,7 @@ export default function StoreSetup() {
                   placeholder="e.g. Rajesh Sharma"
                   value={formData.ownerName}
                   onChange={(e) => updateField('ownerName', e.target.value)}
-                  className={errors.ownerName ? 'border-red-400 focus-visible:ring-red-400' : ''}
+                  className={`text-base ${errors.ownerName ? 'border-red-400 focus-visible:ring-red-400' : ''}`}
                 />
                 {errors.ownerName && (
                   <p className="text-xs text-red-500">{errors.ownerName}</p>
@@ -315,7 +315,7 @@ export default function StoreSetup() {
 
               {/* City */}
               <div className="space-y-2">
-                <Label htmlFor="city" className="flex items-center gap-2">
+                <Label htmlFor="city" className="flex items-center gap-2 text-sm sm:text-base">
                   <MapPin className="w-4 h-4 text-emerald-600" />
                   City <span className="text-red-500">*</span>
                 </Label>
@@ -324,7 +324,7 @@ export default function StoreSetup() {
                   placeholder="e.g. Mumbai"
                   value={formData.city}
                   onChange={(e) => updateField('city', e.target.value)}
-                  className={errors.city ? 'border-red-400 focus-visible:ring-red-400' : ''}
+                  className={`text-base ${errors.city ? 'border-red-400 focus-visible:ring-red-400' : ''}`}
                 />
                 {errors.city && (
                   <p className="text-xs text-red-500">{errors.city}</p>
@@ -333,7 +333,7 @@ export default function StoreSetup() {
 
               {/* State */}
               <div className="space-y-2">
-                <Label htmlFor="state" className="flex items-center gap-2">
+                <Label htmlFor="state" className="flex items-center gap-2 text-sm sm:text-base">
                   <MapPin className="w-4 h-4 text-emerald-600" />
                   State <span className="text-red-500">*</span>
                 </Label>
@@ -343,7 +343,7 @@ export default function StoreSetup() {
                 >
                   <SelectTrigger
                     id="state"
-                    className={errors.state ? 'border-red-400' : ''}
+                    className={`text-base min-h-[44px] ${errors.state ? 'border-red-400' : ''}`}
                   >
                     <SelectValue placeholder="Select your state" />
                   </SelectTrigger>
@@ -362,7 +362,7 @@ export default function StoreSetup() {
 
               {/* GST Number */}
               <div className="space-y-2">
-                <Label htmlFor="gstNumber" className="flex items-center gap-2">
+                <Label htmlFor="gstNumber" className="flex items-center gap-2 text-sm sm:text-base">
                   <FileText className="w-4 h-4 text-emerald-600" />
                   GST Number
                   <Badge variant="secondary" className="text-[10px] px-1.5 py-0">Optional</Badge>
@@ -372,7 +372,9 @@ export default function StoreSetup() {
                   placeholder="e.g. 27AABCU9603R1ZM"
                   value={formData.gstNumber}
                   onChange={(e) => updateField('gstNumber', e.target.value)}
-                  className={errors.gstNumber ? 'border-red-400 focus-visible:ring-red-400' : ''}
+                  inputMode="text"
+                  autoComplete="off"
+                  className={`text-base ${errors.gstNumber ? 'border-red-400 focus-visible:ring-red-400' : ''}`}
                 />
                 {errors.gstNumber && (
                   <p className="text-xs text-red-500">{errors.gstNumber}</p>
@@ -381,16 +383,19 @@ export default function StoreSetup() {
 
               {/* Phone Number */}
               <div className="space-y-2">
-                <Label htmlFor="phone" className="flex items-center gap-2">
+                <Label htmlFor="phone" className="flex items-center gap-2 text-sm sm:text-base">
                   <Phone className="w-4 h-4 text-emerald-600" />
                   Phone Number
                 </Label>
                 <Input
                   id="phone"
+                  type="tel"
+                  inputMode="tel"
                   placeholder="e.g. 9876543210"
                   value={formData.phone}
                   onChange={(e) => updateField('phone', e.target.value)}
-                  className={errors.phone ? 'border-red-400 focus-visible:ring-red-400' : ''}
+                  autoComplete="tel"
+                  className={`text-base ${errors.phone ? 'border-red-400 focus-visible:ring-red-400' : ''}`}
                 />
                 {errors.phone && (
                   <p className="text-xs text-red-500">{errors.phone}</p>
@@ -399,7 +404,7 @@ export default function StoreSetup() {
 
               {/* Store Logo */}
               <div className="space-y-2">
-                <Label className="flex items-center gap-2">
+                <Label className="flex items-center gap-2 text-sm sm:text-base">
                   <Camera className="w-4 h-4 text-emerald-600" />
                   Store Logo
                   <Badge variant="secondary" className="text-[10px] px-1.5 py-0">Optional</Badge>
@@ -407,31 +412,31 @@ export default function StoreSetup() {
                 <div
                   onDragOver={handleDragOver}
                   onDrop={handleDrop}
-                  className="relative border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-emerald-400 transition-colors cursor-pointer"
+                  className="relative border-2 border-dashed border-gray-300 rounded-lg p-4 sm:p-6 text-center hover:border-emerald-400 transition-colors cursor-pointer min-h-[100px] sm:min-h-[120px] flex items-center justify-center"
                 >
                   {logoPreview ? (
                     <div className="flex flex-col items-center gap-2">
                       <img
                         src={logoPreview}
                         alt="Store logo preview"
-                        className="w-20 h-20 rounded-lg object-cover"
+                        className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg object-cover"
                       />
-                      <p className="text-xs text-gray-500">Click or drag to change</p>
+                      <p className="text-xs text-gray-500">Tap to change</p>
                     </div>
                   ) : (
                     <div className="flex flex-col items-center gap-2">
-                      <Upload className="w-8 h-8 text-gray-400" />
-                      <p className="text-sm text-gray-500">
-                        Drag & drop your logo here
+                      <Upload className="w-6 h-6 sm:w-8 sm:h-8 text-gray-400" />
+                      <p className="text-xs sm:text-sm text-gray-500">
+                        Tap to upload logo
                       </p>
-                      <p className="text-xs text-gray-400">or click to browse</p>
+                      <p className="text-[10px] sm:text-xs text-gray-400">or drag & drop</p>
                     </div>
                   )}
                   <input
                     type="file"
                     accept="image/*"
                     onChange={handleLogoUpload}
-                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer min-h-[44px]"
                   />
                 </div>
               </div>
@@ -441,7 +446,7 @@ export default function StoreSetup() {
             <Button
               onClick={handleSubmit}
               disabled={isSubmitting}
-              className="w-full mt-6 bg-emerald-600 hover:bg-emerald-700 text-white py-6 text-lg font-bold gap-2"
+              className="w-full mt-4 sm:mt-6 bg-emerald-600 hover:bg-emerald-700 text-white min-h-[52px] sm:min-h-[56px] text-base sm:text-lg font-bold gap-2 shadow-lg shadow-emerald-600/25 hover:shadow-emerald-600/40 transition-shadow"
             >
               {isSubmitting ? (
                 <>
@@ -460,16 +465,16 @@ export default function StoreSetup() {
       </div>
 
       {/* Footer */}
-      <div className="w-full bg-white/80 backdrop-blur-sm border-t">
-        <div className="max-w-2xl mx-auto px-4 py-4 sm:px-6 lg:px-8 flex items-center justify-between">
+      <div className="w-full bg-white/80 backdrop-blur-sm border-t pb-[env(safe-area-inset-bottom)]">
+        <div className="max-w-2xl mx-auto px-4 py-3 sm:py-4 sm:px-6 lg:px-8 flex items-center justify-between">
           <Button
             variant="ghost"
             onClick={handleBack}
-            className="gap-2 text-gray-500 hover:text-gray-700"
+            className="gap-2 text-gray-500 hover:text-gray-700 min-h-[44px]"
             disabled={isSubmitting}
           >
             <ArrowLeft className="w-4 h-4" />
-            Back
+            <span className="hidden sm:inline">Back</span>
           </Button>
           <p className="text-xs text-gray-400">
             Your data is secure and encrypted

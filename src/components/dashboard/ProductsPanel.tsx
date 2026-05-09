@@ -772,9 +772,9 @@ export default function ProductsPanel() {
   // ─── Render ───
 
   return (
-    <div className="space-y-4 p-4 md:p-6">
+    <div className="space-y-4 p-3 md:p-6">
       {/* Stat Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
         <Card className="shadow-sm hover:shadow-md transition-shadow">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
@@ -877,10 +877,10 @@ export default function ProductsPanel() {
       {/* Top Bar */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          <Package className="h-6 w-6 text-emerald-600" />
+          <Package className="h-6 w-6 text-emerald-600 hidden sm:block" />
           <div>
-            <h2 className="text-xl font-bold">Products & Inventory</h2>
-            <p className="text-sm text-muted-foreground">Manage your product catalog</p>
+            <h2 className="text-lg sm:text-xl font-bold">Products & Inventory</h2>
+            <p className="text-xs sm:text-sm text-muted-foreground">Manage your product catalog</p>
           </div>
           <Badge variant="secondary" className="ml-1">
             {filteredProducts.length} items
@@ -893,22 +893,22 @@ export default function ProductsPanel() {
               placeholder="Search products..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-9 w-full sm:w-56"
+              className="pl-9 w-full sm:w-56 min-h-[44px]"
             />
           </div>
-          <Button onClick={openAddProduct} size="sm" className="bg-emerald-600 hover:bg-emerald-700">
+          <Button onClick={openAddProduct} size="sm" className="bg-emerald-600 hover:bg-emerald-700 min-h-[44px]">
             <Plus className="h-4 w-4 mr-1" />
-            Add Product
+            <span className="sm:inline">Add Product</span>
           </Button>
-          <Button variant="outline" size="sm" onClick={() => setCsvDialogOpen(true)}>
+          <Button variant="outline" size="sm" onClick={() => setCsvDialogOpen(true)} className="hidden sm:flex min-h-[44px]">
             <Upload className="h-4 w-4 mr-1" />
             Import CSV
           </Button>
-          <Button variant="outline" size="sm" onClick={handleExportCSV}>
+          <Button variant="outline" size="sm" onClick={handleExportCSV} className="hidden sm:flex min-h-[44px]">
             <Download className="h-4 w-4 mr-1" />
             Export CSV
           </Button>
-          <Button variant="outline" size="sm" onClick={() => setCategoryDialogOpen(true)}>
+          <Button variant="outline" size="sm" onClick={() => setCategoryDialogOpen(true)} className="hidden md:flex min-h-[44px]">
             <Settings className="h-4 w-4 mr-1" />
             Categories
           </Button>
@@ -917,9 +917,9 @@ export default function ProductsPanel() {
 
       {/* Filter Row + View Toggle */}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-            <SelectTrigger className="w-44">
+            <SelectTrigger className="w-full sm:w-44 min-h-[44px]">
               <Tag className="h-4 w-4 mr-1 text-muted-foreground" />
               <SelectValue placeholder="All Categories" />
             </SelectTrigger>
@@ -934,7 +934,7 @@ export default function ProductsPanel() {
             </SelectContent>
           </Select>
           <Select value={stockFilter} onValueChange={(v) => setStockFilter(v as StockFilter)}>
-            <SelectTrigger className="w-36">
+            <SelectTrigger className="w-full sm:w-36 min-h-[44px]">
               <SelectValue placeholder="All Stock" />
             </SelectTrigger>
             <SelectContent>
@@ -950,20 +950,20 @@ export default function ProductsPanel() {
           <Button
             variant={viewMode === 'grid' ? 'default' : 'ghost'}
             size="sm"
-            className={`rounded-none h-8 px-3 ${viewMode === 'grid' ? 'bg-emerald-600 hover:bg-emerald-700' : ''}`}
+            className={`rounded-none h-9 px-3 min-w-[44px] ${viewMode === 'grid' ? 'bg-emerald-600 hover:bg-emerald-700' : ''}`}
             onClick={() => setViewMode('grid')}
           >
-            <LayoutGrid className="h-4 w-4 mr-1" />
-            Grid
+            <LayoutGrid className="h-4 w-4 sm:mr-1" />
+            <span className="hidden sm:inline">Grid</span>
           </Button>
           <Button
             variant={viewMode === 'list' ? 'default' : 'ghost'}
             size="sm"
-            className={`rounded-none h-8 px-3 ${viewMode === 'list' ? 'bg-emerald-600 hover:bg-emerald-700' : ''}`}
+            className={`rounded-none h-9 px-3 min-w-[44px] ${viewMode === 'list' ? 'bg-emerald-600 hover:bg-emerald-700' : ''}`}
             onClick={() => setViewMode('list')}
           >
-            <List className="h-4 w-4 mr-1" />
-            List
+            <List className="h-4 w-4 sm:mr-1" />
+            <span className="hidden sm:inline">List</span>
           </Button>
         </div>
       </div>
@@ -972,7 +972,7 @@ export default function ProductsPanel() {
       {viewMode === 'grid' && (
         <div>
           {loading ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4">
               {Array.from({ length: 10 }).map((_, i) => (
                 <div key={i} className="h-48 rounded-lg bg-muted animate-pulse" />
               ))}
@@ -993,7 +993,7 @@ export default function ProductsPanel() {
             </div>
           ) : (
             <>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4">
                 {paginatedProducts.map((product) => (
                   <Card
                     key={product.id}
