@@ -6,12 +6,11 @@ FROM base AS deps
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
+# Copy package files
 COPY package.json package-lock.json* yarn.lock* bun.lock* ./
-RUN \
-  if [ -f yarn.lock ]; then yarn --frozen-lockfile; \
-  elif [ -f package-lock.json ]; then npm ci; \
-  else npm install; \
-  fi
+
+# Install dependencies (skip postinstall scripts - we'll run prisma generate later)
+RUN npm install --ignore-scripts
 
 # Rebuild the source code only when needed
 FROM base AS builder
