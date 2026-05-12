@@ -52,6 +52,25 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 
+// ─── Coupon System ────────────────────────────────────────────────
+
+interface Coupon {
+  code: string;
+  type: 'percentage' | 'flat';
+  value: number;
+  minOrder: number;
+  description: string;
+  active: boolean;
+  expiresAt: Date | null;
+}
+
+const STORE_COUPONS: Coupon[] = [
+  { code: 'SAVE10', type: 'percentage', value: 10, minOrder: 500, description: '10% off on orders above ₹500', active: true, expiresAt: null },
+  { code: 'FLAT50', type: 'flat', value: 50, minOrder: 300, description: '₹50 off on orders above ₹300', active: true, expiresAt: null },
+  { code: 'WELCOME20', type: 'percentage', value: 20, minOrder: 1000, description: '20% off on first order above ₹1000', active: true, expiresAt: null },
+  { code: 'DIWALI100', type: 'flat', value: 100, minOrder: 2000, description: '₹100 off on orders above ₹2000', active: false, expiresAt: new Date('2024-11-15') },
+];
+
 // ─── Types ────────────────────────────────────────────────────────
 
 interface Category {
@@ -118,6 +137,7 @@ export default function BillingPos() {
   const [couponCode, setCouponCode] = useState('');
   const [couponApplied, setCouponApplied] = useState(false);
   const [couponDiscount, setCouponDiscount] = useState(0);
+  const [appliedCouponInfo, setAppliedCouponInfo] = useState<Coupon | null>(null);
 
   const [customerName, setCustomerName] = useState('');
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -382,24 +402,63 @@ export default function BillingPos() {
 
   const handleApplyCoupon = () => {
     if (!couponCode.trim()) return;
-    // Mock coupon logic — in production, validate against API
-    if (couponCode.toUpperCase() === 'SAVE10') {
-      setCouponDiscount(Math.round(subtotal * 0.1 * 100) / 100);
-      setCouponApplied(true);
-      toast.success('Coupon applied! 10% off');
-    } else if (couponCode.toUpperCase() === 'FLAT50') {
-      setCouponDiscount(50);
-      setCouponApplied(true);
-      toast.success('Coupon applied! ₹50 off');
-    } else {
-      toast.error('Invalid coupon code');
+
+    // Remove previously applied coupon before validating new one
+    if (couponApplied) {
+      setCouponApplied(false);
+      setCouponDiscount(0);
+      setAppliedCouponInfo(null);
     }
+
+    const enteredCode = couponCode.trim().toUpperCase();
+    const coupon = STORE_COUPONS.find(c => c.code === enteredCode);
+
+    if (!coupon) {
+      toast.error('Invalid coupon code', { description: 'No coupon found with this code' });
+      return;
+    }
+
+    if (!coupon.active) {
+      toast.error('Coupon is no longer active', { description: 'This coupon has been deactivated' });
+      return;
+    }
+
+    if (coupon.expiresAt && new Date() > coupon.expiresAt) {
+      toast.error('Coupon has expired', { description: `This coupon expired on ${coupon.expiresAt.toLocaleDateString('en-IN')}` });
+      return;
+    }
+
+    if (subtotal < coupon.minOrder) {
+      toast.error('Minimum order amount not met', { description: `This coupon requires a minimum order of ₹${coupon.minOrder}. Your subtotal is ₹${subtotal}` });
+      return;
+    }
+
+    // Calculate discount
+    let discount = 0;
+    if (coupon.type === 'percentage') {
+      discount = Math.round(subtotal * (coupon.value / 100) * 100) / 100;
+    } else {
+      discount = coupon.value;
+    }
+
+    // Discount cannot exceed subtotal
+    discount = Math.min(discount, subtotal);
+
+    setCouponDiscount(discount);
+    setCouponApplied(true);
+    setAppliedCouponInfo(coupon);
+
+    const discountLabel = coupon.type === 'percentage'
+      ? `${coupon.value}% off (₹${discount})`
+      : `₹${discount} off`;
+    toast.success('Coupon applied!', { description: `${coupon.code} — ${discountLabel}` });
   };
 
   const handleRemoveCoupon = () => {
     setCouponCode('');
     setCouponApplied(false);
     setCouponDiscount(0);
+    setAppliedCouponInfo(null);
   };
 
   const handleHoldBill = () => {
@@ -447,6 +506,7 @@ export default function BillingPos() {
     setCouponCode('');
     setCouponApplied(false);
     setCouponDiscount(0);
+    setAppliedCouponInfo(null);
     setItemNotes({});
     setItemDiscounts({});
     setExpandedNotes(new Set());
@@ -534,6 +594,7 @@ export default function BillingPos() {
       setCouponCode('');
       setCouponApplied(false);
       setCouponDiscount(0);
+      setAppliedCouponInfo(null);
       setItemNotes({});
       setItemDiscounts({});
       setExpandedNotes(new Set());
@@ -1148,8 +1209,9 @@ export default function BillingPos() {
                 {couponApplied ? (
                   <div className="flex items-center gap-1 flex-1">
                     <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300 text-xs">
-                      {couponCode} applied
+                      {appliedCouponInfo?.code} applied
                     </Badge>
+                    <span className="text-[10px] text-gray-500 dark:text-gray-400 truncate max-w-[120px]">{appliedCouponInfo?.description}</span>
                     <Button
                       variant="ghost"
                       size="icon"

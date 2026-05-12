@@ -24,7 +24,6 @@ import {
   Globe,
   Package,
   TrendingUp,
-  Copy,
 } from 'lucide-react';
 import type { AppUser, AppStore, AppSubscription } from '@/lib/types';
 
@@ -221,13 +220,6 @@ export default function LoginPage() {
     } finally {
       setLoading(false);
     }
-  };
-
-  // ── Fill demo credentials ──
-  const fillDemo = () => {
-    setEmail('demo@storeos.in');
-    setPassword('demo123');
-    setErrors({});
   };
 
   // ── Brand features ──
@@ -635,31 +627,6 @@ export default function LoginPage() {
                     </Button>
                   </motion.div>
                 </form>
-
-                {/* Demo credentials hint */}
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.55 }}
-                  className="mt-5 p-3 rounded-lg bg-emerald-50/80 border border-emerald-100/60"
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-semibold text-emerald-700 mb-0.5">Demo Credentials</p>
-                      <p className="text-xs text-emerald-600/70 font-mono truncate">
-                        demo@storeos.in / demo123
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={fillDemo}
-                      className="shrink-0 flex items-center gap-1 text-xs font-medium text-emerald-700 hover:text-emerald-800 bg-emerald-100/80 hover:bg-emerald-200/80 px-2.5 py-1.5 rounded-md transition-all active:scale-95 cursor-pointer"
-                    >
-                      <Copy className="w-3 h-3" />
-                      Fill
-                    </button>
-                  </div>
-                </motion.div>
 
                 {/* Signup link */}
                 <motion.p

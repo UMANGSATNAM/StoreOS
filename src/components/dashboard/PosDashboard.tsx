@@ -402,6 +402,13 @@ function DashboardOverview({ storeId, niche }: { storeId: string; niche: string 
     lowStockThreshold: number;
   }>>([]);
 
+  // Recent customers for activity feed
+  const [recentCustomers, setRecentCustomers] = useState<Array<{
+    id: string;
+    name: string;
+    createdAt: string;
+  }>>([]);
+
   // Sales chart state
   const [salesPeriod, setSalesPeriod] = useState<'7' | '30' | '90'>('7');
   const [chartData, setChartData] = useState<Array<{ date: string; sales: number; orders: number }>>([]);
@@ -435,44 +442,105 @@ function DashboardOverview({ storeId, niche }: { storeId: string; niche: string 
   const accent = getNicheAccent(niche);
   const accentBg = getNicheAccentBg(niche);
 
-  // ─── Mock Activity Feed Data ────────────────────────────────
-  const activityFeed = useMemo(() => [
-    { id: '1', type: 'order' as const, icon: ShoppingCart, description: 'New order #1047 from Priya Sharma', time: '2 min ago', color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-900/20', border: 'border-l-emerald-500' },
-    { id: '2', type: 'alert' as const, icon: AlertTriangle, description: 'Low stock: Prawn Masala (2 left)', time: '5 min ago', color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-50 dark:bg-amber-900/20', border: 'border-l-amber-500' },
-    { id: '3', type: 'payment' as const, icon: IndianRupee, description: 'Payment received ₹3,200 via UPI', time: '12 min ago', color: 'text-sky-600 dark:text-sky-400', bg: 'bg-sky-50 dark:bg-sky-900/20', border: 'border-l-sky-500' },
-    { id: '4', type: 'customer' as const, icon: UserPlus, description: 'New customer: Rahul Verma signed up', time: '18 min ago', color: 'text-purple-600 dark:text-purple-400', bg: 'bg-purple-50 dark:bg-purple-900/20', border: 'border-l-purple-500' },
-    { id: '5', type: 'order' as const, icon: ShoppingCart, description: 'New order #1046 from Amit Patel', time: '25 min ago', color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-900/20', border: 'border-l-emerald-500' },
-    { id: '6', type: 'payment' as const, icon: IndianRupee, description: 'Payment received ₹1,850 via Cash', time: '32 min ago', color: 'text-sky-600 dark:text-sky-400', bg: 'bg-sky-50 dark:bg-sky-900/20', border: 'border-l-sky-500' },
-    { id: '7', type: 'alert' as const, icon: AlertTriangle, description: 'Low stock: Mushroom Manchurian (3 left)', time: '45 min ago', color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-50 dark:bg-amber-900/20', border: 'border-l-amber-500' },
-    { id: '8', type: 'customer' as const, icon: UserPlus, description: 'New customer: Meera Joshi signed up', time: '1 hr ago', color: 'text-purple-600 dark:text-purple-400', bg: 'bg-purple-50 dark:bg-purple-900/20', border: 'border-l-purple-500' },
-  ], []);
+  // ─── Real Activity Feed Data ────────────────────────────────
+  const activityFeed = useMemo(() => {
+    type FeedItem = {
+      id: string;
+      type: 'order' | 'alert' | 'payment' | 'customer';
+      icon: React.ElementType;
+      description: string;
+      timestamp: Date;
+      color: string;
+      bg: string;
+      border: string;
+    };
+    const items: FeedItem[] = [];
+
+    // Add recent orders as activity items
+    for (const order of recentOrders) {
+      const orderType = order.paymentMethod ? 'payment' as const : 'order' as const;
+      const icon = order.paymentMethod ? IndianRupee : ShoppingCart;
+      const desc = order.paymentMethod
+        ? `Payment received ₹${order.totalAmount.toLocaleString('en-IN')} via ${order.paymentMethod}`
+        : `New order #${order.id.slice(-4)} from ${order.customerName || 'Walk-in'}`;
+      const color = order.paymentMethod
+        ? 'text-sky-600 dark:text-sky-400'
+        : 'text-emerald-600 dark:text-emerald-400';
+      const bg = order.paymentMethod
+        ? 'bg-sky-50 dark:bg-sky-900/20'
+        : 'bg-emerald-50 dark:bg-emerald-900/20';
+      const border = order.paymentMethod
+        ? 'border-l-sky-500'
+        : 'border-l-emerald-500';
+      items.push({
+        id: `order-${order.id}`,
+        type: orderType,
+        icon,
+        description: desc,
+        timestamp: order.createdAt ? new Date(order.createdAt) : new Date(),
+        color,
+        bg,
+        border,
+      });
+    }
+
+    // Add low stock alerts
+    for (const product of lowStockProducts) {
+      items.push({
+        id: `lowstock-${product.id}`,
+        type: 'alert',
+        icon: AlertTriangle,
+        description: `Low stock: ${product.name} (${product.stock} left)`,
+        timestamp: new Date(), // Low stock alerts don't have a specific time
+        color: 'text-amber-600 dark:text-amber-400',
+        bg: 'bg-amber-50 dark:bg-amber-900/20',
+        border: 'border-l-amber-500',
+      });
+    }
+
+    // Add recent customer signups
+    for (const customer of recentCustomers) {
+      items.push({
+        id: `customer-${customer.id}`,
+        type: 'customer',
+        icon: UserPlus,
+        description: `New customer: ${customer.name} signed up`,
+        timestamp: customer.createdAt ? new Date(customer.createdAt) : new Date(),
+        color: 'text-purple-600 dark:text-purple-400',
+        bg: 'bg-purple-50 dark:bg-purple-900/20',
+        border: 'border-l-purple-500',
+      });
+    }
+
+    // Sort by timestamp (most recent first), then take top 8
+    items.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+    return items.slice(0, 8);
+  }, [recentOrders, lowStockProducts, recentCustomers]);
 
   // ─── Relative time formatter ──────────────────────────────
-  const formatRelativeTime = (timeStr: string): string => {
-    // Parse common patterns like "2 min ago", "1 hr ago"
-    const minMatch = timeStr.match(/^(\d+)\s*min/);
-    const hrMatch = timeStr.match(/^(\d+)\s*hr/);
-    if (minMatch) {
-      const mins = parseInt(minMatch[1]);
-      if (mins < 2) return 'just now';
-      if (mins < 60) return `${mins}m ago`;
-      return `${Math.floor(mins / 60)}h ${mins % 60}m ago`;
-    }
-    if (hrMatch) {
-      const hrs = parseInt(hrMatch[1]);
-      if (hrs === 1) return '1h ago';
-      return `${hrs}h ago`;
-    }
-    return timeStr;
+  const formatRelativeTime = (date: Date): string => {
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    if (diffMins < 1) return 'just now';
+    if (diffMins < 60) return `${diffMins}m ago`;
+    const diffHrs = Math.floor(diffMins / 60);
+    if (diffHrs < 24) return `${diffHrs}h ago`;
+    const diffDays = Math.floor(diffHrs / 24);
+    return `${diffDays}d ago`;
   };
 
-  // ─── Sparkline data per stat card ───────────────────────────
-  const sparklineData = useMemo(() => ({
-    sales: [8200, 9100, 7800, 11200, 10450, 12100, reports?.todaySales ?? 12450],
-    orders: [12, 15, 10, 18, 14, 20, reports?.ordersCount ?? 22],
-    products: [25, 25, 26, 26, 25, 25, productCount],
-    customers: [8, 9, 10, 10, 11, 12, customerCount],
-  }), [reports, productCount, customerCount]);
+  // ─── Sparkline data per stat card (derived from real chart data) ──
+  const sparklineData = useMemo(() => {
+    const salesFromChart = chartData.map(d => d.sales);
+    const ordersFromChart = chartData.map(d => d.orders);
+    return {
+      sales: salesFromChart.length > 0 ? salesFromChart : [],
+      orders: ordersFromChart.length > 0 ? ordersFromChart : [],
+      products: productCount > 0 ? [productCount] : [],
+      customers: customerCount > 0 ? [customerCount] : [],
+    };
+  }, [chartData, productCount, customerCount]);
 
   // ─── Yesterday comparison values ────────────────────────────
   const yesterdayValues = useMemo(() => ({
@@ -527,44 +595,19 @@ function DashboardOverview({ storeId, niche }: { storeId: string; niche: string 
           if (data.dailyData && Array.isArray(data.dailyData) && data.dailyData.length > 0) {
             setChartData(data.dailyData);
           } else {
-            setChartData(generateFallbackChartData(salesPeriod, data));
+            setChartData([]);
           }
         } else {
-          setChartData(generateFallbackChartData(salesPeriod));
+          setChartData([]);
         }
       } catch {
-        setChartData(generateFallbackChartData(salesPeriod));
+        setChartData([]);
       } finally {
         setChartLoading(false);
       }
     }
     fetchChartData();
   }, [storeId, salesPeriod]);
-
-  // Helper to generate fallback chart data
-  const generateFallbackChartData = (period: string, reportsData?: ReportsData | null) => {
-    const days = period === '7' ? 7 : period === '30' ? 30 : 90;
-    const baseSales = reportsData?.todaySales || 15000;
-    const data = [];
-    const now = new Date();
-    for (let i = days - 1; i >= 0; i--) {
-      const date = new Date(now);
-      date.setDate(date.getDate() - i);
-      const dayName = days <= 7
-        ? date.toLocaleDateString('en-IN', { weekday: 'short' })
-        : date.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' });
-      const variance = 0.5 + Math.random() * 1.0;
-      const isWeekend = date.getDay() === 0 || date.getDay() === 6;
-      const weekendBoost = isWeekend ? 1.3 : 1.0;
-      const sales = Math.round(baseSales * variance * weekendBoost);
-      data.push({
-        date: dayName,
-        sales,
-        orders: Math.round(sales / (reportsData?.averageOrderValue || 500)),
-      });
-    }
-    return data;
-  };
 
   // Chart summary stats
   const chartSummary = useMemo(() => {
@@ -581,7 +624,7 @@ function DashboardOverview({ storeId, niche }: { storeId: string; niche: string 
       try {
         const [reportsRes, ordersRes, productsRes, customersRes] = await Promise.all([
           fetch(`/api/reports?storeId=${storeId}&period=today`),
-          fetch(`/api/orders?storeId=${storeId}&limit=5`),
+          fetch(`/api/orders?storeId=${storeId}&limit=8`),
           fetch(`/api/products?storeId=${storeId}`),
           fetch(`/api/customers?storeId=${storeId}`),
         ]);
@@ -597,7 +640,7 @@ function DashboardOverview({ storeId, niche }: { storeId: string; niche: string 
 
         if (ordersRes.ok) {
           const data = await ordersRes.json();
-          setRecentOrders(Array.isArray(data) ? data.slice(0, 5) : data.orders?.slice(0, 5) || []);
+          setRecentOrders(Array.isArray(data) ? data.slice(0, 8) : data.orders?.slice(0, 8) || []);
         }
 
         if (productsRes.ok) {
@@ -624,7 +667,7 @@ function DashboardOverview({ storeId, niche }: { storeId: string; niche: string 
             (c: { createdAt?: string }) => c.createdAt && new Date(c.createdAt) >= oneWeekAgo
           ).length;
           const returningCount = totalCustomers - newCustCount;
-          const newPct = totalCustomers > 0 ? Math.round((newCustCount / totalCustomers) * 100) : 35;
+          const newPct = totalCustomers > 0 ? Math.round((newCustCount / totalCustomers) * 100) : 0;
           const retPct = 100 - newPct;
 
           // Find top customer by spend
@@ -639,11 +682,23 @@ function DashboardOverview({ storeId, niche }: { storeId: string; niche: string 
             null as { name: string; spent: number } | null
           );
 
+          // Store recent customers (those created in the last 7 days) for activity feed
+          const recentCusts = customers
+            .filter((c: { createdAt?: string }) => c.createdAt && new Date(c.createdAt) >= oneWeekAgo)
+            .sort((a: { createdAt?: string }, b: { createdAt?: string }) => {
+              const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+              const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+              return bTime - aTime;
+            })
+            .slice(0, 5)
+            .map((c: { id: string; name: string; createdAt: string }) => ({ id: c.id, name: c.name, createdAt: c.createdAt }));
+          setRecentCustomers(recentCusts);
+
           setCustomerInsights({
-            newThisWeek: newCustCount || 3,
-            returning: retPct || 65,
-            newCust: newPct || 35,
-            topCustomer: topCust || { name: 'Priya Sharma', spent: 24500 },
+            newThisWeek: newCustCount,
+            returning: retPct,
+            newCust: newPct,
+            topCustomer: topCust,
           });
         }
       } catch {
@@ -656,16 +711,9 @@ function DashboardOverview({ storeId, niche }: { storeId: string; niche: string 
     if (storeId) fetchData();
   }, [storeId]);
 
-  // Fallback top products if not from API
+  // Display top products from API only (no fake fallback)
   const displayTopProducts = useMemo(() => {
-    if (topProducts.length > 0) return topProducts;
-    return [
-      { name: 'Butter Chicken', quantity: 48, revenue: 15360 },
-      { name: 'Paneer Tikka', quantity: 42, revenue: 10500 },
-      { name: 'Dal Makhani', quantity: 38, revenue: 8360 },
-      { name: 'Garlic Naan', quantity: 65, revenue: 3900 },
-      { name: 'Masala Chai', quantity: 55, revenue: 2750 },
-    ];
+    return topProducts;
   }, [topProducts]);
 
   const store = useAppStore((s) => s.store);
@@ -1042,6 +1090,12 @@ function DashboardOverview({ storeId, niche }: { storeId: string; niche: string 
                   <div className="h-full flex items-center justify-center">
                     <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
                   </div>
+                ) : chartData.length === 0 ? (
+                  <div className="h-full flex flex-col items-center justify-center text-gray-400 dark:text-gray-500">
+                    <BarChart3 className="w-8 h-8 mb-2 opacity-40" />
+                    <p className="text-sm font-medium">No sales data yet</p>
+                    <p className="text-xs mt-1">Sales chart will appear once orders are placed</p>
+                  </div>
                 ) : (
                   <ResponsiveContainer width="100%" height="100%">
                     <ComposedChart data={chartData} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
@@ -1124,6 +1178,7 @@ function DashboardOverview({ storeId, niche }: { storeId: string; niche: string 
                 )}
               </div>
               {/* Chart Summary */}
+              {chartData.length > 0 && (
               <div className="mt-3 pt-3 border-t dark:border-gray-700 flex flex-wrap items-center gap-x-5 gap-y-1 text-sm">
                 <span className="text-gray-500 dark:text-gray-400">
                   Total: <span className="font-bold text-gray-900 dark:text-gray-100">₹{chartSummary.total.toLocaleString('en-IN')}</span>
@@ -1141,6 +1196,7 @@ function DashboardOverview({ storeId, niche }: { storeId: string; niche: string 
                   Avg line
                 </span>
               </div>
+              )}
             </CardContent>
           </Card>
 
@@ -1332,44 +1388,52 @@ function DashboardOverview({ storeId, niche }: { storeId: string; niche: string 
             </CardHeader>
             <CardContent>
               <div className="space-y-1 max-h-72 overflow-y-auto">
-                {activityFeed.map((item, idx) => {
-                  const ItemIcon = item.icon;
-                  return (
-                    <motion.div
-                      key={item.id}
-                      initial={{ opacity: 0, x: 20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ duration: 0.3, delay: idx * 0.05 }}
-                      className={`flex gap-3 group cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 px-2 py-1.5 rounded-lg transition-colors border-l-[3px] ${item.border}`}
-                      onClick={() => {
-                        if (item.type === 'order' || item.type === 'payment') {
-                          setDashboardTab('orders');
-                        } else if (item.type === 'alert') {
-                          setDashboardTab('products');
-                        } else if (item.type === 'customer') {
-                          setDashboardTab('customers');
-                        }
-                      }}
-                    >
-                      {/* Timeline connector */}
-                      <div className="flex flex-col items-center">
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${item.bg} group-hover:scale-110 transition-transform`}>
-                          <ItemIcon className={`w-3.5 h-3.5 ${item.color}`} />
+                {activityFeed.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-8 text-gray-400 dark:text-gray-500">
+                    <Activity className="w-8 h-8 mb-2 opacity-40" />
+                    <p className="text-sm font-medium">No recent activity</p>
+                    <p className="text-xs mt-1">Activity will appear here as orders come in</p>
+                  </div>
+                ) : (
+                  activityFeed.map((item, idx) => {
+                    const ItemIcon = item.icon;
+                    return (
+                      <motion.div
+                        key={item.id}
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.3, delay: idx * 0.05 }}
+                        className={`flex gap-3 group cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 px-2 py-1.5 rounded-lg transition-colors border-l-[3px] ${item.border}`}
+                        onClick={() => {
+                          if (item.type === 'order' || item.type === 'payment') {
+                            setDashboardTab('orders');
+                          } else if (item.type === 'alert') {
+                            setDashboardTab('products');
+                          } else if (item.type === 'customer') {
+                            setDashboardTab('customers');
+                          }
+                        }}
+                      >
+                        {/* Timeline connector */}
+                        <div className="flex flex-col items-center">
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${item.bg} group-hover:scale-110 transition-transform`}>
+                            <ItemIcon className={`w-3.5 h-3.5 ${item.color}`} />
+                          </div>
+                          {idx < activityFeed.length - 1 && (
+                            <div className="w-px flex-1 bg-gray-200 dark:bg-gray-700 my-1" />
+                          )}
                         </div>
-                        {idx < activityFeed.length - 1 && (
-                          <div className="w-px flex-1 bg-gray-200 dark:bg-gray-700 my-1" />
-                        )}
-                      </div>
-                      {/* Content */}
-                      <div className={`pb-3 flex-1 min-w-0 ${idx === activityFeed.length - 1 ? 'pb-0' : ''}`}>
-                        <p className="text-sm text-gray-700 dark:text-gray-300 leading-snug group-hover:text-gray-900 dark:group-hover:text-gray-100 transition-colors">{item.description}</p>
-                        <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5">{formatRelativeTime(item.time)}</p>
-                      </div>
-                      {/* Hover arrow */}
-                      <ArrowUpRight className="w-3.5 h-3.5 text-gray-300 dark:text-gray-600 self-center opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
-                    </motion.div>
-                  );
-                })}
+                        {/* Content */}
+                        <div className={`pb-3 flex-1 min-w-0 ${idx === activityFeed.length - 1 ? 'pb-0' : ''}`}>
+                          <p className="text-sm text-gray-700 dark:text-gray-300 leading-snug group-hover:text-gray-900 dark:group-hover:text-gray-100 transition-colors">{item.description}</p>
+                          <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5">{formatRelativeTime(item.timestamp)}</p>
+                        </div>
+                        {/* Hover arrow */}
+                        <ArrowUpRight className="w-3.5 h-3.5 text-gray-300 dark:text-gray-600 self-center opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+                      </motion.div>
+                    );
+                  })
+                )}
               </div>
               {/* View All Link */}
               <div className="mt-3 pt-3 border-t dark:border-gray-700">
@@ -1404,6 +1468,14 @@ function DashboardOverview({ storeId, niche }: { storeId: string; niche: string 
               <CardDescription>Revenue breakdown by product</CardDescription>
             </CardHeader>
             <CardContent>
+              {displayTopProducts.length === 0 ? (
+                <div className="h-56 flex flex-col items-center justify-center text-gray-400 dark:text-gray-500">
+                  <BarChart3 className="w-8 h-8 mb-2 opacity-40" />
+                  <p className="text-sm font-medium">No sales data yet</p>
+                  <p className="text-xs mt-1">Top sellers will appear once orders are placed</p>
+                </div>
+              ) : (
+              <>
               <div className="h-56 relative">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
@@ -1470,6 +1542,8 @@ function DashboardOverview({ storeId, niche }: { storeId: string; niche: string 
                   </div>
                 ))}
               </div>
+              </>
+              )}
             </CardContent>
           </Card>
 
@@ -2071,7 +2145,7 @@ export default function PosDashboard() {
     }
 
     if (dashboardTab === 'notifications') {
-      return <NotificationsPanel />;
+      return <NotificationsPanel storeId={store?.id || ''} />;
     }
 
     if (dashboardTab === 'settings') {

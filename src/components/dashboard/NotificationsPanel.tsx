@@ -1,38 +1,30 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Bell,
   ShoppingCart,
-  AlertTriangle,
   IndianRupee,
-  UserPlus,
   RefreshCcw,
   PackageCheck,
-  Star,
   Clock,
-  Wifi,
-  BarChart3,
-  Tag,
-  CalendarDays,
-  Scissors,
+  Package,
+  Settings,
+  Users,
+  Trash2,
   CheckCircle2,
   Mail,
+  CalendarDays,
+  BellOff,
   Eye,
   EyeOff,
   X,
   ChevronDown,
-  BellOff,
-  Package,
-  CreditCard,
-  Settings,
-  Users,
-  Trash2,
+  Loader2,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -40,7 +32,19 @@ import { toast } from 'sonner';
 
 type NotificationCategory = 'order' | 'inventory' | 'payment' | 'customer' | 'system';
 
-interface Notification {
+interface DbNotification {
+  id: string;
+  storeId: string | null;
+  userId: string | null;
+  title: string;
+  message: string;
+  type: string; // info, warning, success, error, order
+  read: boolean;
+  createdAt: string;
+  isDynamic?: boolean;
+}
+
+interface DisplayNotification {
   id: string;
   type: NotificationCategory;
   icon: React.ElementType;
@@ -54,225 +58,6 @@ interface Notification {
   actionTab?: string;
   timestamp: Date;
 }
-
-// ─── Mock Data with timestamps for grouping ──────────────────────
-
-const now = new Date();
-const hour = 3600000;
-const day = 86400000;
-
-const MOCK_NOTIFICATIONS: Notification[] = [
-  {
-    id: 'n1',
-    type: 'order',
-    icon: ShoppingCart,
-    iconColor: 'text-emerald-600 dark:text-emerald-400',
-    iconBg: 'bg-emerald-50 dark:bg-emerald-900/20',
-    title: 'New Order Received',
-    description: '₹1,250 from Priya Sharma — Dine-in, Table T2',
-    time: '5 min ago',
-    unread: true,
-    actionLabel: 'View Order',
-    actionTab: 'orders',
-    timestamp: new Date(now.getTime() - 5 * 60000),
-  },
-  {
-    id: 'n2',
-    type: 'inventory',
-    icon: Package,
-    iconColor: 'text-amber-600 dark:text-amber-400',
-    iconBg: 'bg-amber-50 dark:bg-amber-900/20',
-    title: 'Low Stock Alert',
-    description: 'Butter Chicken — only 2 units left',
-    time: '12 min ago',
-    unread: true,
-    actionLabel: 'Check Stock',
-    actionTab: 'products',
-    timestamp: new Date(now.getTime() - 12 * 60000),
-  },
-  {
-    id: 'n3',
-    type: 'payment',
-    icon: IndianRupee,
-    iconColor: 'text-green-600 dark:text-green-400',
-    iconBg: 'bg-green-50 dark:bg-green-900/20',
-    title: 'Payment Received via UPI',
-    description: '₹3,500 credited to your account',
-    time: '25 min ago',
-    unread: true,
-    actionLabel: 'View Details',
-    actionTab: 'orders',
-    timestamp: new Date(now.getTime() - 25 * 60000),
-  },
-  {
-    id: 'n4',
-    type: 'customer',
-    icon: Users,
-    iconColor: 'text-violet-600 dark:text-violet-400',
-    iconBg: 'bg-violet-50 dark:bg-violet-900/20',
-    title: 'New Customer Signup',
-    description: 'Amit Patel joined your store',
-    time: '40 min ago',
-    unread: true,
-    actionLabel: 'View Profile',
-    actionTab: 'customers',
-    timestamp: new Date(now.getTime() - 40 * 60000),
-  },
-  {
-    id: 'n5',
-    type: 'system',
-    icon: Settings,
-    iconColor: 'text-gray-600 dark:text-gray-400',
-    iconBg: 'bg-gray-50 dark:bg-gray-900/20',
-    title: 'Subscription Renewal Reminder',
-    description: 'Your Pro plan renews in 3 days — ₹999/month',
-    time: '1 hour ago',
-    unread: true,
-    actionLabel: 'Manage Plan',
-    actionTab: 'settings',
-    timestamp: new Date(now.getTime() - 1 * hour),
-  },
-  {
-    id: 'n6',
-    type: 'order',
-    icon: ShoppingCart,
-    iconColor: 'text-emerald-600 dark:text-emerald-400',
-    iconBg: 'bg-emerald-50 dark:bg-emerald-900/20',
-    title: 'Daily Sales Summary',
-    description: "Today's sales: ₹12,450 across 18 orders",
-    time: '2 hours ago',
-    unread: false,
-    actionLabel: 'View Report',
-    actionTab: 'reports',
-    timestamp: new Date(now.getTime() - 2 * hour),
-  },
-  {
-    id: 'n7',
-    type: 'payment',
-    icon: RefreshCcw,
-    iconColor: 'text-green-600 dark:text-green-400',
-    iconBg: 'bg-green-50 dark:bg-green-900/20',
-    title: 'Refund Processed',
-    description: 'Order #ORD-004 — ₹450 refunded via UPI',
-    time: '3 hours ago',
-    unread: false,
-    actionLabel: 'View Order',
-    actionTab: 'orders',
-    timestamp: new Date(now.getTime() - 3 * hour),
-  },
-  {
-    id: 'n8',
-    type: 'inventory',
-    icon: PackageCheck,
-    iconColor: 'text-amber-600 dark:text-amber-400',
-    iconBg: 'bg-amber-50 dark:bg-amber-900/20',
-    title: 'Stock Restocked',
-    description: 'Paneer Tikka — 50 units added to inventory',
-    time: '4 hours ago',
-    unread: false,
-    actionLabel: 'View Stock',
-    actionTab: 'products',
-    timestamp: new Date(now.getTime() - 4 * hour),
-  },
-  {
-    id: 'n9',
-    type: 'customer',
-    icon: Users,
-    iconColor: 'text-violet-600 dark:text-violet-400',
-    iconBg: 'bg-violet-50 dark:bg-violet-900/20',
-    title: 'Loyalty Milestone',
-    description: 'Rajesh Kumar reached Gold tier — 5,000 points!',
-    time: '5 hours ago',
-    unread: false,
-    actionLabel: 'View Customer',
-    actionTab: 'customers',
-    timestamp: new Date(now.getTime() - 5 * hour),
-  },
-  {
-    id: 'n10',
-    type: 'system',
-    icon: Settings,
-    iconColor: 'text-gray-600 dark:text-gray-400',
-    iconBg: 'bg-gray-50 dark:bg-gray-900/20',
-    title: 'Shift Started',
-    description: 'Priya Singh (Cashier) started her shift',
-    time: '6 hours ago',
-    unread: false,
-    actionLabel: 'View Staff',
-    actionTab: 'staff',
-    timestamp: new Date(now.getTime() - 6 * hour),
-  },
-  {
-    id: 'n11',
-    type: 'order',
-    icon: ShoppingCart,
-    iconColor: 'text-emerald-600 dark:text-emerald-400',
-    iconBg: 'bg-emerald-50 dark:bg-emerald-900/20',
-    title: 'Zomato Order Received',
-    description: 'Order #ZM-456 — ₹820, Delivery',
-    time: '8 hours ago',
-    unread: false,
-    actionLabel: 'View Order',
-    actionTab: 'orders',
-    timestamp: new Date(now.getTime() - 8 * hour),
-  },
-  {
-    id: 'n12',
-    type: 'system',
-    icon: Settings,
-    iconColor: 'text-gray-600 dark:text-gray-400',
-    iconBg: 'bg-gray-50 dark:bg-gray-900/20',
-    title: 'Weekly Report Ready',
-    description: 'Your weekly business report is ready to view',
-    time: 'Yesterday',
-    unread: false,
-    actionLabel: 'View Report',
-    actionTab: 'reports',
-    timestamp: new Date(now.getTime() - 1 * day - 2 * hour),
-  },
-  {
-    id: 'n13',
-    type: 'payment',
-    icon: IndianRupee,
-    iconColor: 'text-green-600 dark:text-green-400',
-    iconBg: 'bg-green-50 dark:bg-green-900/20',
-    title: 'Bulk Payment Received',
-    description: '₹15,200 from corporate catering order',
-    time: 'Yesterday',
-    unread: false,
-    actionLabel: 'View Order',
-    actionTab: 'orders',
-    timestamp: new Date(now.getTime() - 1 * day - 5 * hour),
-  },
-  {
-    id: 'n14',
-    type: 'order',
-    icon: ShoppingCart,
-    iconColor: 'text-emerald-600 dark:text-emerald-400',
-    iconBg: 'bg-emerald-50 dark:bg-emerald-900/20',
-    title: 'Table T3 Reserved',
-    description: 'Reserved for 7:30 PM — Party of 4',
-    time: 'Yesterday',
-    unread: false,
-    actionLabel: 'View Tables',
-    actionTab: 'tables',
-    timestamp: new Date(now.getTime() - 1 * day - 8 * hour),
-  },
-  {
-    id: 'n15',
-    type: 'inventory',
-    icon: Package,
-    iconColor: 'text-amber-600 dark:text-amber-400',
-    iconBg: 'bg-amber-50 dark:bg-amber-900/20',
-    title: 'Expiry Warning',
-    description: 'Milk batch expires in 2 days — 30 units',
-    time: '2 days ago',
-    unread: false,
-    actionLabel: 'Check Stock',
-    actionTab: 'products',
-    timestamp: new Date(now.getTime() - 2 * day),
-  },
-];
 
 // ─── Category badge color mapping ───────────────────────────────
 
@@ -299,6 +84,75 @@ const CATEGORY_ICONS: Record<NotificationCategory, React.ElementType> = {
   customer: Users,
   system: Settings,
 };
+
+// ─── Map DB notification type to display category ─────────────────
+
+function mapDbToCategory(notif: DbNotification): NotificationCategory {
+  if (notif.type === 'order') return 'order';
+  if (notif.type === 'warning') return 'inventory';
+  if (notif.type === 'success') return 'payment';
+  if (notif.type === 'error') return 'system';
+  if (notif.type === 'info' && notif.title.toLowerCase().includes('customer')) return 'customer';
+  return 'system';
+}
+
+// ─── Map category to icon/color info ────────────────────────────
+
+function getCategoryStyle(category: NotificationCategory): {
+  icon: React.ElementType;
+  iconColor: string;
+  iconBg: string;
+} {
+  switch (category) {
+    case 'order':
+      return { icon: ShoppingCart, iconColor: 'text-emerald-600 dark:text-emerald-400', iconBg: 'bg-emerald-50 dark:bg-emerald-900/20' };
+    case 'inventory':
+      return { icon: Package, iconColor: 'text-amber-600 dark:text-amber-400', iconBg: 'bg-amber-50 dark:bg-amber-900/20' };
+    case 'payment':
+      return { icon: IndianRupee, iconColor: 'text-green-600 dark:text-green-400', iconBg: 'bg-green-50 dark:bg-green-900/20' };
+    case 'customer':
+      return { icon: Users, iconColor: 'text-violet-600 dark:text-violet-400', iconBg: 'bg-violet-50 dark:bg-violet-900/20' };
+    case 'system':
+    default:
+      return { icon: Settings, iconColor: 'text-gray-600 dark:text-gray-400', iconBg: 'bg-gray-50 dark:bg-gray-900/20' };
+  }
+}
+
+// ─── Map category to action tab and label ───────────────────────
+
+function getCategoryAction(category: NotificationCategory): { label: string; tab: string } {
+  switch (category) {
+    case 'order':
+      return { label: 'View Order', tab: 'orders' };
+    case 'inventory':
+      return { label: 'Check Stock', tab: 'products' };
+    case 'payment':
+      return { label: 'View Details', tab: 'orders' };
+    case 'customer':
+      return { label: 'View Profile', tab: 'customers' };
+    case 'system':
+    default:
+      return { label: 'View', tab: 'settings' };
+  }
+}
+
+// ─── Relative time formatter ────────────────────────────────────
+
+function formatRelativeTime(date: Date): string {
+  const now = Date.now();
+  const diff = now - date.getTime();
+  const seconds = Math.floor(diff / 1000);
+  const minutes = Math.floor(seconds / 60);
+  const hours = Math.floor(minutes / 60);
+  const days = Math.floor(hours / 24);
+
+  if (seconds < 60) return 'just now';
+  if (minutes < 60) return `${minutes} min ago`;
+  if (hours < 24) return `${hours} hour${hours !== 1 ? 's' : ''} ago`;
+  if (days === 1) return 'Yesterday';
+  if (days < 7) return `${days} days ago`;
+  return date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+}
 
 // ─── Timestamp Grouping ──────────────────────────────────────────
 
@@ -341,10 +195,63 @@ const listItemVariants = {
 
 // ─── Component ──────────────────────────────────────────────────
 
-export default function NotificationsPanel() {
-  const [notifications, setNotifications] = useState<Notification[]>(MOCK_NOTIFICATIONS);
+interface NotificationsPanelProps {
+  storeId: string;
+}
+
+export default function NotificationsPanel({ storeId }: NotificationsPanelProps) {
+  const [notifications, setNotifications] = useState<DisplayNotification[]>([]);
+  const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState<string>('all');
   const [displayCount, setDisplayCount] = useState(20);
+
+  // ─── Fetch notifications from API ───────────────────────────
+  const fetchNotifications = useCallback(async () => {
+    if (!storeId) return;
+    try {
+      const res = await fetch(`/api/notifications?storeId=${storeId}`);
+      if (res.ok) {
+        const data = await res.json();
+        const dbNotifs: DbNotification[] = data.notifications || [];
+
+        const mapped: DisplayNotification[] = dbNotifs.map((n) => {
+          const category = mapDbToCategory(n);
+          const style = getCategoryStyle(category);
+          const action = getCategoryAction(category);
+          const timestamp = new Date(n.createdAt);
+
+          return {
+            id: n.id,
+            type: category,
+            icon: style.icon,
+            iconColor: style.iconColor,
+            iconBg: style.iconBg,
+            title: n.title,
+            description: n.message,
+            time: formatRelativeTime(timestamp),
+            unread: !n.read,
+            actionLabel: action.label,
+            actionTab: action.tab,
+            timestamp,
+          };
+        });
+
+        setNotifications(mapped);
+      }
+    } catch (err) {
+      console.error('Failed to fetch notifications:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [storeId]);
+
+  // Initial fetch + auto-refresh every 30 seconds
+  useEffect(() => {
+    setLoading(true);
+    fetchNotifications();
+    const interval = setInterval(fetchNotifications, 30000);
+    return () => clearInterval(interval);
+  }, [fetchNotifications]);
 
   // Computed values
   const unreadCount = useMemo(() => notifications.filter(n => n.unread).length, [notifications]);
@@ -380,7 +287,7 @@ export default function NotificationsPanel() {
 
   // Group notifications by time
   const groupedNotifications = useMemo(() => {
-    const groups: Record<TimeGroup, Notification[]> = {
+    const groups: Record<TimeGroup, DisplayNotification[]> = {
       'Today': [],
       'Yesterday': [],
       'Earlier this week': [],
@@ -393,29 +300,94 @@ export default function NotificationsPanel() {
     return groups;
   }, [displayedNotifications]);
 
-  // Handlers
-  const handleMarkAllRead = () => {
-    setNotifications(prev => prev.map(n => ({ ...n, unread: false })));
-    toast.success('All notifications marked as read');
+  // ─── Handlers ──────────────────────────────────────────────
+
+  const handleMarkAllRead = async () => {
+    try {
+      const res = await fetch('/api/notifications', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ markAllRead: true, storeId }),
+      });
+      if (res.ok) {
+        setNotifications(prev => prev.map(n => ({ ...n, unread: false })));
+        toast.success('All notifications marked as read');
+      } else {
+        toast.error('Failed to mark all as read');
+      }
+    } catch {
+      toast.error('Failed to mark all as read');
+    }
   };
 
-  const handleToggleRead = (id: string) => {
+  const handleToggleRead = async (id: string) => {
+    const notif = notifications.find(n => n.id === id);
+    if (!notif) return;
+
+    // Optimistic update
     setNotifications(prev =>
       prev.map(n => (n.id === id ? { ...n, unread: !n.unread } : n))
     );
+
+    // Only call API for stored (non-dynamic) notifications
+    if (!id.startsWith('dynamic-')) {
+      try {
+        await fetch('/api/notifications', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id }),
+        });
+      } catch {
+        // Revert on failure
+        setNotifications(prev =>
+          prev.map(n => (n.id === id ? { ...n, unread: !n.unread } : n))
+        );
+      }
+    }
   };
 
-  const handleClearAll = () => {
-    setNotifications([]);
-    toast.success('All notifications cleared');
+  const handleClearAll = async () => {
+    try {
+      const res = await fetch(`/api/notifications?storeId=${storeId}&clearAll=true`, {
+        method: 'DELETE',
+      });
+      if (res.ok) {
+        // Remove all stored notifications, keep only dynamic ones
+        setNotifications(prev => prev.filter(n => n.id.startsWith('dynamic-')));
+        toast.success('All stored notifications cleared');
+      } else {
+        toast.error('Failed to clear notifications');
+      }
+    } catch {
+      toast.error('Failed to clear notifications');
+    }
   };
 
-  const handleDismiss = (id: string) => {
+  const handleDismiss = async (id: string) => {
+    // Optimistic update
     setNotifications(prev => prev.filter(n => n.id !== id));
-    toast.success('Notification dismissed');
+
+    // Only call API for stored (non-dynamic) notifications
+    if (!id.startsWith('dynamic-')) {
+      try {
+        const res = await fetch(`/api/notifications?id=${id}`, { method: 'DELETE' });
+        if (!res.ok) {
+          // Revert on failure by re-fetching
+          fetchNotifications();
+          toast.error('Failed to dismiss notification');
+        } else {
+          toast.success('Notification dismissed');
+        }
+      } catch {
+        fetchNotifications();
+        toast.error('Failed to dismiss notification');
+      }
+    } else {
+      toast.success('Notification dismissed');
+    }
   };
 
-  const handleAction = (notification: Notification) => {
+  const handleAction = (notification: DisplayNotification) => {
     if (notification.unread) {
       handleToggleRead(notification.id);
     }
@@ -468,6 +440,30 @@ export default function NotificationsPanel() {
     { value: 'system', label: 'System', icon: Settings },
   ];
 
+  // ─── Loading state ─────────────────────────────────────────
+  if (loading) {
+    return (
+      <div className="space-y-6 p-1">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center">
+            <Bell className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+          </div>
+          <div>
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100">
+              Notifications Center
+            </h2>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              Loading notifications...
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="w-8 h-8 text-emerald-600 animate-spin" />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 p-1">
       {/* ─── Header ─── */}
@@ -486,6 +482,15 @@ export default function NotificationsPanel() {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={fetchNotifications}
+            className="text-xs gap-1.5 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800"
+          >
+            <RefreshCcw className="w-3.5 h-3.5" />
+            Refresh
+          </Button>
           {unreadCount > 0 && (
             <Button
               variant="outline"
@@ -661,6 +666,14 @@ export default function NotificationsPanel() {
                                       <TypeIcon className="w-2.5 h-2.5 mr-0.5" />
                                       {CATEGORY_LABELS[notification.type]}
                                     </Badge>
+                                    {notification.id.startsWith('dynamic-') && (
+                                      <Badge
+                                        variant="secondary"
+                                        className="text-[10px] px-1.5 py-0 border-0 bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-400"
+                                      >
+                                        Live
+                                      </Badge>
+                                    )}
                                   </div>
                                 </div>
 
