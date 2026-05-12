@@ -31,7 +31,10 @@ yarn-error.log*
 .pnpm-debug.log*
 
 # env files (can opt-in for committing if needed)
-.env*
+.env
+.env.local
+.env.*.local
+!.env.example
 
 # vercel
 .vercel
@@ -52,3 +55,25 @@ prompt
 server.log
 # Skills directory
 /skills/
+
+# Database files
+db/*.db
+db/*.db-shm
+db/*.db-wal
+db/*.db-journal
+
+# Agent context files
+agent-ctx/
+
+# Download/screenshot files
+download/
+
+# Z scripts internal
+.zscripts/
+
+# Mini services build artifacts
+mini-services/*/node_modules
+mini-services/*/.next
+
+# Worklog
+worklog.md
