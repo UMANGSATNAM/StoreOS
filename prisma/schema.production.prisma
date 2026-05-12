@@ -1,0 +1,325 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Auth & Users ───
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  password      String
+  name          String
+  phone         String?
+  role          String    @default("user") // user, admin
+  avatar        String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  store         Store?
+  subscription  Subscription?
+}
+
+// ─── Store / Tenant ───
+model Store {
+  id            String    @id @default(cuid())
+  userId        String    @unique
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name          String
+  ownerName     String
+  niche         String    // restaurant, clothing, pharmacy, etc.
+  template      String    @default("default")
+  city          String?
+  state         String?
+  gstNumber     String?
+  logo          String?
+  address       String?
+  phone         String?
+  email         String?
+  currency      String    @default("INR")
+  taxRate       Float     @default(18.0)
+  receiptHeader String?
+  receiptFooter String?
+  onboardingComplete Boolean @default(false)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  products      Product[]
+  categories    Category[]
+  customers     Customer[]
+  orders        Order[]
+  suppliers     Supplier[]
+  staff         Staff[]
+  tables        Table[]
+  appointments  Appointment[]
+  vehicles      Vehicle[]
+  rooms         Room[]
+  members       Member[]
+  students      Student[]
+}
+
+// ─── Subscription ───
+model Subscription {
+  id              String    @id @default(cuid())
+  userId          String    @unique
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan            String    @default("basic") // basic, pro
+  status          String    @default("trial") // trial, active, past_due, cancelled
+  trialEndsAt     DateTime?
+  currentPeriodStart DateTime?
+  currentPeriodEnd   DateTime?
+  cancelledAt     DateTime?
+  razorpaySubscriptionId String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+// ─── Product Categories ───
+model Category {
+  id          String    @id @default(cuid())
+  storeId     String
+  store       Store     @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  name        String
+  icon        String?
+  color       String?
+  sortOrder   Int       @default(0)
+  nicheData   String?   // JSON for niche-specific fields
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  products    Product[]
+}
+
+// ─── Products ───
+model Product {
+  id            String    @id @default(cuid())
+  storeId       String
+  store         Store     @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  categoryId    String?
+  category      Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  name          String
+  description   String?
+  sku           String?
+  barcode       String?
+  price         Float
+  costPrice     Float     @default(0)
+  unit          String    @default("piece") // piece, kg, liter, etc.
+  stock         Float     @default(0)
+  lowStockAlert Float     @default(5)
+  image         String?
+  variants      String?   // JSON: size, color, etc.
+  nicheData     String?   // JSON for niche-specific fields (batch, expiry, IMEI, etc.)
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  orderItems    OrderItem[]
+}
+
+// ─── Customers ───
+model Customer {
+  id            String    @id @default(cuid())
+  storeId       String
+  store         Store     @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  name          String
+  phone         String?
+  email         String?
+  address       String?
+  gstNumber     String?
+  loyaltyPoints Int       @default(0)
+  creditBalance Float     @default(0)
+  totalSpent    Float     @default(0)
+  totalOrders   Int       @default(0)
+  nicheData     String?   // JSON for niche-specific fields
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  orders        Order[]
+}
+
+// ─── Orders ───
+model Order {
+  id            String    @id @default(cuid())
+  storeId       String
+  store         Store     @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  customerId    String?
+  customer      Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  orderNumber   String
+  status        String    @default("completed") // draft, held, completed, cancelled, refunded
+  type          String    @default("dine_in") // dine_in, takeaway, delivery, etc.
+  subtotal      Float
+  taxAmount     Float     @default(0)
+  discountAmount Float    @default(0)
+  totalAmount   Float
+  paymentMethod String    @default("cash") // cash, upi, card, split
+  paymentStatus String    @default("paid") // paid, partial, pending
+  notes         String?
+  nicheData     String?   // JSON for niche-specific fields (table, vehicle, room, etc.)
+  staffId       String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  items         OrderItem[]
+}
+
+// ─── Order Items ───
+model OrderItem {
+  id            String    @id @default(cuid())
+  orderId       String
+  order         Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId     String?
+  product       Product?  @relation(fields: [productId], references: [id], onDelete: SetNull)
+  name          String
+  quantity      Float
+  unitPrice     Float
+  discount      Float     @default(0)
+  total         Float
+  notes         String?
+  nicheData     String?   // JSON for niche-specific fields
+  createdAt     DateTime  @default(now())
+}
+
+// ─── Suppliers ───
+model Supplier {
+  id            String    @id @default(cuid())
+  storeId       String
+  store         Store     @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  name          String
+  phone         String?
+  email         String?
+  address       String?
+  gstNumber     String?
+  balance       Float     @default(0)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+// ─── Staff ───
+model Staff {
+  id            String    @id @default(cuid())
+  storeId       String
+  store         Store     @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  name          String
+  phone         String?
+  role          String    @default("cashier") // admin, cashier, manager, viewer
+  shiftStart    String?   // "09:00"
+  shiftEnd      String?   // "17:00"
+  salary        Float     @default(0)
+  commission    Float     @default(0)
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+// ─── Restaurant: Tables ───
+model Table {
+  id            String    @id @default(cuid())
+  storeId       String
+  store         Store     @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  number        Int
+  capacity      Int       @default(4)
+  status        String    @default("available") // available, occupied, reserved
+  section       String?   // indoor, outdoor, VIP
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+// ─── Salon/Clinic: Appointments ───
+model Appointment {
+  id            String    @id @default(cuid())
+  storeId       String
+  store         Store     @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  customerName  String
+  customerPhone String?
+  service       String
+  staffName     String?
+  date          DateTime
+  duration      Int       @default(30) // minutes
+  status        String    @default("scheduled") // scheduled, in_progress, completed, cancelled
+  notes         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+// ─── Garage: Vehicles ───
+model Vehicle {
+  id            String    @id @default(cuid())
+  storeId       String
+  store         Store     @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  registrationNumber String
+  make          String?
+  model         String?
+  year          Int?
+  ownerName     String?
+  ownerPhone    String?
+  lastServiceDate DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+// ─── Hotel: Rooms ───
+model Room {
+  id            String    @id @default(cuid())
+  storeId       String
+  store         Store     @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  number        String
+  type          String    @default("standard") // standard, deluxe, suite
+  pricePerNight Float
+  capacity      Int       @default(2)
+  status        String    @default("available") // available, occupied, maintenance
+  floor         Int?
+  amenities     String?   // JSON
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+// ─── Gym: Members ───
+model Member {
+  id            String    @id @default(cuid())
+  storeId       String
+  store         Store     @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  name          String
+  phone         String?
+  email         String?
+  plan          String    @default("monthly") // monthly, quarterly, annual
+  startDate     DateTime
+  endDate       DateTime
+  status        String    @default("active") // active, expired, cancelled
+  trainerName   String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+// ─── Coaching: Students ───
+model Student {
+  id            String    @id @default(cuid())
+  storeId       String
+  store         Store     @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  name          String
+  phone         String?
+  email         String?
+  parentPhone   String?
+  batch         String?
+  course        String?
+  feeTotal      Float     @default(0)
+  feePaid       Float     @default(0)
+  status        String    @default("active") // active, graduated, dropped
+  enrollDate    DateTime  @default(now())
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+// ─── Notifications ───
+model Notification {
+  id            String    @id @default(cuid())
+  storeId       String?
+  userId        String?
+  title         String
+  message       String
+  type          String    @default("info") // info, warning, success, error
+  read          Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+}
