@@ -21,8 +21,8 @@ COPY . .
 # Switch to PostgreSQL schema for production
 RUN cp prisma/schema.production.prisma prisma/schema.prisma
 
-# Generate Prisma client
-RUN npx prisma generate
+# Generate Prisma client using the PROJECT's installed version (v6), NOT latest
+RUN ./node_modules/.bin/prisma generate
 
 # Next.js collects completely anonymous telemetry data - disable it
 ENV NEXT_TELEMETRY_DISABLED=1
@@ -49,10 +49,11 @@ RUN chown nextjs:nodejs .next
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
-# Copy Prisma schema and migrations for production
+# Copy Prisma schema, migrations, and engine for production
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
+COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
 
 USER nextjs
 
